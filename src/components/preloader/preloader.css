@@ -1,0 +1,318 @@
+/* preloader.css */
+
+.preloader-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Canvas layers */
+.preloader-grid-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.07;
+}
+
+.preloader-noise-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.035;
+  mix-blend-mode: screen;
+}
+
+/* CRT overlays */
+.preloader-scan-lines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.18) 2px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 20;
+  animation: preloader-scan-move 8s linear infinite;
+  background-size: 100% 40px;
+}
+
+.preloader-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  pointer-events: none;
+  z-index: 19;
+}
+
+/* Curtain + inner layout */
+.preloader-curtain {
+  position: absolute;
+  inset: 0;
+  background: #080808;
+  z-index: 30;
+  transform-origin: top center;
+}
+
+.preloader-curtain-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px 40px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  overflow: hidden;
+}
+
+/* Top row */
+.preloader-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.preloader-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preloader-brand-letters {
+  display: flex;
+  gap: 1px;
+}
+
+.preloader-brand-letter {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  color: #e8e8e8;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+.preloader-brand-sep {
+  width: 1px;
+  height: 14px;
+  background: #333;
+  align-self: center;
+  margin: 0 8px;
+}
+
+.preloader-brand-sub {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: #444;
+  text-transform: uppercase;
+  align-self: center;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+.preloader-sys-badge {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #2a2a2a;
+  border: 1px solid #1a1a1a;
+  padding: 4px 10px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+/* Center / counter */
+.preloader-center-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.preloader-counter-wrap {
+  position: relative;
+}
+
+.preloader-counter-main {
+  font-size: clamp(100px, 20vw, 168px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: #efefef;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  display: block;
+  position: relative;
+}
+
+.preloader-counter-ghost {
+  position: absolute;
+  inset: 0;
+  font-size: clamp(100px, 20vw, 168px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: #c8f135;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.preloader-counter-label {
+  font-size: 9px;
+  letter-spacing: 0.4em;
+  color: #2d2d2d;
+  margin-top: 8px;
+  text-transform: uppercase;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+.preloader-side-data {
+  position: absolute;
+  right: -120px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preloader-data-row {
+  font-size: 9px;
+  color: #292929;
+  letter-spacing: 0.12em;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+/* Bottom */
+.preloader-bottom-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preloader-progress-track {
+  width: 100%;
+  height: 1px;
+  background: #111;
+  position: relative;
+  overflow: hidden;
+}
+
+.preloader-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #c8f135;
+  width: 0%;
+}
+
+.preloader-progress-glow {
+  position: absolute;
+  right: -4px;
+  top: -3px;
+  width: 8px;
+  height: 7px;
+  background: #c8f135;
+  opacity: 0.7;
+  filter: blur(3px);
+}
+
+.preloader-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.preloader-status-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preloader-status-wrap {
+  height: 14px;
+  overflow: hidden;
+}
+
+.preloader-status-text {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #333;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  display: block;
+}
+
+.preloader-terminal-log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.preloader-log-entry {
+  font-size: 9px;
+  color: #252525;
+  letter-spacing: 0.08em;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.25s ease;
+}
+
+.preloader-log-entry.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.preloader-log-entry.active {
+  color: #444 !important;
+}
+
+.preloader-right-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.preloader-entry-badge {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c8f135;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+.preloader-entry-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c8f135;
+  align-self: flex-end;
+  animation: preloader-blink 0.6s step-end infinite;
+}
+
+/* Animations */
+@keyframes preloader-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes preloader-scan-move {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 40px;
+  }
+}
