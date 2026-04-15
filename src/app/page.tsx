@@ -1,16 +1,21 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Preloader from "../components/preloader/Preloader";
 
-export default function Layout({ children }) {
+export default function Home() {
+  const router = useRouter();
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (done) {
+      router.push('/intro');
+    }
+  }, [done, router]);
 
   return (
     <>
       {!done && <Preloader onComplete={() => setDone(true)} />}
-      <main style={{ opacity: done ? 1 : 0, transition: "opacity 0.5s ease" }}>
-        {children}
-      </main>
     </>
   );
 }

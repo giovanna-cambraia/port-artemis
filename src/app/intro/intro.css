@@ -1,0 +1,244 @@
+/* phone-mockup.css */
+
+.mockup-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: transparent;
+  overflow: hidden;
+  background: radial-gradient(
+    circle at 80% 70%,
+    #2a2a2a 0%,
+    #0d0d0d 60%,
+    #000 100%
+  );
+}
+
+/* Camera animation container */
+.camera-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* phone mockup wrapper */
+.phone-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transform: scale(0.8);
+  opacity: 0;
+  animation: cameraPushIn 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.3s;
+}
+
+@keyframes cameraPushIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.phone-image {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+
+  max-height: 90vh;
+  width: auto;
+
+  object-fit: contain;
+}
+
+.phone-image:hover {
+  transform: scale(1.02);
+}
+
+.phone-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+/* Screen overlay (clickable area) */
+.screen-overlay {
+  position: absolute;
+  top: 8%;
+  left: 12.5%;
+  width: 75%;
+  height: 58%;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.screen-overlay:hover {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(2px);
+}
+
+/* Screen preview content */
+.screen-preview {
+  position: absolute;
+  top: 8%;
+  left: 12.5%;
+  width: 75%;
+  height: 58%;
+  overflow: hidden;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.screen-preview iframe,
+.screen-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Portfolio content (hidden until click) */
+.portfolio-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #080808;
+  z-index: 1000;
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.portfolio-content.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Zoom out transition when leaving phone */
+.phone-wrapper.zoom-out {
+  animation: zoomOut 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes zoomOut {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Entrance animation for portfolio */
+.portfolio-enter {
+  animation: portfolioEnter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes portfolioEnter {
+  0% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Optional: Floating animation for phone */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.phone-image.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .screen-overlay,
+  .screen-preview {
+    top: 7%;
+    left: 10%;
+    width: 80%;
+    height: 55%;
+  }
+}
+
+@media (max-width: 480px) {
+  .screen-overlay,
+  .screen-preview {
+    top: 6%;
+    left: 8%;
+    width: 84%;
+    height: 52%;
+  }
+}
+
+/* Loading indicator for portfolio */
+.portfolio-loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #c8f135;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  z-index: 1001;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.portfolio-loading.visible {
+  opacity: 1;
+}
+
+/* Glitch effect on click */
+@keyframes screenGlitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+.screen-overlay:active {
+  animation: screenGlitch 0.2s ease;
+}
