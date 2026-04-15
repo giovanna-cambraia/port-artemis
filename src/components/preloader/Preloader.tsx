@@ -98,15 +98,26 @@ function useGridCanvas(
 
 function useNoiseCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
   const frameRef = useRef<number>(0);
+  const isRunningRef = useRef<boolean>(false);
 
   const start = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || isRunningRef.current) return;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    isRunningRef.current = true;
+
     const tick = () => {
+      if (!isRunningRef.current) return;
+
       const { width: w, height: h } = canvas;
+      if (w === 0 || h === 0) {
+        frameRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
       const img = ctx.createImageData(w, h);
       const data = img.data;
       for (let i = 0; i < data.length; i += 4) {
@@ -124,8 +135,10 @@ function useNoiseCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
   }, [canvasRef]);
 
   const stop = useCallback(() => {
+    isRunningRef.current = false;
     if (frameRef.current) {
       cancelAnimationFrame(frameRef.current);
+      frameRef.current = 0;
     }
   }, []);
 
@@ -140,6 +153,11 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   const curtainRef = useRef<HTMLDivElement>(null);
   const gridCanvasRef = useRef<HTMLCanvasElement>(null);
   const noiseCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Track if animation has been initialized
+  const isInitializedRef = useRef<boolean>(false);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const counterAnimationRef = useRef<gsap.core.Tween | null>(null);
 
   // Brand
   const letterGRef = useRef<HTMLSpanElement>(null);
@@ -168,18 +186,46 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   const { start: startNoise, stop: stopNoise } = useNoiseCanvas(noiseCanvasRef);
 
   useEffect(() => {
+    // Prevent double initialization
+    if (isInitializedRef.current) return;
+    isInitializedRef.current = true;
+
     // Size noise canvas to match container
     const container = containerRef.current;
     const noiseCanvas = noiseCanvasRef.current;
     if (container && noiseCanvas) {
+      const resizeObserver = new ResizeObserver(() => {
+        if (noiseCanvas) {
+          noiseCanvas.width = container.clientWidth;
+          noiseCanvas.height = container.clientHeight;
+        }
+      });
+      resizeObserver.observe(container);
+
       noiseCanvas.width = container.clientWidth;
       noiseCanvas.height = container.clientHeight;
-    }
 
+      return () => resizeObserver.disconnect();
+    }
+  }, []); // Empty dependency array for mount only
+
+  useEffect(() => {
+    // Start noise after canvas is ready
     startNoise();
+
     const tl = buildTimeline();
+    timelineRef.current = tl;
+
     return () => {
-      tl.kill();
+      // Cleanup animations properly
+      if (timelineRef.current) {
+        timelineRef.current.kill();
+        timelineRef.current = null;
+      }
+      if (counterAnimationRef.current) {
+        counterAnimationRef.current.kill();
+        counterAnimationRef.current = null;
+      }
       stopNoise();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -272,7 +318,10 @@ export default function Preloader({ onComplete }: PreloaderProps) {
         },
         onComplete: () => {
           if (preloaderRef.current) preloaderRef.current.style.display = "none";
-          onComplete?.();
+          // Use setTimeout to ensure onComplete is called after DOM update
+          setTimeout(() => {
+            onComplete?.();
+          }, 50);
         },
       });
 
@@ -280,10 +329,15 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   }
 
   function startCounterAnimation() {
+    // Kill existing counter animation if any
+    if (counterAnimationRef.current) {
+      counterAnimationRef.current.kill();
+    }
+
     const obj = { val: 0 };
     let lastGlitch = 0;
 
-    gsap.to(obj, {
+    counterAnimationRef.current = gsap.to(obj, {
       val: 100,
       duration: COUNTER_DURATION,
       ease: "power1.inOut",
@@ -306,18 +360,33 @@ export default function Preloader({ onComplete }: PreloaderProps) {
           const scrambled = glitchString(v);
           if (counterRef.current) counterRef.current.textContent = scrambled;
           setTimeout(() => {
-            if (counterRef.current) counterRef.current.textContent = str;
+            if (
+              counterRef.current &&
+              counterRef.current.textContent === scrambled
+            ) {
+              counterRef.current.textContent = str;
+            }
           }, GLITCH_DURATION_MS);
         }
+      },
+      onComplete: () => {
+        // Ensure final value is exactly "100"
+        if (counterRef.current) counterRef.current.textContent = "100";
+        if (progressFillRef.current)
+          progressFillRef.current.style.width = "100%";
       },
     });
   }
 
   function activateLog(index: number) {
-    if (index > 0) {
+    // Deactivate previous log
+    if (index > 0 && logRefs.current[index - 1]) {
       logRefs.current[index - 1]?.classList.remove("active");
     }
-    logRefs.current[index]?.classList.add("visible", "active");
+    // Activate current log
+    if (logRefs.current[index]) {
+      logRefs.current[index]?.classList.add("visible", "active");
+    }
   }
 
   function setStatus(stage: (typeof STATUS_STAGES)[number]) {
