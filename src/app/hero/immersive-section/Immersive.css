@@ -3,7 +3,6 @@
   background: #1a1a1a;
 }
 
-
 .sticky-container {
   position: sticky;
   top: 0;
@@ -98,8 +97,6 @@
   padding: 0 2rem;
 }
 
-
-
 /* Portal Content */
 .portal-content {
   position: relative;
@@ -148,7 +145,6 @@
     font-size: 1.25rem;
   }
 }
-
 
 .portal-stats {
   position: relative;
@@ -208,7 +204,6 @@
   background: #1a1a1a;
   pointer-events: none;
 }
-
 
 .top-left {
   top: 2rem;
@@ -358,3 +353,261 @@
   height: 100%;
 }
 
+/* Scrolling Text Content */
+.scroll-content {
+  position: absolute;
+  bottom: 15%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 20;
+  will-change: transform, opacity;
+}
+
+.content-wrapper {
+  text-align: center;
+  max-width: 800px;
+  padding: 0 2rem;
+}
+
+.text-line {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 500;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 1.5rem 0;
+  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  will-change: transform, opacity;
+}
+
+/* Transition Overlay */
+.transition-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  transition: opacity 0.3s ease;
+}
+
+.transition-content {
+  text-align: center;
+  color: white;
+}
+
+.transition-content h3 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.loading-bar {
+  width: 300px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 2rem auto;
+  overflow: hidden;
+}
+
+.loading-progress {
+  height: 100%;
+  background: white;
+  transition: width 0.1s linear;
+}
+
+.transition-content p {
+  font-size: 0.875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.next-section {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+}
+
+.next-section-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.next-section-content h2 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: white;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.next-section-content > p {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 600px;
+  margin: 0 auto 4rem;
+  line-height: 1.6;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.feature-card h3 {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.feature-card p {
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .text-line {
+    font-size: 1.2rem;
+    margin: 1rem 0;
+  }
+
+  .loading-bar {
+    width: 200px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.text-content-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 15vh;
+  pointer-events: none;
+}
+
+.text-content-section.active {
+  pointer-events: auto;
+}
+
+.immersive-title {
+  font-size: clamp(2.5rem, 10vw, 6rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 2rem;
+  opacity: 0;
+  transform: translateY(80px);
+  transition:
+    opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.immersive-title.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.troika-container {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  height: 50vh;
+  min-height: 300px;
+}
+
+/* WebGL Text Container */
+.webgl-text-container {
+  position: absolute;
+  bottom: 10%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 20;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Ensure the WebGL text content is centered */
+.webgl-text-container .content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.webgl-text-container .container {
+  margin: 0 auto;
+  gap: 0;
+  padding: 0;
+}
+
+.webgl-text-container section {
+  margin: 0;
+  padding: 0;
+}
+
+/* Adjust text sizes for the immersive section */
+.webgl-text-container .text__1,
+.webgl-text-container .text__2,
+.webgl-text-container .text__3 {
+  color: var(--clr-text);
+}
+
+.webgl-text-container .text__2 {
+  font-size: 2.5em;
+  max-width: 80%;
+  margin: 0 auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .webgl-text-container {
+    bottom: 5%;
+  }
+  
+  .webgl-text-container .text__2 {
+    font-size: 1.5em;
+    max-width: 90%;
+  }
+}
