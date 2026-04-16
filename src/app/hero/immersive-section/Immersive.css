@@ -1,11 +1,9 @@
-/* ImmersiveSection.css */
-
 .immersive-section {
   position: relative;
   background: #1a1a1a;
 }
 
-/* Sticky Container */
+
 .sticky-container {
   position: sticky;
   top: 0;
@@ -14,7 +12,6 @@
   overflow: hidden;
 }
 
-/* Zoom Layer */
 .zoom-layer {
   position: absolute;
   inset: 0;
@@ -91,7 +88,6 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Inner Scene */
 .inner-scene {
   position: absolute;
   inset: 0;
@@ -102,24 +98,7 @@
   padding: 0 2rem;
 }
 
-/* Scene Background */
-.scene-background {
-  position: absolute;
-  inset: 0;
-}
 
-.floating-particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(125, 159, 122, 0.3);
-}
-
-.radial-gradient {
-  position: absolute;
-  inset: 0;
-}
 
 /* Portal Content */
 .portal-content {
@@ -170,7 +149,7 @@
   }
 }
 
-/* Portal Stats */
+
 .portal-stats {
   position: relative;
   z-index: 10;
@@ -186,17 +165,6 @@
   }
 }
 
-.stat-item {
-  text-align: center;
-}
-
-.stat-value {
-  color: #ff0000;
-  font-size: 2.25rem;
-  font-weight: 900;
-  margin-bottom: 0.5rem;
-}
-
 @media (min-width: 768px) {
   .stat-value {
     font-size: 3.75rem;
@@ -210,7 +178,6 @@
   letter-spacing: 0.05em;
 }
 
-/* Exit Hint */
 .exit-hint {
   position: absolute;
   bottom: 3rem;
@@ -235,7 +202,6 @@
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
 }
 
-/* Exit Transition */
 .exit-transition {
   position: absolute;
   inset: 0;
@@ -243,14 +209,6 @@
   pointer-events: none;
 }
 
-/* Corner Frames */
-.corner-frame {
-  position: absolute;
-  width: 3rem;
-  height: 3rem;
-  border-color: rgba(255, 255, 255, 0.1);
-  transition: all 0.5s;
-}
 
 .top-left {
   top: 2rem;
@@ -280,7 +238,6 @@
   border-bottom: 2px solid;
 }
 
-/* Progress Indicator */
 .progress-indicator {
   position: absolute;
   right: 2rem;
@@ -353,3 +310,51 @@
     font-size: 1rem;
   }
 }
+
+.immersive-section {
+  position: relative;
+  z-index: 1;
+}
+
+.portal-inner-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+
+.progress-indicator {
+  position: fixed;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  z-index: 1000;
+}
+
+.progress-indicator-fill {
+  width: 100%;
+  background: white;
+  border-radius: 2px;
+  transition: height 0.1s ease-out;
+}
+
+.circle-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease;
+  background: transparent;
+  z-index: 5;
+}
+
+.circle-layer > div {
+  width: 100%;
+  height: 100%;
+}
+

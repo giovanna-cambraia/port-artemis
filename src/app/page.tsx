@@ -1,16 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Preloader from "../components/preloader/Preloader";
 import HeroSection from "./hero/hero-section/Hero";
 
 export default function Home() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [done, setDone] = useState(false);
 
-
-  const showHeroDirect = searchParams.get("hero") === "true";
+  const showHeroDirect =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("hero") === "true";
 
   useEffect(() => {
     if (done && !showHeroDirect) {

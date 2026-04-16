@@ -186,49 +186,39 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   const { start: startNoise, stop: stopNoise } = useNoiseCanvas(noiseCanvasRef);
 
   useEffect(() => {
-    // Prevent double initialization
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
 
-    // Size noise canvas to match container
+    // Canvas setup
     const container = containerRef.current;
     const noiseCanvas = noiseCanvasRef.current;
-    if (container && noiseCanvas) {
-      const resizeObserver = new ResizeObserver(() => {
-        if (noiseCanvas) {
-          noiseCanvas.width = container.clientWidth;
-          noiseCanvas.height = container.clientHeight;
-        }
-      });
-      resizeObserver.observe(container);
+    let resizeObserver: ResizeObserver | null = null;
 
+    if (container && noiseCanvas) {
       noiseCanvas.width = container.clientWidth;
       noiseCanvas.height = container.clientHeight;
 
-      return () => resizeObserver.disconnect();
+      resizeObserver = new ResizeObserver(() => {
+        noiseCanvas.width = container.clientWidth;
+        noiseCanvas.height = container.clientHeight;
+      });
+      resizeObserver.observe(container);
     }
-  }, []); // Empty dependency array for mount only
 
-  useEffect(() => {
-    // Start noise after canvas is ready
+    // Animation
     startNoise();
-
     const tl = buildTimeline();
     timelineRef.current = tl;
 
     return () => {
-      // Cleanup animations properly
-      if (timelineRef.current) {
-        timelineRef.current.kill();
-        timelineRef.current = null;
-      }
-      if (counterAnimationRef.current) {
-        counterAnimationRef.current.kill();
-        counterAnimationRef.current = null;
-      }
+      resizeObserver?.disconnect();
+      timelineRef.current?.kill();
+      timelineRef.current = null;
+      counterAnimationRef.current?.kill();
+      counterAnimationRef.current = null;
       stopNoise();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   function buildTimeline() {
     const tl = gsap.timeline();
