@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import Transmission from "./Transmission";
+import Scene from "./Scene";
 
 export default function TransmissionWrapper() {
   return (
@@ -15,7 +15,7 @@ export default function TransmissionWrapper() {
           position: [2.5, 2, 2],
         }}
       >
-        <Transmission />
+        <Scene />
       </Canvas>
     </div>
   );

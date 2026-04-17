@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import "./Immersive.css";
-import TransmissionWrapper from "./transmission/TransmissionWrapper";
-import { WebGLTextScene } from "./transmission/troika-text/components/WebGLTextScene";
+import TransmissionWrapper from "./troika-text/TransmissionWrapper";
 
 export function ImmersiveSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,13 +18,12 @@ export function ImmersiveSection() {
       const scrolled = -rect.top;
       const newProgress = Math.max(0, Math.min(1, scrolled / scrollHeight));
       setProgress(newProgress);
-      
-      // Show WebGL text when progress reaches 0.5 (text phase)
+
       if (newProgress >= 0.5 && !showWebGLText) {
         setShowWebGLText(true);
       }
     };
-    
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [showWebGLText]);
@@ -43,7 +41,7 @@ export function ImmersiveSection() {
   const circlePhase = phase(0.25, 0.5);
   const textPhase = phase(0.5, 0.75);
   const exitPhase = phase(0.75, 1.0);
-  
+
   const scale = 1 + zoomPhase * 49;
   const letterOpacity = 1 - Math.min(1, zoomPhase * 1.5);
   const circleOpacity = circlePhase * (1 - exitPhase);
@@ -87,25 +85,6 @@ export function ImmersiveSection() {
         >
           <TransmissionWrapper />
         </div>
-
-        {/* WebGL Text below the model - appears when textPhase > 0 */}
-        {showWebGLText && (
-          <div
-            className="webgl-text-container"
-            style={{
-              opacity: textOpacity,
-              transform: `translateY(${textY}px)`,
-              position: "absolute",
-              bottom: "10%",
-              left: 0,
-              right: 0,
-              zIndex: 20,
-              pointerEvents: textOpacity > 0 ? "auto" : "none",
-            }}
-          >
-            <WebGLTextScene />
-          </div>
-        )}
 
         {/* Progress indicator */}
         <div className="progress-indicator">

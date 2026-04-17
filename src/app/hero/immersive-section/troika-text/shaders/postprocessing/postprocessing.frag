@@ -1,13 +1,3 @@
-export const postprocessingVertexShader = `
-varying vec2 vUv;
-
-void main() {
-  vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`;
-
-export const postprocessingFragmentShader = `
 uniform sampler2D tDiffuse;
 uniform float uVelocity;
 uniform float uTime;
@@ -18,7 +8,7 @@ void main() {
   vec2 uv = vUv;
   
   float waveAmplitude = uVelocity * 0.0009;
-  float waveFrequency = 4.0 + uVelocity * 0.01;
+  float waveFrequency = 4.0 + uVelocity * 0.001;
   
   vec2 waveUv = uv;
   waveUv.x += sin(uv.y * waveFrequency + uTime) * waveAmplitude;
@@ -29,4 +19,3 @@ void main() {
 
   gl_FragColor = vec4(r, gb.x, gb.y, 1.0);
 }
-`;
