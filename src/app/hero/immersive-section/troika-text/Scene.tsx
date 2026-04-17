@@ -163,7 +163,7 @@ export default function Scene() {
       <color args={["black"]} attach="background" />
       <ambientLight />
 
-      <group rotation={[-0.23, 0.1, 0]}>
+      <group rotation={[0, 0.9, 0]}>
         <spotLight
           position={[4, 4, 4]}
           intensity={100}

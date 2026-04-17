@@ -94,6 +94,7 @@ export function ImmersiveSection() {
           />
         </div>
       </div>
+
     </section>
   );
 }
