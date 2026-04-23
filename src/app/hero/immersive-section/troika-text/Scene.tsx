@@ -3,81 +3,135 @@
 import {
   useGLTF,
   MeshTransmissionMaterial,
-  PresentationControls,
   RandomizedLight,
   Text,
 } from "@react-three/drei";
-import { useRef, useState } from "react";
+import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { gsap } from "gsap";
 
 const FONT = "/fonts/Oi-Regular.ttf";
 
-const TEXT_BLOCKS = [
-  {
-    id: 1,
-    content: "CRAFTED WITH\nWEBGL AND\nTHREE.JS",
-    y: -2.5,
-    size: 0.18,
-  },
-  {
-    id: 2,
-    content: "EVERY PIXEL\nRENDERED IN\nREAL TIME —\nNO SHORTCUTS.",
-    y: -3.5,
-    size: 0.13,
-  },
-  {
-    id: 3,
-    content:
-      "SHADERS, GEOMETRY\nAND LIGHT WORKING\nTOGETHER TO BUILD\nSOMETHING THAT\nFEELS ALIVE.",
-    y: -4.5,
-    size: 0.11,
-  },
-  {
-    id: 5,
-    content: "NOW GO CRAZY\nWITH THE SHADERS.",
-    y: -5.5,
-    size: 0.15,
-  },
-  {
-    id: 6,
-    content:
-      "SHADERS, GEOMETRY\nAND LIGHT WORKING\nTOGETHER TO BUILD\nSOMETHING THAT\nFEELS ALIVE.",
-    y: -6.5,
-    size: 0.15,
-  },
-];
+// Tunnel component – creates a descending cube tunnel below the torus
+function Tunnel() {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const timeRef = useRef({ value: 0 });
 
-function TextBlock({
+  const rowCount = 20;
+  const columnCount = 64;
+  const layerCount = 2;
+  const totalInstances = rowCount * columnCount * layerCount;
+
+  const { geometry, material } = useMemo(() => {
+    // Bordered cube texture (white square with transparent center)
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.clearRect(3, 3, 122, 122);
+    const map = new THREE.CanvasTexture(canvas);
+    map.anisotropy = 4;
+
+    // Geometry with rcl attribute
+    const geo = new THREE.BoxGeometry();
+    const rcl = [];
+    for (let i = 0; i < rowCount; i++) {
+      for (let j = 0; j < layerCount; j++) {
+        for (let k = 0; k < columnCount; k++) {
+          rcl.push(i, k, j);
+        }
+      }
+    }
+    geo.setAttribute(
+      "rcl",
+      new THREE.InstancedBufferAttribute(new Float32Array(rcl), 3),
+    );
+
+    // Material using onBeforeCompile (same as original)
+    const mat = new THREE.MeshBasicMaterial({ map, transparent: true });
+    const time = timeRef.current;
+
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.time = time;
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          "#include <common>",
+          `
+          uniform float time;
+          attribute vec3 rcl;
+          #include <common>
+        `,
+        )
+        .replace(
+          "#include <project_vertex>",
+          `
+          const float columnCount = ${columnCount}.0;
+          const float arc = 2.0 * 3.14159265359 / columnCount;
+          const float oneStep = 0.283;
+          float shift = 3.0 - fract(time) * oneStep;
+          float radius = shift;
+          float zShift = 0.0;
+          int x = int(rcl.x);
+          for (int i = 0; i < 20; i++) {
+            if (i >= x) break;
+            radius += radius * arc;
+            zShift += radius * arc;
+          }
+          vec4 mvPosition = vec4(transformed, 1.0);
+          if (mvPosition.z > 0.0) {
+            radius += radius * arc;
+          }
+          mvPosition.xz *= radius * arc;
+          mvPosition.z += zShift + shift;
+          float t = sin(rcl.y / 5.3) * 1.1
+                  + sin(rcl.y / 1.3) * 1.5
+                  + cos(rcl.y / 1.7) * 2.5;
+          t = 2.0 - rcl.x + abs(t) + fract(time);
+          t += rcl.z * abs(sin(rcl.y));
+          t = max(t, 0.0);
+          mvPosition.y -= t * t * t + rcl.z;
+          float angle = rcl.y * arc;
+          float sn = sin(angle);
+          float cs = cos(angle);
+          mvPosition.xz = mvPosition.xz * mat2(cs, -sn, sn, cs);
+          mvPosition = modelViewMatrix * mvPosition;
+          gl_Position = projectionMatrix * mvPosition;
+        `,
+        );
+    };
+
+    return { geometry: geo, material: mat };
+  }, []);
+
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      timeRef.current.value += delta * 0.5;
+      meshRef.current.rotation.y -= delta * 0.3;
+    }
+  });
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[geometry, material, totalInstances]}
+      position={[0, -1.8, 0]}
+      scale={0.9}
+    />
+  );
+}
+
+// Fixed text block (no scroll movement)
+function FixedTextBlock({
   content,
   y,
   size,
-  scrollY,
 }: {
   content: string;
   y: number;
   size: number;
-  scrollY: number;
 }) {
   const ref = useRef<any>(null);
-  const [progress, setProgress] = useState(0);
-
-  useFrame(() => {
-    if (!ref.current) return;
-
-    // Map scroll to reveal — each block reveals as it comes into view
-    const blockWorldY = y - scrollY * 0.01;
-    const revealStart = -1.5;
-    const revealEnd = 0.5;
-    const p = Math.max(
-      0,
-      Math.min(1, (blockWorldY - revealStart) / (revealEnd - revealStart)),
-    );
-    setProgress(1 - p);
-
-    ref.current.position.y = y + scrollY * 0.01;
-  });
 
   return (
     <Text
@@ -86,11 +140,11 @@ function TextBlock({
       fontSize={size}
       color="white"
       anchorX="center"
-      anchorY="top"
+      anchorY="middle"
       position={[0, y, 0]}
       maxWidth={3}
       textAlign="center"
-      fillOpacity={progress}
+      fillOpacity={1}
     >
       {content}
     </Text>
@@ -98,12 +152,10 @@ function TextBlock({
 }
 
 export default function Scene() {
-  const { nodes, materials } = useGLTF("/circle_text_13.glb");
+  const { nodes } = useGLTF("/circle_text_13.glb");
 
   const circularText = useRef<THREE.Group>(null);
   const transmissionMaterial = useRef<any>(null);
-  const groupRef = useRef<THREE.Group>(null);
-
   const spotLight1 = useRef<THREE.SpotLight>(null);
   const spotLight2 = useRef<THREE.SpotLight>(null);
 
@@ -112,29 +164,13 @@ export default function Scene() {
   const oscillationDuration = 2;
   const totalCycleDuration = oscillationDuration + pauseDuration;
 
-  const scrollY = useRef(0);
-
-  const sectionProgress = useRef(0);
-
   useFrame((state, delta) => {
-    // Get section progress
-    const section = document.querySelector(".immersive-section") as HTMLElement;
-    if (section) {
-      const rect = section.getBoundingClientRect();
-      const scrollHeight = section.offsetHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      sectionProgress.current = Math.max(
-        0,
-        Math.min(1, scrolled / scrollHeight),
-      );
-    }
-
-    // Rotate model
+    // Rotate torus model
     if (circularText.current) {
       circularText.current.rotation.y -= delta * 0.3;
     }
 
-    // IOR animation
+    // Animate transmission material IOR
     if (transmissionMaterial.current) {
       elapsedTime.current = state.clock.elapsedTime % totalCycleDuration;
       let ior: number;
@@ -146,28 +182,22 @@ export default function Scene() {
       } else {
         ior = 1.07;
       }
-      gsap.to(transmissionMaterial.current, { ior });
-    }
-
-    // Move group up based on section progress (0 to 3 units)
-    if (groupRef.current) {
-      groupRef.current.position.y = sectionProgress.current * -0.5;
+      transmissionMaterial.current.ior = ior;
     }
   });
 
   const torusMesh = nodes.Torus as THREE.Mesh;
-  const textMesh = nodes.Text as THREE.Mesh;
 
   return (
     <>
       <color args={["black"]} attach="background" />
-      <ambientLight />
+      <ambientLight intensity={0.5} />
 
-      <group rotation={[0, 0.9, 0]}>
+      <group rotation={[-0.01, 0.9, 0.01]}>
         <spotLight
           position={[4, 4, 4]}
           intensity={100}
-          color={"#E5FCFF"}
+          color="#E5FCFF"
           angle={Math.PI / 8}
           ref={spotLight1}
         />
@@ -175,7 +205,7 @@ export default function Scene() {
           position={[1.5, -0.3, 2]}
           intensity={800}
           power={60.0}
-          color={"#FFA530"}
+          color="#FFA530"
           angle={Math.PI / 4}
           ref={spotLight2}
         />
@@ -188,49 +218,45 @@ export default function Scene() {
           bias={0.001}
         />
 
-        <group ref={groupRef}>
-          {/* 3D model */}
-          <group dispose={null} ref={circularText}>
-            <mesh
-              castShadow
-              receiveShadow
-              geometry={torusMesh.geometry}
-              rotation={[0.026, 0.195, -10.334]}
-            >
-              <MeshTransmissionMaterial
-                background={new THREE.Color("#000000")}
-                isMeshPhysicalMaterial={false}
-                transmissionSampler={false}
-                backside={false}
-                samples={10}
-                resolution={2048}
-                transmission={1}
-                roughness={0}
-                thickness={0.2}
-                ior={1.068}
-                chromaticAberration={0}
-                anisotropy={0}
-                distortion={0.5}
-                distortionScale={0.5}
-                temporalDistortion={0.5}
-                clearcoat={1}
-                attenuationDistance={0.5}
-                attenuationColor={"#ffffff"}
-                color={"#ff0000"}
-                ref={transmissionMaterial}
-              />
-            </mesh>
-          </group>
-          {TEXT_BLOCKS.map((block) => (
-            <TextBlock
-              key={block.id}
-              content={block.content}
-              y={block.y}
-              size={block.size}
-              scrollY={sectionProgress.current * 1000}
+        {/* Torus (glass ring) */}
+        <group ref={circularText} position={[0, 0.6, 0]} scale={0.8}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={torusMesh.geometry}
+            rotation={[0.026, 0.195, -10.334]}
+          >
+            <MeshTransmissionMaterial
+              background={new THREE.Color("#000000")}
+              isMeshPhysicalMaterial={false}
+              transmissionSampler={false}
+              backside={false}
+              samples={10}
+              resolution={2048}
+              transmission={1}
+              roughness={0}
+              thickness={0.2}
+              ior={1.068}
+              chromaticAberration={0}
+              anisotropy={0}
+              distortion={0.5}
+              distortionScale={0.5}
+              temporalDistortion={0.5}
+              clearcoat={1}
+              attenuationDistance={0.5}
+              attenuationColor="#ffffff"
+              color="#ff0000"
+              ref={transmissionMaterial}
             />
-          ))}
+          </mesh>
         </group>
+
+        {/* Tunnel effect - placed below the torus, rotates in sync */}
+        <Tunnel />
+
+        {/* Fixed text */}
+        <FixedTextBlock content="DIVE IN THE" y={1} size={0.25} />
+        <FixedTextBlock content="VAST ABYSS" y={0.5} size={0.25} />
       </group>
     </>
   );

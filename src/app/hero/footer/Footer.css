@@ -1,235 +1,223 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
- 
+@import url("https://fonts.googleapis.com/css2?family=Sekuya&display=swap");
+
+/* ── Shell ── */
 .footer {
-  background: white;
-  padding: 3rem 3rem 2rem;
-  font-family: 'DM Sans', sans-serif;
+  position: relative;
+  background: #ffffff;
   overflow: hidden;
-}
- 
-/* ── Top: Big Name ── */
-.footer__top {
-  margin-bottom: 2.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-family: "DM Sans", sans-serif;
+  /* isolate stacking context */
+  isolation: isolate;
 }
 
-.footer::before {
-  content: '';
+.footer__name-wrap {
   position: absolute;
-  inset: 0;
-  background-image: 
-    repeating-linear-gradient(transparent, transparent 19px, rgba(0, 0, 0, 0.03) 19px, rgba(0, 0, 0, 0.03) 20px),
-    repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(0, 0, 0, 0.03) 19px, rgba(0, 0, 0, 0.03) 20px);
-  pointer-events: none;
+  left: 0;
+  width: 100%;
+  bottom: 85%;
+  text-align: center;
 }
- 
+
 .footer__name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(5rem, 15vw, 11rem);
+  color: #111112;
+  font-family: "Sekuya", sans-serif;
+  font-size: 200px;
   font-weight: 400;
-  line-height: 0.9;
-  color: #1a1714;
-  letter-spacing: -0.02em;
-  margin: 0;
-  user-select: none;
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+  -webkit-text-stroke: 1px rgba(255, 38, 0, 0.15);
+  width: 100%;
 }
- 
-/* ── Bottom Row ── */
-.footer__bottom {
+
+.footer__torus {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 540px;
+  z-index: 3;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* Left text positioned to the left of the torus */
+.footer__torus-left-text {
+  font-family: "Sekuya", sans-serif;
+  font-size: 2.2rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: #111112;
+  opacity: 0.7;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  justify-self: end;
+}
+
+/* Right text positioned to the right of the torus */
+.footer__torus-right-text {
+  font-family: "Sekuya", sans-serif;
+  font-size: 2.2rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: #111112;
+  opacity: 0.7;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  justify-self: start;
+}
+
+/* Ensure KineticTypeDemo1 maintains its size and position and stays centered */
+.footer__torus > :nth-child(2) {
+  flex-shrink: 0;
+  justify-self: center;
+  margin: 0 auto;
+}
+
+/* ── Content overlay ── */
+.footer__content {
+  position: relative;
+  z-index: 4;
+  padding: 0 2.5rem 2rem;
+  will-change: transform;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.footer__top-row {
+  margin-bottom: 8px;
+  display: flex;
   justify-content: space-between;
-  gap: 2rem;
-}
- 
-/* ── Left Side ── */
-.footer__left {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  flex: 1;
-}
- 
-.footer__nav {
-  display: flex;
-  gap: 3rem;
-}
- 
-.footer__nav-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
- 
-.footer__nav-col a {
-  font-size: 0.95rem;
-  font-weight: 400;
-  color: #2e2926;
-  text-decoration: none;
-  transition: opacity 0.2s;
-}
- 
-.footer__nav-col a:hover {
-  opacity: 0.5;
-}
- 
-.footer__badge {
-  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #2e2926;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  margin-top: 0.25rem;
-  width: fit-content;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
- 
-.footer__cta p {
-  font-size: 1rem;
-  font-weight: 400;
-  color: #2e2926;
-  margin: 0 0 0.75rem;
-  max-width: 220px;
-}
- 
-.footer__button {
-  display: inline-flex;
+
+.footer__tagline {
+  display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #1a1714;
-  color: #f0ede8;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  padding: 0.6rem 1.1rem;
-  border-radius: 999px;
-  transition: background 0.2s, transform 0.15s;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ff0000;
 }
- 
-.footer__button:hover {
-  background: #333;
-  transform: translateY(-1px);
-}
- 
-.footer__button-dot {
+
+.footer__dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #ff0000;
+  animation: pulse 2s ease-in-out infinite;
   flex-shrink: 0;
 }
- 
-.footer__copy {
-  font-size: 0.75rem;
-  color: rgba(46, 41, 38, 0.5);
-  margin: 0;
-}
- 
-/* Footer.css */
-.footer__card-wrap {
-  width: 500px;
-  height: 300px;
-}
- 
-.footer__card {
-  width: 160px;
-  height: 220px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1.5px solid rgba(255, 255, 255, 0.55);
-  border-radius: 14px;
-  backdrop-filter: blur(6px);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 1rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.4);
-  transform: rotate(4deg);
-  transition: transform 0.3s ease;
-}
- 
-.footer__card:hover {
-  transform: rotate(0deg) scale(1.03);
-}
- 
-.footer__card-clip {
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 28px;
-  height: 22px;
-  background: linear-gradient(180deg, #b0a8a0 0%, #d8d0c8 100%);
-  border-radius: 3px 3px 0 0;
-  border: 1px solid rgba(0,0,0,0.15);
-}
- 
-.footer__card-clip::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(0,0,0,0.2);
-  background: #c8c0b8;
-}
- 
-.footer__card-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  height: 100%;
-  padding-top: 0.25rem;
-}
- 
-.footer__card-role {
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 300;
-  color: rgba(46, 41, 38, 0.45);
-  letter-spacing: 0.01em;
-}
- 
-.footer__card-role.top {
-  font-size: 1rem;
-  align-self: flex-start;
-}
- 
-.footer__card-role.bottom {
-  font-size: 1.4rem;
-  font-weight: 500;
-  color: #2e2926;
-  align-self: flex-end;
-}
- 
-.footer__card-star {
-  font-size: 2.5rem;
-  color: rgba(46, 41, 38, 0.15);
-  line-height: 1;
-}
- 
-/* ── Responsive ── */
-@media (max-width: 640px) {
-  .footer {
-    padding: 2rem 1.5rem 1.5rem;
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
- 
-  .footer__bottom {
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+
+.footer__socials {
+  margin-bottom: -15px;
+  display: flex;
+  gap: 1.75rem;
+}
+
+.footer__socials a {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.4);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.footer__socials a:hover {
+  color: #b90b0b;
+}
+
+/* Bottom row: nav + cta + copy */
+.footer__bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer__nav {
+  margin-bottom: 30px;
+  display: flex;
+  gap: 1.75rem;
+}
+
+.footer__nav a {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.4);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.footer__nav a:hover {
+  color: #b90b0b;
+}
+
+
+.footer__copy {
+  font-size: 0.72rem;
+  color: rgba(0, 0, 0, 0.2);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .footer__torus {
+    width: 320px;
+    height: 320px;
+    gap: 1rem;
+  }
+
+  .footer__torus-left-text,
+  .footer__torus-right-text {
+    font-size: 1.2rem;
+  }
+
+  .footer__content {
+    padding: 0 1.25rem 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .footer__bottom-row {
     flex-direction: column;
     align-items: flex-start;
   }
- 
-  .footer__card-wrap {
-    align-self: flex-end;
+
+  .footer__top-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
- 

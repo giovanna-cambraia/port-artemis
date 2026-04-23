@@ -1,5 +1,4 @@
-/* Google Fonts Import */
-@import url("https://fonts.googleapis.com/css2?family=Oi&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Sekuya&display=swap');
 
 /* CSS Reset & Base Styles */
 *,
@@ -13,7 +12,7 @@
   --clr-selection: rgba(255, 156, 245, 0.3);
   --clr-background: #212720;
 
-  --font-primary: "Oi", "Arial Black", "Impact", sans-serif;
+  --font-primary: "Sekuya", "Arial Black", "Impact", sans-serif;
   --font-mono: ui-monospace, monospace;
 
   --container-width: 70em;
