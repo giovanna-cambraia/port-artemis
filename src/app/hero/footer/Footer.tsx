@@ -116,7 +116,7 @@ const Footer: React.FC = () => {
             <a href="#">Contact</a>
           </div>
 
-          <p className="footer__copy">© 2025 SHEEP — All rights reserved</p>
+          <p className="footer__copy">© 2026 SHEEP — All rights reserved</p>
         </div>
       </div>
     </footer>

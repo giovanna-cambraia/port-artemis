@@ -8,7 +8,7 @@ const features = [
     title: "Performance First",
     description:
       "I focus on building websites that load fast and feel smooth from the first interaction. Performance is considered at every stage, from structure and assets to code quality and optimization, ensuring reliable results on real devices and networks.",
-    
+
     variant: "light" as const,
   },
   {
@@ -30,7 +30,7 @@ const features = [
     title: "SEO Optimized",
     description:
       "Every website I build is structured with search engines in mind. From semantic HTML to meta tags and performance metrics, I ensure your site ranks well and reaches the right audience organically.",
-    
+
     variant: "accent" as const,
   },
   {
@@ -124,8 +124,6 @@ export function FeaturesSection() {
                   >
                     {feature.description}
                   </p>
-
-              
                 </div>
               </div>
 

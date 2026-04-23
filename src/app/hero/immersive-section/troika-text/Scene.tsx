@@ -194,7 +194,10 @@ export default function Scene() {
 
     const p = sectionProgress.current;
     const diveStart = 0.55;
-    const diveProgress = Math.max(0, (p - diveStart) / (1 - diveStart));
+    const diveProgress = Math.min(
+      0.85,
+      Math.max(0, (p - diveStart) / (1 - diveStart)),
+    );
     const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
     const camY = THREE.MathUtils.lerp(6, -18, ease);
     const camZ = THREE.MathUtils.lerp(6, 0.2, ease);
@@ -206,7 +209,6 @@ export default function Scene() {
     camera.position.set(0, camY, camZ);
     (camera as THREE.PerspectiveCamera).lookAt(0, lookY, 0);
 
-    // Drive card opacity directly via ref — no React state, no re-renders
     const newOpacity = Math.max(0, Math.min(1, (p - 0.75) / 0.1));
     if (cardRef.current && newOpacity !== cardOpacity.current) {
       cardOpacity.current = newOpacity;
