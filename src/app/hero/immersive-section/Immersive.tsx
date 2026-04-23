@@ -52,7 +52,7 @@ export function ImmersiveSection() {
     <section
       ref={containerRef}
       className="immersive-section"
-      style={{ height: "400vh" }}
+      style={{ height: "600vh" }}
     >
       <div className="sticky-container">
         {/* W letter zoom */}

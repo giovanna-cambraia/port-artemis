@@ -8,7 +8,7 @@ const features = [
     title: "Performance First",
     description:
       "I focus on building websites that load fast and feel smooth from the first interaction. Performance is considered at every stage, from structure and assets to code quality and optimization, ensuring reliable results on real devices and networks.",
-    link: "Learn more",
+    
     variant: "light" as const,
   },
   {
@@ -16,7 +16,6 @@ const features = [
     title: "Clean & Scalable Code",
     description:
       "I write clean, well-structured, and maintainable code with a strong focus on clarity and long-term scalability. This approach makes projects easier to understand, update, and extend over time, while reducing complexity and keeping the codebase reliable as it grows.",
-    link: "My workflow",
     variant: "accent" as const,
   },
   {
@@ -24,7 +23,6 @@ const features = [
     title: "Modern UI & UX",
     description:
       "I design intuitive interfaces that prioritize user experience without sacrificing aesthetics. Every element is crafted with purpose, ensuring seamless navigation and engaging interactions that keep users coming back.",
-    link: "See examples",
     variant: "light" as const,
   },
   {
@@ -32,7 +30,7 @@ const features = [
     title: "SEO Optimized",
     description:
       "Every website I build is structured with search engines in mind. From semantic HTML to meta tags and performance metrics, I ensure your site ranks well and reaches the right audience organically.",
-    link: "Learn more",
+    
     variant: "accent" as const,
   },
   {
@@ -40,7 +38,6 @@ const features = [
     title: "Responsive Design",
     description:
       "I create websites that look and function perfectly across all devices and screen sizes. From mobile phones to large desktop monitors, every layout adapts fluidly to provide an optimal viewing experience.",
-    link: "View process",
     variant: "light" as const,
   },
 ];
@@ -128,17 +125,7 @@ export function FeaturesSection() {
                     {feature.description}
                   </p>
 
-                  <a
-                    href="#"
-                    className={`
-                      inline-flex items-center gap-1 text-sm font-medium
-                      transition-opacity hover:opacity-70
-                      ${feature.variant === "light" ? "text-[#1a1a1a]" : "text-[#1a1a1a]"}
-                    `}
-                  >
-                    {feature.link}
-                    <ArrowUpRight className="w-4 h-4" />
-                  </a>
+              
                 </div>
               </div>
 
