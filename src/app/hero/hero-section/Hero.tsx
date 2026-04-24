@@ -1,10 +1,121 @@
 "use client";
+import { useState, useEffect } from "react";
 import Waves from "@/src/react-components/waves/Waves";
 import "./Hero.css";
 
 export default function HeroSection() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger entrance animation
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+
+  const menuItems = [
+    { num: "01", label: "About" },
+    { num: "02", label: "Work" },
+    { num: "03", label: "Projects" },
+    { num: "04", label: "Contact" },
+  ];
+
   return (
     <section className="hero-section">
+      {/* Navbar - Top Right */}
+      <header className="hero-navbar">
+        <div className="hero-nav-container">
+         
+
+          {/* Menu Button */}
+          <button
+            className={`hero-menu-button ${menuOpen ? "is-open" : ""}`}
+            onClick={toggleMenu}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+          >
+            <div className="hero-menu-button-text">
+              <span className="hero-menu-label">Menu</span>
+              <span className="hero-menu-label">Close</span>
+            </div>
+            <div className="hero-menu-icon-wrap">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                className="hero-menu-icon"
+              >
+                <path
+                  d="M7.33333 16V0H8.66667V16H7.33333Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M16 8.66667H0V7.33333H16V8.66667Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </header>
+
+      {/* Fullscreen Menu Overlay */}
+      <div className={`hero-menu-overlay ${menuOpen ? "is-open" : ""}`}>
+        <div className="hero-menu-overlay-bg" onClick={toggleMenu} />
+        <nav className="hero-menu-panel">
+          <div className="hero-menu-panel-bg">
+            <div className="hero-menu-bg-layer hero-menu-bg-first" />
+            <div className="hero-menu-bg-layer hero-menu-bg-second" />
+            <div className="hero-menu-bg-layer" />
+          </div>
+          <div className="hero-menu-inner">
+            <ul className="hero-menu-list">
+              {menuItems.map((item) => (
+                <li key={item.num} className="hero-menu-item">
+                  <a
+                    href={`#${item.label.toLowerCase()}`}
+                    className="hero-menu-link"
+                    onClick={toggleMenu}
+                  >
+                    <span className="hero-menu-link-heading">{item.label}</span>
+                    <span className="hero-menu-link-num">{item.num}</span>
+                    <div className="hero-menu-link-bg" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <div className="hero-menu-details">
+              <p className="hero-menu-details-label">Socials</p>
+              <div className="hero-menu-socials">
+                <a href="#" className="hero-menu-social-link">
+                  GitHub
+                </a>
+                <a href="#" className="hero-menu-social-link">
+                  LinkedIn
+                </a>
+                <a href="#" className="hero-menu-social-link">
+                  Twitter
+                </a>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </div>
+
       {/* Animated Wave Background */}
       <div className="hero-wave-background">
         <Waves
@@ -24,12 +135,10 @@ export default function HeroSection() {
 
       {/* Content */}
       <div className="hero-content-container">
-        {/* Top Divider Line with padding for menu */}
         <div className="hero-top-divider">
           <div className="hero-divider-line"></div>
         </div>
 
-        {/* Main Content - Centered Phrase */}
         <div className="hero-main-content">
           <h1 className="hero-title">
             <span className="hero-title-line-1">
@@ -44,7 +153,6 @@ export default function HeroSection() {
           </h1>
         </div>
 
-        {/* Bottom Divider Line */}
         <div className="hero-bottom-divider">
           <div className="hero-divider-line"></div>
         </div>

@@ -13,7 +13,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import ProjectCard from "../cards/Cards";
 
-const FONT = "/fonts/Oi-Regular.ttf";
+const FONT = "/fonts/Sekuya-Regular.ttf";
 
 function TextBlock({
   content,
@@ -310,52 +310,6 @@ export default function Scene() {
 
         <Tunnel />
       </group>
-
-      {/* Card rendered inside the scene via Html — no fixed positioning issues */}
-      <Html
-        center
-        position={[0, -12, 0]}
-        zIndexRange={[100, 0]}
-        style={{ width: "min(720px, 90vw)" }}
-        prepend
-      >
-        <div
-          ref={cardRef}
-          style={{
-            opacity: 0,
-            transform: "translateY(24px)",
-            pointerEvents: "none",
-            paddingTop: "20px", // room for the status badge that bleeds upward
-          }}
-        >
-          <ProjectCard
-            title="MASKED.\nMARKED.\nWATCHED."
-            coordinates="35.6762° N / 139.6503° E"
-            tag="JAPAN"
-            description="Holographic billboards light up the towering skyline, while traditional temples are reduced to relics."
-            ctaLabel="_EXECUTE"
-            onCta={() => {
-              window.open("https://example.com", "_blank");
-            }}
-            stats={[
-              { value: "24/7", label: "MONITOR" },
-              { value: "∞", label: "RECORD" },
-              { value: "99.9%", label: "ACCURACY" },
-            ]}
-            subTag="THREE.JS / WEBGL"
-            subTitle="FREEDOM TRADED\nFOR SECURITY."
-            version="VER: 2.0.0-RC.1"
-            badge="FEATURED"
-            progress={78}
-            status="active"
-            metrics={[
-              { label: "LATENCY", value: "0.2ms", trend: "down" },
-              { label: "BANDWIDTH", value: "1.4TB/s", trend: "up" },
-              { label: "UPTIME", value: "99.99%", trend: "stable" },
-            ]}
-          />
-        </div>
-      </Html>
     </>
   );
 }

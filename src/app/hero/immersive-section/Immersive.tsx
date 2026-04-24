@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import "./Immersive.css";
-import TransmissionWrapper from "./troika-text/TransmissionWrapper";
+import TransmissionWrapper from "./3Dscene/TransmissionWrapper";
 
 export function ImmersiveSection() {
   const containerRef = useRef<HTMLDivElement>(null);
