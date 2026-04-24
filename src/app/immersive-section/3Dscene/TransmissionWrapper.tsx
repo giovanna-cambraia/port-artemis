@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 
 
 const DIVE_END = 0.5;
-const TOTAL_HEIGHT = "1500vh";
+const TOTAL_HEIGHT = "600vh";
 export default function TransmissionWrapper() {
   const sectionRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./Immersive.css";
 import TransmissionWrapper from "./3Dscene/TransmissionWrapper";
+import ProjectsSection from "../projects-section/ProjectsSection";
 
 export function ImmersiveSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,7 +84,7 @@ export function ImmersiveSection() {
             pointerEvents: circleOpacity > 0 ? "auto" : "none",
           }}
         >
-          <TransmissionWrapper />
+          <ProjectsSection />
         </div>
 
         {/* Progress indicator */}

@@ -11,7 +11,6 @@ import {
 import { useRef, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import ProjectCard from "../cards/Cards";
 
 const FONT = "/fonts/Sekuya-Regular.ttf";
 

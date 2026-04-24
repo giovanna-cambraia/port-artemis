@@ -1,6 +1,6 @@
 import HeroSection from "./hero-section/Hero";
 import { FeaturesSection } from "./features-section/Features";
-import { ImmersiveSection } from "./immersive-section/Immersive";
+import { ImmersiveSection } from "../immersive-section/Immersive";
 import Footer from "./footer/Footer";
 
 export default function Home() {
@@ -9,7 +9,8 @@ export default function Home() {
       <HeroSection />
       <FeaturesSection />
       <ImmersiveSection />
-      <Footer/>
+
+      <Footer />
     </>
   );
 }
