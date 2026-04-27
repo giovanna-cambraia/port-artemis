@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import React, { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 // Shader for Box (Demo 3)
 const vertexShader = `
@@ -60,32 +60,40 @@ const KineticTypeDemo3: React.FC = () => {
     renderer.setClearColor(0x000000, 0);
     containerRef.current.appendChild(renderer.domElement);
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      window.innerWidth / window.innerHeight,
+      1,
+      1000,
+    );
     camera.position.z = 15;
 
     const scene = new THREE.Scene();
 
     // Create text texture
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
     canvas.width = 1024;
     canvas.height = 512;
-    ctx.fillStyle = '#d8345f';
+    ctx.fillStyle = "#d8345f";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = "#ffffff";
     ctx.font = 'Bold 80px "Arial", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('TWISTED', canvas.width / 2, canvas.height / 2);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("TWISTED", canvas.width / 2, canvas.height / 2);
     const texture = new THREE.CanvasTexture(canvas);
 
     // Create render target
-    const rt = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+    const rt = new THREE.WebGLRenderTarget(
+      window.innerWidth,
+      window.innerHeight,
+    );
     const rtCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
     rtCamera.position.z = 2.4;
 
     const rtScene = new THREE.Scene();
-    rtScene.background = new THREE.Color('#d8345f');
+    rtScene.background = new THREE.Color("#d8345f");
 
     const planeGeo = new THREE.PlaneGeometry(4, 2);
     const planeMat = new THREE.MeshBasicMaterial({ map: texture });
@@ -103,7 +111,7 @@ const KineticTypeDemo3: React.FC = () => {
         uTime: { value: 0 },
         uTexture: { value: rt.texture },
       },
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -117,6 +125,8 @@ const KineticTypeDemo3: React.FC = () => {
 
     // Animation
     const animate = () => {
+      window.addEventListener("resize", handleResize);
+      document.body.classList.add("demo-3");
       requestAnimationFrame(animate);
       timeRef.current += 0.016;
       material.uniforms.uTime.value = timeRef.current;
@@ -124,21 +134,19 @@ const KineticTypeDemo3: React.FC = () => {
     };
     animate();
 
-    // Resize handler
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const { offsetWidth: w, offsetHeight: h } = containerRef.current!;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      rt.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(w, h);
+      rt.setSize(w, h);
     };
-    window.addEventListener('resize', handleResize);
 
-    // Set body class for styling
-    document.body.classList.add('demo-3');
+    document.body.classList.add("demo-3");
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      document.body.classList.remove('demo-3');
+      window.removeEventListener("resize", handleResize);
+      document.body.classList.remove("demo-3");
       if (containerRef.current && renderer.domElement) {
         containerRef.current.removeChild(renderer.domElement);
       }
@@ -146,7 +154,18 @@ const KineticTypeDemo3: React.FC = () => {
     };
   }, []);
 
-  return <div ref={containerRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%' }} />;
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: "relative",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+      }}
+    />
+  );
 };
 
 export default KineticTypeDemo3;

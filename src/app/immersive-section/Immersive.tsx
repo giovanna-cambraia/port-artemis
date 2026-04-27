@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./Immersive.css";
 import TransmissionWrapper from "./3Dscene/TransmissionWrapper";
-import ProjectsSection from "../projects-section/ProjectsSection";
+import ProjectsSection from "../about-section/AboutSection";
 
 export function ImmersiveSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,31 +29,25 @@ export function ImmersiveSection() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [showWebGLText]);
 
-  // 0.00 – 0.25  W zooms in
-  // 0.25 – 0.50  3D circle appears
-  // 0.50 – 0.75  text fades in below circle
-  // 0.75 – 1.00  everything fades out, ready for cards
+
 
   function phase(start: number, end: number) {
     return Math.max(0, Math.min(1, (progress - start) / (end - start)));
   }
 
-  const zoomPhase = phase(0, 0.25);
-  const circlePhase = phase(0.25, 0.5);
-  const textPhase = phase(0.5, 0.75);
-  const exitPhase = phase(0.75, 1.0);
+  const zoomPhase = phase(0, 0.85);
+  const circlePhase = phase(0.90, 1);
+
 
   const scale = 1 + zoomPhase * 49;
   const letterOpacity = 1 - Math.min(1, zoomPhase * 1.5);
-  const circleOpacity = circlePhase * (1 - exitPhase);
-  const textOpacity = textPhase * (1 - exitPhase);
-  const textY = (1 - textPhase) * 32; // slides up as it enters
+
 
   return (
     <section
       ref={containerRef}
       className="immersive-section"
-      style={{ height: "600vh" }}
+      style={{ height: "150vh" }}
     >
       <div className="sticky-container">
         {/* W letter zoom */}
@@ -75,27 +69,8 @@ export function ImmersiveSection() {
             </h2>
           </div>
         </div>
-
-        {/* 3D Circle */}
-        <div
-          className="circle-layer"
-          style={{
-            opacity: circleOpacity,
-            pointerEvents: circleOpacity > 0 ? "auto" : "none",
-          }}
-        >
-          <ProjectsSection />
-        </div>
-
-        {/* Progress indicator */}
-        <div className="progress-indicator">
-          <div
-            className="progress-indicator-fill"
-            style={{ height: `${progress * 100}%` }}
-          />
-        </div>
+    
       </div>
-
     </section>
   );
 }
