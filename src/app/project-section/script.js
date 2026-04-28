@@ -123,9 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateTargetPosition = (scrollProgress = 0) => {
     path.forEach((line, lineIndex) => {
       line.letterElements.forEach((element, i) => {
-        const point = line.curve.getPoint(
-          (i / 14 + scrollProgress * lineSpeedMultipliers[lineIndex]) % 1,
-        );
+      const point = line.curve.getPoint(
+  (i / 14 + scrollProgress * lineSpeedMultipliers[lineIndex]) % 1,
+);
 
         const vector = point.clone().project(lettersCamera);
         const positions = letterPositions.get(element);
@@ -198,6 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
     lettersCamera.aspect = window.innerWidth / window.innerHeight;
     lettersCamera.updateProjectionMatrix();
     lettersRenderer.setSize(window.innerWidth, window.innerHeight);
-    updateTargetPosition(ScrollTrigger.getAll()[0]?.progress || 0);
-  });
+    updateTargetPosition(ScrollTrigger.getAll()[0]?.progress || 0)
+  })
 });

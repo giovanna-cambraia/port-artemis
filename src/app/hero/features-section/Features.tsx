@@ -115,10 +115,10 @@ export function FeaturesSection() {
                 </div>
 
                 {/* Bottom section with description and link */}
-                <div className="max-w-2xl mx-auto text-center mt-auto">
+                <div className="max-w-2xl mx-auto text-left mt-auto">
                   <p
                     className={`
-                      text-sm md:text-base leading-relaxed mb-6
+                      text-xl md:text-base leading-relaxed mb-25
                       ${feature.variant === "light" ? "text-[#1a1a1a]/80" : "text-[#1a1a1a]/80"}
                     `}
                   >

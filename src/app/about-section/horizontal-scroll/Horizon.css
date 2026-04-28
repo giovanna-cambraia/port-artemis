@@ -30,6 +30,21 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+.horizons-root {
+  width: 100%;
+}
+
+.horizons-sticky {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.horizons-root .horizons-scroller {
+  flex-wrap: nowrap;
+  height: 100vh;
+}
+
 /* Main container - scoped */
 .horizons-root .horizons-container {
   position: relative;
