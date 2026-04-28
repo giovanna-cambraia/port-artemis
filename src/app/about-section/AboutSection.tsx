@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import "./AboutSection.css";
+import Horizons from "./horizontal-scroll/Horizon";
 
 const AboutSection = () => {
   // Refs for all sections
@@ -92,30 +93,6 @@ const AboutSection = () => {
     return () => {
       window.removeEventListener("mousemove", move);
       cursor.remove();
-    };
-  }, []);
-
-  // Scroll progress bar
-  useEffect(() => {
-    const progressBar = document.createElement("div");
-    progressBar.className = "scroll-progress-track";
-    const progressFill = document.createElement("div");
-    progressFill.className = "scroll-progress-fill";
-    progressBar.appendChild(progressFill);
-    document.body.appendChild(progressBar);
-
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset;
-      const scrollHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = scrollTop / scrollHeight;
-      progressFill.style.transform = `scaleX(${scrollPercent})`;
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      progressBar.remove();
     };
   }, []);
 
@@ -316,7 +293,6 @@ const AboutSection = () => {
     };
   }, []);
 
-
   return (
     <div className="about-section">
       {/* PANEL 1 — HERO */}
@@ -325,7 +301,8 @@ const AboutSection = () => {
           <div className="hero-eyebrow">
             <span className="hero-eyebrow-line"></span>
             <span className="hero-eyebrow-text">
-              <span className="special-letter">M</span>OTION DESIGNER & DEVELOPER
+              <span className="special-letter">M</span>OTION DESIGNER &
+              DEVELOPER
             </span>
           </div>
 
@@ -366,6 +343,10 @@ const AboutSection = () => {
             <div className="hero-img-cover"></div>
           </div>
         </div>
+      </div>
+
+      <div>
+        <Horizons />
       </div>
 
       {/* PANEL 2 — MANIFESTO */}
@@ -422,7 +403,6 @@ const AboutSection = () => {
           <div className="milestone-card milestone-card--1">
             <div className="milestone-year">2024</div>
             <div className="milestone-content">
-          
               <div className="milestone-title">Lead Innovation</div>
               <div className="milestone-desc">
                 Spearheaded AI integration at global design firm,
@@ -435,7 +415,6 @@ const AboutSection = () => {
           <div className="milestone-card milestone-card--2">
             <div className="milestone-year">2022</div>
             <div className="milestone-content">
-      
               <div className="milestone-title">Award Recognition</div>
               <div className="milestone-desc">
                 Received Awwwards Site of the Day for immersive brand experience
@@ -448,7 +427,6 @@ const AboutSection = () => {
           <div className="milestone-card milestone-card--3">
             <div className="milestone-year">2020</div>
             <div className="milestone-content">
-          
               <div className="milestone-title">Master's Degree</div>
               <div className="milestone-desc">
                 Completed MSc in Interactive Media with focus on emerging
@@ -461,7 +439,6 @@ const AboutSection = () => {
           <div className="milestone-card milestone-card--4">
             <div className="milestone-year">2018</div>
             <div className="milestone-content">
-      
               <div className="milestone-title">Studio Launch</div>
               <div className="milestone-desc">
                 Founded creative studio working with Fortune 500 clients
