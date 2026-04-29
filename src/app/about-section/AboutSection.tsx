@@ -1,113 +1,370 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import "./AboutSection.css";
 import Horizons from "./horizontal-scroll/Horizon";
 
+
+/* ─── Types ─── */
+interface MousePos {
+  x: number;
+  y: number;
+}
+
+/* ─── Constants for Hero Panel ─── */
+const WORDS = ["CREATIVE", "IMMERSIVE", "KINETIC", "RADICAL", "FLUID"];
+const SCRAMBLE_CHARS = "!<>-_\\/[]{}—=+*^?#░▒▓@$%&";
+
+/* ─── Text Scramble Hook ─── */
+function useScramble(target: string, trigger: boolean) {
+  const [display, setDisplay] = useState(target);
+  const raf = useRef<number>(0);
+
+  useEffect(() => {
+    if (!trigger) return;
+    let iter = 0;
+    const total = target.length * 3;
+    cancelAnimationFrame(raf.current);
+
+    const tick = () => {
+      setDisplay(
+        target
+          .split("")
+          .map((char, i) => {
+            if (char === " ") return " ";
+            if (i < iter / 3) return target[i];
+            return SCRAMBLE_CHARS[
+              Math.floor(Math.random() * SCRAMBLE_CHARS.length)
+            ];
+          })
+          .join(""),
+      );
+      iter++;
+      if (iter < total) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target, trigger]);
+
+  return display;
+}
+
+/* ─── Magnetic Hook for Buttons ─── */
+function useMagnetic(strength = 0.35) {
+  const ref = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const onMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = (e.clientX - cx) * strength;
+      const dy = (e.clientY - cy) * strength;
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+    };
+    const onLeave = () => {
+      el.style.transform = "translate(0,0) scale(1)";
+    };
+
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseleave", onLeave);
+    return () => {
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("mouseleave", onLeave);
+    };
+  }, [strength]);
+
+  return ref;
+}
+
+/* ─── Custom Cursor Component ─── */
+function CustomCursor() {
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const pos = useRef<MousePos>({ x: -100, y: -100 });
+  const ring = useRef<MousePos>({ x: -100, y: -100 });
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      pos.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("mousemove", onMove);
+
+    let raf: number;
+    const tick = () => {
+      ring.current.x += (pos.current.x - ring.current.x) * 0.12;
+      ring.current.y += (pos.current.y - ring.current.y) * 0.12;
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
+      }
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate(${ring.current.x}px, ${ring.current.y}px)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    const onEnter = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (t.closest("a, button, [data-hover]")) {
+        dotRef.current?.classList.add("is-hover");
+        ringRef.current?.classList.add("is-hover");
+      }
+    };
+    const onLeave = () => {
+      dotRef.current?.classList.remove("is-hover");
+      ringRef.current?.classList.remove("is-hover");
+    };
+    document.addEventListener("mouseover", onEnter);
+    document.addEventListener("mouseout", onLeave);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseover", onEnter);
+      document.removeEventListener("mouseout", onLeave);
+    };
+  }, []);
+
+  return (
+    <>
+      <div ref={dotRef} className="cur-dot" />
+      <div ref={ringRef} className="cur-ring" />
+    </>
+  );
+}
+
+/* ─── Noise Canvas Component ─── */
+function NoiseCanvas() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current!;
+    const ctx = canvas.getContext("2d")!;
+    let raf: number;
+    const W = 256,
+      H = 256;
+    canvas.width = W;
+    canvas.height = H;
+    const tick = () => {
+      const img = ctx.createImageData(W, H);
+      for (let i = 0; i < img.data.length; i += 4) {
+        const v = Math.random() * 255;
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+        img.data[i + 3] = 18;
+      }
+      ctx.putImageData(img, 0, 0);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return <canvas ref={ref} className="noise-canvas" />;
+}
+
+/* ─── Image Distortion Component ─── */
+function DistortImage({ src }: { src?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouse = useRef({ x: 0.5, y: 0.5, vx: 0, vy: 0 });
+  const revealed = useRef(false);
+  const progress = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext("2d")!;
+    canvas.width = 420;
+    canvas.height = 560;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onerror = () => {
+      revealed.current = true;
+    };
+    img.onload = () => {
+      revealed.current = true;
+    };
+    img.src = src || "";
+
+    const onMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.current.x = (e.clientX - rect.left) / rect.width;
+      mouse.current.y = (e.clientY - rect.top) / rect.height;
+    };
+    canvas.addEventListener("mousemove", onMove);
+
+    let raf: number;
+    const tick = () => {
+      ctx.clearRect(0, 0, 420, 560);
+
+      if (revealed.current && progress.current < 1) {
+        progress.current = Math.min(1, progress.current + 0.015);
+      }
+
+      mouse.current.vx += (mouse.current.x - 0.5) * 0.04;
+      mouse.current.vy += (mouse.current.y - 0.5) * 0.04;
+      mouse.current.vx *= 0.85;
+      mouse.current.vy *= 0.85;
+
+      const SLICES = 20;
+      const sliceH = 560 / SLICES;
+
+      for (let i = 0; i < SLICES; i++) {
+        const t = i / SLICES;
+        const delay = t * 0.4;
+        const p = Math.max(0, Math.min(1, (progress.current - delay) / 0.6));
+        const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+
+        const wave =
+          Math.sin(t * Math.PI * 3 + Date.now() * 0.001) * (1 - ease) * 60;
+        const distX = mouse.current.vx * Math.sin(t * Math.PI) * 30;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, i * sliceH, 420, sliceH + 1);
+        ctx.clip();
+
+        if (img.complete && img.naturalWidth > 0) {
+          ctx.globalAlpha = ease;
+          ctx.drawImage(img, wave + distX, 0, 420, 560);
+        } else {
+          const hue = (i * 15 + Date.now() * 0.05) % 360;
+          ctx.globalAlpha = ease * 0.7;
+          ctx.fillStyle = `hsl(${hue}, 60%, ${10 + i * 2}%)`;
+          ctx.fillRect(wave + distX, 0, 420, 560);
+        }
+
+        ctx.globalAlpha = 0.03;
+        ctx.fillStyle = i % 2 === 0 ? "#000" : "#fff";
+        ctx.fillRect(0, i * sliceH, 420, sliceH);
+
+        ctx.restore();
+      }
+
+      const wipeY = 560 * (1 - Math.min(1, progress.current * 1.5));
+      if (wipeY > 0) {
+        ctx.fillStyle = "#ff0000";
+        ctx.fillRect(0, wipeY, 420, 560 - wipeY);
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      canvas.removeEventListener("mousemove", onMove);
+    };
+  }, [src]);
+
+  return <canvas ref={canvasRef} className="distort-canvas" />;
+}
+
+/* ─── Word Cycler with Scramble ─── */
+function WordCycler() {
+  const [idx, setIdx] = useState(0);
+  const [trigger, setTrigger] = useState(true);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setIdx((i) => (i + 1) % WORDS.length);
+      setTrigger(false);
+      requestAnimationFrame(() => setTrigger(true));
+    }, 2800);
+    return () => clearInterval(t);
+  }, []);
+
+  const scrambled = useScramble(WORDS[idx], trigger);
+
+  return <span className="word-cycler">{scrambled}</span>;
+}
+
+/* ─── Counter Component ─── */
+function Counter({ to, suffix = "+" }: { to: number; suffix?: string }) {
+  const [val, setVal] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        obs.disconnect();
+        const start = performance.now();
+        const dur = 1800;
+        const tick = (now: number) => {
+          const t = Math.min(1, (now - start) / dur);
+          const ease = 1 - Math.pow(1 - t, 4);
+          setVal(Math.round(ease * to));
+          if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      },
+      { threshold: 0.3 },
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [to]);
+
+  return (
+    <span ref={ref}>
+      {val}
+      {suffix}
+    </span>
+  );
+}
+
 const AboutSection = () => {
   // Refs for all sections
-  const heroContentRef = useRef<HTMLDivElement>(null);
-  const heroAsideRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const manifestoRef = useRef<HTMLDivElement>(null);
   const galleryHeaderRef = useRef<HTMLDivElement>(null);
   const skillsHeaderRef = useRef<HTMLDivElement>(null);
   const skillsFooterRef = useRef<HTMLDivElement>(null);
   const ctaInnerRef = useRef<HTMLDivElement>(null);
 
-  const [wordIndex, setWordIndex] = useState(0);
-  const [isLeaving, setIsLeaving] = useState(false);
+  // Hero panel state
+  const [heroVisible, setHeroVisible] = useState(false);
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const btn1 = useMagnetic();
+  const btn2 = useMagnetic();
+
   const [countedValues, setCountedValues] = useState({
     projects: 0,
     clients: 0,
     years: 0,
   });
 
-  const words = ["Creative", "Developer", "Designer", "Innovator", "Builder"];
-
-  // Image URLs (replace with your actual images)
+  // Image URL
   const heroImage =
     "https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=800&h=1000&fit=crop";
-  const galleryImages = [
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=400&h=500&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=600&h=500&fit=crop",
-  ];
 
-  // Enhanced custom cursor with magnetic effect
+  // Hero reveal on mount
   useEffect(() => {
-    const cursor = document.createElement("div");
-    cursor.className = "about-cursor";
-    document.body.appendChild(cursor);
-
-    const magneticElements = document.querySelectorAll(".magnetic-btn");
-    const interactiveElements = document.querySelectorAll(
-      ".image-card__frame, .skill-item, .magnetic-btn",
-    );
-
-    const move = (e: MouseEvent) => {
-      cursor.style.left = e.clientX + "px";
-      cursor.style.top = e.clientY + "px";
-
-      // Check hover on interactive elements
-      let isHovering = false;
-      interactiveElements.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (
-          e.clientX >= rect.left &&
-          e.clientX <= rect.right &&
-          e.clientY >= rect.top &&
-          e.clientY <= rect.bottom
-        ) {
-          isHovering = true;
-        }
-      });
-
-      if (isHovering) {
-        cursor.classList.add("hover");
-      } else {
-        cursor.classList.remove("hover");
-      }
-
-      // Magnetic effect for buttons
-      magneticElements.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const distanceX = e.clientX - centerX;
-        const distanceY = e.clientY - centerY;
-        const distance = Math.hypot(distanceX, distanceY);
-
-        if (distance < 100) {
-          const moveX = distanceX * 0.15;
-          const moveY = distanceY * 0.15;
-          (el as HTMLElement).style.transform =
-            `translate(${moveX}px, ${moveY}px)`;
-        } else {
-          (el as HTMLElement).style.transform = "";
-        }
-      });
-    };
-
-    window.addEventListener("mousemove", move);
-    return () => {
-      window.removeEventListener("mousemove", move);
-      cursor.remove();
-    };
+    const t = setTimeout(() => setHeroVisible(true), 100);
+    return () => clearTimeout(t);
   }, []);
 
-  // Word cycler animation
+  // Parallax tilt effect for hero image
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIsLeaving(true);
-      setTimeout(() => {
-        setWordIndex((prev) => (prev + 1) % words.length);
-        setIsLeaving(false);
-      }, 300);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [words.length]);
+    const el = tiltRef.current;
+    if (!el) return;
+    const onMove = (e: MouseEvent) => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const rx = ((e.clientY - cy) / cy) * -8;
+      const ry = ((e.clientX - cx) / cx) * 8;
+      el.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    };
+    const onLeave = () => {
+      el.style.transform = "perspective(1200px) rotateX(0) rotateY(0)";
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseleave", onLeave);
+    };
+  }, []);
 
   // Number counter animation
   const startCounter = () => {
@@ -142,18 +399,14 @@ const AboutSection = () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            if (heroContentRef.current)
-              heroContentRef.current.classList.add("is-visible");
-            if (heroAsideRef.current)
-              heroAsideRef.current.classList.add("is-visible");
+            // Already handled by mount animation
           }
         });
       },
       { threshold: 0.2 },
     );
 
-    if (heroContentRef.current) heroObserver.observe(heroContentRef.current);
-    if (heroAsideRef.current) heroObserver.observe(heroAsideRef.current);
+    if (heroRef.current) heroObserver.observe(heroRef.current);
 
     // Manifesto observer
     const manifestoObserver = new IntersectionObserver(
@@ -162,7 +415,6 @@ const AboutSection = () => {
           if (entry.isIntersecting) {
             entry.target.classList.add("revealed");
             startCounter();
-            // Animate stat items
             const statItems = document.querySelectorAll(".manifesto-stat");
             statItems.forEach((item, idx) => {
               setTimeout(() => {
@@ -248,7 +500,6 @@ const AboutSection = () => {
             if (ctaInnerRef.current)
               ctaInnerRef.current.classList.add("revealed");
 
-            // Add 3D tilt effect on mousemove
             const handleMouseMove = (e: MouseEvent) => {
               if (!ctaInnerRef.current) return;
               const rect = ctaInnerRef.current.getBoundingClientRect();
@@ -268,125 +519,111 @@ const AboutSection = () => {
 
     if (ctaInnerRef.current) ctaObserver.observe(ctaInnerRef.current);
 
-    // Gallery images observer (individual cards)
-    const imageCardObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-revealed");
-          }
-        });
-      },
-      { threshold: 0.1 },
-    );
-
-    const imageCards = document.querySelectorAll(".image-card");
-    imageCards.forEach((card) => imageCardObserver.observe(card));
-
     return () => {
       heroObserver.disconnect();
       manifestoObserver.disconnect();
       galleryObserver.disconnect();
       skillsObserver.disconnect();
       ctaObserver.disconnect();
-      imageCardObserver.disconnect();
     };
   }, []);
 
   return (
     <div className="about-section">
-      {/* PANEL 1 — HERO */}
-      <div className="about-panel about-panel--hero">
-        <div className="hero-content" ref={heroContentRef}>
-          <div className="hero-eyebrow">
-            <span className="hero-eyebrow-line"></span>
-            <span className="hero-eyebrow-text">
-              <span className="special-letter">M</span>OTION DESIGNER &
-              DEVELOPER
-            </span>
-          </div>
+      {/* PANEL 1 — ENHANCED HERO */}
+      <CustomCursor />
+      <section className="about-panel about-panel--hero hero" ref={heroRef}>
+        <NoiseCanvas />
 
-          <h1 className="hero-headline">
-            <span className="hero-line hero-line--1">
-              <span
-                className={`word-cycler ${isLeaving ? "is-leaving" : "is-visible"}`}
-              >
-                {words[wordIndex]}
-              </span>
-            </span>
-            <span className="hero-line hero-line--2">WITH EDGE</span>
-            <span className="hero-line hero-line--3">& PRECISION</span>
-          </h1>
-
-          <div className="hero-sub">
-            Crafting immersive digital experiences that push boundaries and
-            redefine possibilities. Where motion meets meaning, and code becomes
-            art.
-          </div>
-
-          <div className="hero-cta-row">
-            <a href="#work" className="magnetic-btn">
-              View Work →
-            </a>
-            <a href="#contact" className="magnetic-btn">
-              Contact Me
-            </a>
-          </div>
-        </div>
-
-        <div className="hero-aside" ref={heroAsideRef}>
-          <div className="hero-img-frame">
+        {/* Floating grid lines */}
+        <div className="hero-grid" aria-hidden="true">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div
-              className="hero-img"
-              style={{ backgroundImage: `url(${heroImage})` }}
-            ></div>
-            <div className="hero-img-cover"></div>
-          </div>
+              key={i}
+              className="hero-grid-line"
+              style={{ animationDelay: `${i * 0.15}s` }}
+            />
+          ))}
         </div>
-      </div>
+
+        <div className={`hero-layout ${heroVisible ? "is-visible" : ""}`}>
+          {/* Left Content */}
+          <div className="hero-content">
+            <div className="eyebrow">
+              <span className="eyebrow-line" />
+              <span className="eyebrow-text">
+                <span className="eyebrow-accent">
+                  <span className="special-letter">M</span>
+                </span>
+                OTION DESIGNER &amp; DEVELOPER
+              </span>
+            </div>
+
+            <h1 className="headline">
+              <span className="hl-row hl-row--1">
+                <WordCycler />
+              </span>
+              <span className="hl-row hl-row--2">WITH EDGE</span>
+              <span className="hl-row hl-row--3">&amp; PRECISION</span>
+            </h1>
+
+            <p className="hero-sub">
+              Crafting immersive digital experiences that push boundaries and
+              redefine possibilities. Where <em>motion meets meaning</em>, and
+              code becomes art.
+            </p>
+
+            <div className="hero-stats">
+              {[
+                { val: 2, label: "Years exp." },
+                { val: 30, label: "Projects" },
+              ].map(({ val, label }) => (
+                <div key={label} className="hero-stat">
+                  <span className="hero-stat-val">
+                    <Counter to={val} />
+                  </span>
+                  <span className="hero-stat-label">{label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="hero-cta-row">
+              <a
+                ref={btn1}
+                href="#work"
+                className="mag-btn mag-btn--primary"
+                data-hover
+              >
+                <span>View Work</span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </a>
+              <a ref={btn2} href="#contact" className="mag-btn" data-hover>
+                Contact Me
+              </a>
+            </div>
+
+            <div className="scroll-hint">
+              <div className="scroll-hint-line" />
+              <span>Scroll to explore</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
 
       <div>
         <Horizons />
       </div>
 
-      {/* PANEL 2 — MANIFESTO */}
-      <div className="about-panel about-panel--manifesto" ref={manifestoRef}>
-        <div className="manifesto-track">
-          <div className="manifesto-copy">
-            I turn <em>complex ideas</em> into seamless digital realities.
-          </div>
-          <div className="manifesto-body">
-            With over a decade of experience pushing pixels and perfecting
-            interactions, I've collaborated with brands that demand excellence.{" "}
-            <strong>Motion is my language,</strong>
-            and performance is my promise. Every line of code, every keyframe
-            tells a story of precision and passion.
-          </div>
-        </div>
-
-        <div className="manifesto-stats">
-          <div className="manifesto-skills">
-            <div className="manifesto-stat">
-              <div className="manifesto-stat-value">
-                {countedValues.projects}+
-              </div>
-              <div className="manifesto-stat-label">Projects Delivered</div>
-            </div>
-            <div className="manifesto-stat">
-              <div className="manifesto-stat-value">
-                {countedValues.clients}+
-              </div>
-              <div className="manifesto-stat-label">Happy Clients</div>
-            </div>
-            <div className="manifesto-stat">
-              <div className="manifesto-stat-value">{countedValues.years}+</div>
-              <div className="manifesto-stat-label">Years Experience</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* PANEL 3 — JOURNEY / MILESTONES (Replaces Gallery) */}
+      {/* PANEL 3 — JOURNEY / MILESTONES */}
       <div className="about-panel about-panel--journey">
         <div className="journey-header" ref={galleryHeaderRef}>
           <div className="journey-label">Personal Journey</div>
@@ -619,37 +856,56 @@ const AboutSection = () => {
           </div>
         </div>
 
-        <div className="skills-footer" ref={skillsFooterRef}>
-          <div className="skills-available-dot"></div>
-          <div className="skills-available-text">
-            Available for freelance & full-time opportunities
-          </div>
-        </div>
+      
       </div>
 
       {/* PANEL 5 — CTA */}
       <div className="about-panel about-panel--cta">
+        <canvas className="cta-particles" aria-hidden="true" />
+
+        <div className="cta-bg-text" aria-hidden="true">
+          <span className="cta-bg-line cta-bg-line--1">LET'S</span>
+          <span className="cta-bg-line cta-bg-line--2">WORK</span>
+        </div>
+
         <div className="cta-inner" ref={ctaInnerRef}>
-          <div className="cta-eyebrow">What's Next?</div>
-          <div className="cta-headline">
-            Let's create <em>something</em>
-            <br />
-            extraordinary
+          <div className="cta-status">
+            <span className="cta-status-dot" />
+            <span className="cta-status-label">Available for projects</span>
           </div>
-          <a
-            href="#contact"
-            className="magnetic-btn"
-            style={{ fontSize: "0.9rem", padding: "1.2rem 2.5rem" }}
-          >
-            Start a project →
-          </a>
-          <div className="cta-visualizer">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="visualizer-bar"></div>
-            ))}
+
+          <h2 className="cta-headline">
+            <span className="cta-hl-row">
+              <span className="cta-hl-word">Got a</span>
+              <span className="cta-hl-glitch" data-text="vision?">
+                vision?
+              </span>
+            </span>
+            <span className="cta-hl-row cta-hl-row--muted">Let's make it</span>
+            <span className="cta-hl-row cta-hl-accent">real.</span>
+          </h2>
+
+          <p className="cta-descriptor">
+            From first sketch to final pixel — I build things that matter.
+          </p>
+
+          <div className="cta-footer">
+            <span className="cta-footer-line" />
+            <span className="cta-footer-text">
+              Response within 24h · Remote worldwide
+            </span>
+            <span className="cta-footer-line" />
           </div>
         </div>
-        <div className="cta-bg-text">GET IN TOUCH</div>
+
+        <div className="cta-coords cta-coords--tl" aria-hidden="true">
+          <span>LAT 48°51'N</span>
+          <span>LNG 002°21'E</span>
+        </div>
+        <div className="cta-coords cta-coords--br" aria-hidden="true">
+          <span>EST. MMXXV</span>
+          <span>v3.0.0</span>
+        </div>
       </div>
     </div>
   );

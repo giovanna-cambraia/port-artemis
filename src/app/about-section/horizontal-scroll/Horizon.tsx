@@ -32,10 +32,11 @@ const Horizons: React.FC = () => {
         scrollTrigger: {
           trigger: track,
           start: "top top",
-          end: () => `+=${moveDistance}`,
+          end: () => `+=${moveDistance * 0.7}`, // Adjusted for 5 slides
           pin: true,
-          scrub: 1,
+          scrub: 0.7,
           anticipatePin: 1,
+          invalidateOnRefresh: true,
           onUpdate: (self) => {
             const pct = Math.round(self.progress * 100);
             if (counterRef.current)
@@ -50,7 +51,7 @@ const Horizons: React.FC = () => {
     return () => ctx.revert();
   }, []);
 
-  // ── custom cursor ──────────────────────────────────────────────
+  // Custom cursor
   useEffect(() => {
     const cursor = cursorRef.current;
     if (!cursor) return;
@@ -83,7 +84,7 @@ const Horizons: React.FC = () => {
         <div className="horizons-container">
           <div className="horizons-cursor" ref={cursorRef} />
           <div id="scroller" className="horizons-scroller" ref={scrollerRef}>
-            {/* your slides unchanged */}
+            {/* Slide 1 - Hero Dimensions */}
             <section className="horizon-slide hero-img">
               <div className="geometric-bg" />
               <div className="hero-content">
@@ -101,6 +102,8 @@ const Horizons: React.FC = () => {
               </div>
               <div className="section-label">01</div>
             </section>
+
+            {/* Slide 2 - Infinity */}
             <section className="horizon-slide hero-img">
               <div className="grid-bg" />
               <div className="pulse-ring" />
@@ -110,6 +113,8 @@ const Horizons: React.FC = () => {
               </div>
               <div className="section-label">02</div>
             </section>
+
+            {/* Slide 3 - Main Quote */}
             <section className="horizon-slide header">
               <div className="glitch-wrapper">
                 <h1
@@ -122,6 +127,8 @@ const Horizons: React.FC = () => {
               </div>
               <div className="scroll-indicator" />
             </section>
+
+            {/* Slide 4 - About / Manifesto */}
             <section className="horizon-slide about">
               <div className="about-bg-pattern" />
               <div className="row">
@@ -148,6 +155,8 @@ const Horizons: React.FC = () => {
               </div>
               <h1>Future Architectonics</h1>
             </section>
+
+            {/* Slide 5 - Banner (Final Slide) */}
             <section className="horizon-slide banner-img">
               <div className="wave-bg" />
               <div className="banner-content">
@@ -159,46 +168,7 @@ const Horizons: React.FC = () => {
                 </div>
               </div>
               <div className="particles" />
-            </section>
-            <section className="horizon-slide story">
-              <div className="story-grid">
-                <h1 data-speed="slow">Digital Alchemy</h1>
-                <div className="story-divider" />
-                <h1 data-speed="medium">Neoteric Identities</h1>
-                <div className="story-divider" />
-                <h1 data-speed="fast">Cinematic Realities</h1>
-                <div className="story-divider" />
-                <h1 data-speed="slowest">Symphonics</h1>
-              </div>
-              <div className="story-accent" />
-            </section>
-            <section className="horizon-slide concept-img">
-              <div className="vortex-bg" />
-              <div className="concept-content">
-                <div className="ring-container">
-                  <div className="ring" />
-                  <div className="ring" />
-                  <div className="ring" />
-                </div>
-                <div className="concept-quote">
-                  <span className="quote-line">"Where imagination</span>
-                  <span className="quote-line">meets innovation"</span>
-                </div>
-              </div>
-              <div className="section-label">07</div>
-            </section>
-            <section className="horizon-slide outro">
-              <div className="outro-content">
-                <div className="outro-glow" />
-                <h1>horizons.com</h1>
-                <div className="outro-line" />
-                <p>© 2024 — Beyond boundaries</p>
-                <div className="social-links">
-                  <span>⟡</span>
-                  <span>⟡</span>
-                  <span>⟡</span>
-                </div>
-              </div>
+              <div className="section-label">05</div>
             </section>
           </div>
         </div>
