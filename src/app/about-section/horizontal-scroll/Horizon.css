@@ -1263,3 +1263,83 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ========= ADDITIONAL ENHANCEMENTS: SKILLS MODULE (KEEPS ALL CLASS NAMES, NEW ELEMENTS ADDED WITHOUT CONFLICT) ========= */
+.horizons-root .skills-grid {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  z-index: 2;
+  position: relative;
+}
+
+.horizons-root .skill-pill {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  padding: 0.6rem 1.4rem;
+  border-radius: 40px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  transition: all 0.25s ease;
+  color: #fff3e0;
+}
+
+.horizons-root .skill-pill:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 100, 50, 0.3);
+  border-color: #ffaa44;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.horizons-root .about-stats {
+  margin-top: 2rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 2rem;
+}
+
+.horizons-root .stat-block {
+  flex: 1;
+  min-width: 100px;
+  text-align: left;
+}
+
+.horizons-root .stat-number {
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: linear-gradient(125deg, #ffd966, #ffffff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-family: "Space Mono", monospace;
+}
+
+.horizons-root .stat-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.horizons-root .story-quote {
+  font-size: 1.3rem;
+  font-weight: 400;
+  font-style: italic;
+  margin-top: 2rem;
+  color: #fff5e6;
+  border-left: 3px solid #ffaa44;
+  padding-left: 1.5rem;
+}
+
+.horizons-root .outro-credits {
+  font-size: 0.7rem;
+  margin-top: 1rem;
+  letter-spacing: 0.2em;
+  opacity: 0.6;
+}

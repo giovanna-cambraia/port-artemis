@@ -32,7 +32,7 @@ const Horizons: React.FC = () => {
         scrollTrigger: {
           trigger: track,
           start: "top top",
-          end: () => `+=${moveDistance * 0.7}`, // Adjusted for 5 slides
+          end: () => `+=${moveDistance * 0.7}`,
           pin: true,
           scrub: 0.7,
           anticipatePin: 1,

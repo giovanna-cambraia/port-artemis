@@ -38,8 +38,6 @@ export default function HeroSection() {
       {/* Navbar - Top Right */}
       <header className="hero-navbar">
         <div className="hero-nav-container">
-         
-
           {/* Menu Button */}
           <button
             className={`hero-menu-button ${menuOpen ? "is-open" : ""}`}
@@ -73,16 +71,21 @@ export default function HeroSection() {
         </div>
       </header>
 
+
       {/* Fullscreen Menu Overlay */}
       <div className={`hero-menu-overlay ${menuOpen ? "is-open" : ""}`}>
         <div className="hero-menu-overlay-bg" onClick={toggleMenu} />
         <nav className="hero-menu-panel">
-          <div className="hero-menu-panel-bg">
-            <div className="hero-menu-bg-layer hero-menu-bg-first" />
-            <div className="hero-menu-bg-layer hero-menu-bg-second" />
-            <div className="hero-menu-bg-layer" />
-          </div>
           <div className="hero-menu-inner">
+            {/* Optional top section - like in your screenshot */}
+            <div className="hero-menu-header">
+              <div className="hero-menu-header-title">Navigation</div>
+              <div className="hero-menu-header-desc">
+                Explore my work and journey
+              </div>
+            </div>
+
+            {/* Main menu items - centered */}
             <ul className="hero-menu-list">
               {menuItems.map((item) => (
                 <li key={item.num} className="hero-menu-item">
@@ -91,15 +94,15 @@ export default function HeroSection() {
                     className="hero-menu-link"
                     onClick={toggleMenu}
                   >
-                    <span className="hero-menu-link-heading">{item.label}</span>
                     <span className="hero-menu-link-num">{item.num}</span>
-                    <div className="hero-menu-link-bg" />
+                    <span className="hero-menu-link-heading">{item.label}</span>
                   </a>
                 </li>
               ))}
             </ul>
-            <div className="hero-menu-details">
-              <p className="hero-menu-details-label">Socials</p>
+
+            {/* Footer with socials and copyright */}
+            <div className="hero-menu-footer">
               <div className="hero-menu-socials">
                 <a href="#" className="hero-menu-social-link">
                   GitHub
@@ -111,11 +114,13 @@ export default function HeroSection() {
                   Twitter
                 </a>
               </div>
+              <div className="hero-menu-copyright">
+                ©2026 All Rights Reserved
+              </div>
             </div>
           </div>
         </nav>
       </div>
-
       {/* Animated Wave Background */}
       <div className="hero-wave-background">
         <Waves

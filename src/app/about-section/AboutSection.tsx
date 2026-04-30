@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import "./AboutSection.css";
 import Horizons from "./horizontal-scroll/Horizon";
-
+import gsap from "gsap";
 
 /* ─── Types ─── */
 interface MousePos {
@@ -47,6 +47,8 @@ function useScramble(target: string, trigger: boolean) {
   }, [target, trigger]);
 
   return display;
+
+
 }
 
 /* ─── Magnetic Hook for Buttons ─── */
@@ -334,6 +336,138 @@ const AboutSection = () => {
     years: 0,
   });
 
+    const sectionRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  const descRef = useRef<HTMLParagraphElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const whaleRef = useRef<HTMLDivElement>(null);
+  const noiseRef = useRef<HTMLDivElement>(null);
+  const sideTextRef = useRef<HTMLDivElement>(null);
+  const cornerRef = useRef<HTMLDivElement>(null);
+  const bloodSplatterRef = useRef<HTMLDivElement>(null);
+ 
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+ 
+      // Noise flicker on entry
+      tl.fromTo(
+        noiseRef.current,
+        { opacity: 0 },
+        { opacity: 0.06, duration: 0.4 }
+      );
+ 
+      // Corner metadata
+      tl.fromTo(
+        cornerRef.current,
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.6 },
+        0.2
+      );
+ 
+      // Side text vertical
+      tl.fromTo(
+        sideTextRef.current,
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.8 },
+        0.3
+      );
+ 
+      // Blood splatter behind whale
+      tl.fromTo(
+        bloodSplatterRef.current,
+        { opacity: 0, scale: 0.6 },
+        { opacity: 1, scale: 1, duration: 1.2, ease: "expo.out" },
+        0.2
+      );
+ 
+      // Whale SVG entrance — dramatic lunge from right
+      tl.fromTo(
+        whaleRef.current,
+        { opacity: 0, x: 200, scale: 0.8, rotate: -8 },
+        { opacity: 1, x: 0, scale: 1, rotate: 0, duration: 1.4, ease: "expo.out" },
+        0.1
+      );
+ 
+      // Headline — character by character stagger via split trick
+      const headline = headlineRef.current;
+      if (headline) {
+        const text = headline.getAttribute("data-text") || "";
+        headline.innerHTML = text
+          .split("")
+          .map((ch) =>
+            ch === " "
+              ? `<span style="display:inline-block;width:0.35em"></span>`
+              : `<span class="char" style="display:inline-block;opacity:0;transform:translateY(60px) skewX(-6deg)">${ch}</span>`
+          )
+          .join("");
+ 
+        tl.to(
+          headline.querySelectorAll(".char"),
+          {
+            opacity: 1,
+            y: 0,
+            skewX: 0,
+            duration: 0.7,
+            stagger: 0.04,
+            ease: "power4.out",
+          },
+          0.5
+        );
+      }
+ 
+      // Sub-headline
+      tl.fromTo(
+        subRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7 },
+        1.2
+      );
+ 
+      // Description paragraph
+      tl.fromTo(
+        descRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6 },
+        1.5
+      );
+ 
+      // Stats row
+      tl.fromTo(
+        statsRef.current?.children ?? [],
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.12 },
+        1.6
+      );
+ 
+      // Breathing animation on whale (subtle float)
+      gsap.to(whaleRef.current, {
+        y: "+=18",
+        x: "+=6",
+        rotate: "+=1.5",
+        duration: 5,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut",
+        delay: 1.6,
+      });
+ 
+      // Subtle noise opacity flicker
+      gsap.to(noiseRef.current, {
+        opacity: 0.04,
+        duration: 0.08,
+        yoyo: true,
+        repeat: -1,
+        ease: "none",
+        repeatDelay: 0.6,
+      });
+    }, sectionRef);
+ 
+    return () => ctx.revert();
+  }, []);
+
+
   // Image URL
   const heroImage =
     "https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=800&h=1000&fit=crop";
@@ -587,276 +721,16 @@ const AboutSection = () => {
               ))}
             </div>
 
-            <div className="hero-cta-row">
-              <a
-                ref={btn1}
-                href="#work"
-                className="mag-btn mag-btn--primary"
-                data-hover
-              >
-                <span>View Work</span>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M3 8h10M9 4l4 4-4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </a>
-              <a ref={btn2} href="#contact" className="mag-btn" data-hover>
-                Contact Me
-              </a>
-            </div>
-
             <div className="scroll-hint">
               <div className="scroll-hint-line" />
               <span>Scroll to explore</span>
             </div>
           </div>
-
         </div>
       </section>
 
       <div>
         <Horizons />
-      </div>
-
-      {/* PANEL 3 — JOURNEY / MILESTONES */}
-      <div className="about-panel about-panel--journey">
-        <div className="journey-header" ref={galleryHeaderRef}>
-          <div className="journey-label">Personal Journey</div>
-          <div className="journey-title">
-            Career
-            <br />
-            Milestones
-          </div>
-        </div>
-
-        <div className="journey-timeline">
-          <div className="timeline-line"></div>
-
-          <div className="milestone-card milestone-card--1">
-            <div className="milestone-year">2024</div>
-            <div className="milestone-content">
-              <div className="milestone-title">Lead Innovation</div>
-              <div className="milestone-desc">
-                Spearheaded AI integration at global design firm,
-                revolutionizing workflow efficiency by 150%
-              </div>
-              <div className="milestone-tag">Current Role</div>
-            </div>
-          </div>
-
-          <div className="milestone-card milestone-card--2">
-            <div className="milestone-year">2022</div>
-            <div className="milestone-content">
-              <div className="milestone-title">Award Recognition</div>
-              <div className="milestone-desc">
-                Received Awwwards Site of the Day for immersive brand experience
-                platform
-              </div>
-              <div className="milestone-tag">Achievement</div>
-            </div>
-          </div>
-
-          <div className="milestone-card milestone-card--3">
-            <div className="milestone-year">2020</div>
-            <div className="milestone-content">
-              <div className="milestone-title">Master's Degree</div>
-              <div className="milestone-desc">
-                Completed MSc in Interactive Media with focus on emerging
-                technologies
-              </div>
-              <div className="milestone-tag">Education</div>
-            </div>
-          </div>
-
-          <div className="milestone-card milestone-card--4">
-            <div className="milestone-year">2018</div>
-            <div className="milestone-content">
-              <div className="milestone-title">Studio Launch</div>
-              <div className="milestone-desc">
-                Founded creative studio working with Fortune 500 clients
-                globally
-              </div>
-              <div className="milestone-tag">Entrepreneurship</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* PANEL 4 — SKILLS */}
-      <div className="about-panel about-panel--skills">
-        <div className="skills-header" ref={skillsHeaderRef}>
-          <div className="skills-label">Expertise</div>
-          <div className="skills-title">
-            Core
-            <br />
-            Competencies
-          </div>
-        </div>
-
-        <div className="skills-columns">
-          <div className="skills-col">
-            <div className="skills-col-heading">Development</div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>React / Next.js</span>
-                </div>
-                <span className="skill-percent">95%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="95%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>TypeScript</span>
-                </div>
-                <span className="skill-percent">90%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="90%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Node.js</span>
-                </div>
-                <span className="skill-percent">85%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="85%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Python</span>
-                </div>
-                <span className="skill-percent">80%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="80%"></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="skills-col">
-            <div className="skills-col-heading">Design</div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Figma</span>
-                </div>
-                <span className="skill-percent">90%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="90%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Adobe Creative</span>
-                </div>
-                <span className="skill-percent">85%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="85%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Motion Design</span>
-                </div>
-                <span className="skill-percent">95%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="95%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>UI/UX</span>
-                </div>
-                <span className="skill-percent">88%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="88%"></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="skills-col">
-            <div className="skills-col-heading">Tools</div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Git / GitHub</span>
-                </div>
-                <span className="skill-percent">88%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="88%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>VSCode</span>
-                </div>
-                <span className="skill-percent">85%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="85%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Webpack / Vite</span>
-                </div>
-                <span className="skill-percent">82%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="82%"></div>
-              </div>
-            </div>
-            <div className="skill-item">
-              <div className="skill-info">
-                <div className="skill-name">
-                  <span className="skill-dot"></span>
-                  <span>Docker</span>
-                </div>
-                <span className="skill-percent">75%</span>
-              </div>
-              <div className="skill-progress">
-                <div className="skill-progress-bar" data-progress="75%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      
       </div>
 
       {/* PANEL 5 — CTA */}
