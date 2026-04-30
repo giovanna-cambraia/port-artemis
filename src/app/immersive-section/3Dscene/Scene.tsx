@@ -1,4 +1,3 @@
-// Scene.tsx
 "use client";
 
 import {
@@ -6,39 +5,12 @@ import {
   MeshTransmissionMaterial,
   RandomizedLight,
   Text,
-  Html,
 } from "@react-three/drei";
 import { useRef, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 const FONT = "/fonts/Sekuya-Regular.ttf";
-
-function TextBlock({
-  content,
-  y,
-  size,
-}: {
-  content: string;
-  y: number;
-  size: number;
-}) {
-  return (
-    <Text
-      font={FONT}
-      fontSize={size}
-      color="white"
-      anchorX="center"
-      anchorY="middle"
-      position={[0, y, 0]}
-      maxWidth={3}
-      textAlign="center"
-      fillOpacity={1}
-    >
-      {content}
-    </Text>
-  );
-}
 
 function Tunnel() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -164,57 +136,71 @@ gl_Position = projectionMatrix * mvPosition;
   );
 }
 
-export default function Scene() {
+function TextBlock({
+  content,
+  y,
+  size,
+}: {
+  content: string;
+  y: number;
+  size: number;
+}) {
+  return (
+    <Text
+      font={FONT}
+      fontSize={size}
+      color="white"
+      anchorX="center"
+      anchorY="middle"
+      position={[0, y, 0]}
+      maxWidth={3}
+      textAlign="center"
+      fillOpacity={1}
+    >
+      {content}
+    </Text>
+  );
+}
+
+export default function Scene({
+  sectionRef,
+  progressRef,
+}: {
+  sectionRef: React.RefObject<HTMLElement> | null;
+  progressRef: React.RefObject<number>;
+}) {
   const { nodes } = useGLTF("/circle_text_13.glb");
   const { camera } = useThree();
+
   const circularText = useRef<THREE.Group>(null);
   const transmissionMaterial = useRef<any>(null);
-  const spotLight1 = useRef<THREE.SpotLight>(null);
-  const spotLight2 = useRef<THREE.SpotLight>(null);
   const elapsedTime = useRef(0);
+
   const pauseDuration = 3;
   const oscillationDuration = 2;
   const totalCycleDuration = oscillationDuration + pauseDuration;
-  const sectionProgress = useRef(0);
-  const cardOpacity = useRef(0);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   useFrame((state, delta) => {
-    const section = document.querySelector(".immersive-section") as HTMLElement;
-    if (section) {
-      const rect = section.getBoundingClientRect();
-      const scrollHeight = section.offsetHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      sectionProgress.current = Math.max(
-        0,
-        Math.min(1, scrolled / scrollHeight),
-      );
-    }
+    const p = progressRef.current;
 
-    const p = sectionProgress.current;
-    const diveStart = 0.55;
+    const diveStart = 0.25;
     const diveProgress = Math.min(
       0.85,
       Math.max(0, (p - diveStart) / (1 - diveStart)),
     );
     const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
+
     const camY = THREE.MathUtils.lerp(6, -18, ease);
     const camZ = THREE.MathUtils.lerp(6, 0.2, ease);
     const lookY = THREE.MathUtils.lerp(0, -8, ease);
-    const fogNear = THREE.MathUtils.lerp(8, 0.5, ease);
-    const fogFar = THREE.MathUtils.lerp(20, 6, ease);
 
-    state.scene.fog = new THREE.Fog("black", fogNear, fogFar);
+    state.scene.fog = new THREE.Fog(
+      "black",
+      THREE.MathUtils.lerp(8, 0.5, ease),
+      THREE.MathUtils.lerp(20, 6, ease),
+    );
     camera.position.set(0, camY, camZ);
     (camera as THREE.PerspectiveCamera).lookAt(0, lookY, 0);
-
-    const newOpacity = Math.max(0, Math.min(1, (p - 0.75) / 0.1));
-    if (cardRef.current && newOpacity !== cardOpacity.current) {
-      cardOpacity.current = newOpacity;
-      cardRef.current.style.opacity = String(newOpacity);
-      cardRef.current.style.transform = `translateY(${(1 - newOpacity) * 24}px)`;
-      cardRef.current.style.pointerEvents = newOpacity > 0.1 ? "auto" : "none";
-    }
 
     if (circularText.current) {
       circularText.current.rotation.y -= delta * 0.3;
@@ -248,6 +234,7 @@ export default function Scene() {
     <>
       <color args={["black"]} attach="background" />
       <ambientLight intensity={0.5} />
+
       <TextBlock content="THE ABYSS" y={1.8} size={0.35} />
       <TextBlock content="DRIFT INTO" y={2.6} size={0.35} />
 
@@ -257,7 +244,6 @@ export default function Scene() {
           intensity={100}
           color="#E5FCFF"
           angle={Math.PI / 8}
-          ref={spotLight1}
         />
         <spotLight
           position={[1.5, -0.3, 2]}
@@ -265,7 +251,6 @@ export default function Scene() {
           power={60.0}
           color="#FFA530"
           angle={Math.PI / 4}
-          ref={spotLight2}
         />
         <RandomizedLight
           radius={10}

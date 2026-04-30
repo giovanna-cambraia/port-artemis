@@ -1,91 +1,94 @@
-// TransmissionWrapper.tsx
 "use client";
 
 import { Canvas } from "@react-three/fiber";
 import Scene from "./Scene";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { TRANSMISSIONS } from "../../../data/transmissionData"; 
+import { TransmissionCard } from "../cards/TransmissionCard";
 
+const CARD_START = 0.70;
+const CARD_END = 1.0;
 
-const DIVE_END = 0.5;
-const TOTAL_HEIGHT = "600vh";
 export default function TransmissionWrapper() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null) as React.RefObject<HTMLElement>;
+  const progressRef = useRef(0);
+  const [activeCard, setActiveCard] = useState(-1);
+  const [cardsVisible, setCardsVisible] = useState(false);
 
   useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
     const onScroll = () => {
-      const section = sectionRef.current;
-      if (!section) return;
-
       const rect = section.getBoundingClientRect();
-      const scrollHeight = section.offsetHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      const progress = Math.max(0, Math.min(1, scrolled / scrollHeight));
+      const p = Math.max(0, Math.min(1, -rect.top / (section.offsetHeight - window.innerHeight)));
+      progressRef.current = p;
 
-      // Fade in the overlay when dive is done
-      if (overlayRef.current) {
-        const overlayOpacity = Math.max(
-          0,
-          Math.min(1, (progress - DIVE_END + 0.03) / 0.04),
-        );
-        overlayRef.current.style.opacity = String(overlayOpacity);
-        overlayRef.current.style.pointerEvents =
-          overlayOpacity > 0.1 ? "auto" : "none";
+      const shouldShow = p >= CARD_START && p <= CARD_END;
+      setCardsVisible(shouldShow);
+
+      if (shouldShow) {
+        const cardP = (p - CARD_START) / (CARD_END - CARD_START);
+        const idx = Math.min(TRANSMISSIONS.length - 1, Math.floor(cardP * TRANSMISSIONS.length));
+        setActiveCard(idx);
+      } else {
+        setActiveCard(-1);
       }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <section
       ref={sectionRef}
-      style={{ height: TOTAL_HEIGHT, position: "relative" }}
-      className="immersive-section"
+      style={{ height: "600vh", position: "relative" }}
+      className="transmission-section"
     >
-      {/* 3D Canvas — always fixed behind everything */}
       <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100vh",
-          zIndex: 0,
-        }}
+        className="transmission-sticky"
+        style={{ position: "sticky", top: 0, height: "100vh" }}
       >
         <Canvas
           shadows
           camera={{ fov: 45, position: [0, 6, 6], near: 0.1, far: 100 }}
-          style={{ background: "#000000" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+          }}
         >
-          <Scene />
+          <Scene sectionRef={sectionRef} progressRef={progressRef} />
         </Canvas>
-      </div>
 
-      {/* Scroll hint */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: "2rem",
-          left: "50%",
-          transform: "translateX(-50%)",
-          color: "#e8180c",
-          fontFamily: "'Space Mono', monospace",
-          fontSize: "10px",
-          letterSpacing: "0.1em",
-          opacity: 0.5,
-          transition: "opacity 0.4s ease",
-          pointerEvents: "none",
-          zIndex: 5,
-        }}
-        ref={hintRef}
-      >
-        SCROLL TO DIVE ↓
+        {/* Cards overlay — plain DOM, inside sticky, z-indexed above canvas */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+            zIndex: 10,
+            opacity: cardsVisible ? 1 : 0,
+            transition: "opacity 0.5s ease",
+          }}
+        >
+          <div style={{ position: "relative", width: "480px", height:"420px" }}>
+            {TRANSMISSIONS.map((tx, i) => (
+              <TransmissionCard
+                key={tx.id}
+                data={tx}
+                active={activeCard === i}
+                currentIdx={activeCard}
+                total={TRANSMISSIONS.length}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import "./intro.css";
-import Preloader from "../../components/preloader/Preloader";
+import Preloader from "../components/preloader/Preloader";
 
 interface HomeProps {
   searchParams?: { [key: string]: string | string[] | undefined };

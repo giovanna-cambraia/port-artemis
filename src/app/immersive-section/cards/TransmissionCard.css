@@ -1,0 +1,215 @@
+ @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
+
+  .tx-panel {
+    width: 550px;
+    pointer-events: none;
+    user-select: none;
+    transform-origin: center center;
+  }
+
+  .tx-inner {
+    border: 1px solid rgba(240, 236, 228, 0.18);
+    background: rgba(4, 4, 4, 0.82);
+    backdrop-filter: blur(6px);
+    padding: 32px 36px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tx-inner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(240, 236, 228, 0.016) 2px,
+      rgba(240, 236, 228, 0.016) 4px
+    );
+    pointer-events: none;
+  }
+
+  .tx-torn-edge {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%, rgba(240,236,228,0.25) 8%, transparent 12%,
+      transparent 30%, rgba(240,236,228,0.25) 35%, transparent 40%,
+      transparent 70%, rgba(240,236,228,0.25) 76%, transparent 82%
+    );
+  }
+
+  .tx-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(240, 236, 228, 0.35);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tx-meta .sig-id {
+    color: rgba(240, 236, 228, 0.65);
+  }
+
+  .tx-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 5vw, 46px);
+    letter-spacing: 0.05em;
+    color: rgba(240, 236, 228, 0.95);
+    line-height: 1;
+    margin-bottom: 18px;
+  }
+
+  .tx-body {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.9;
+    color: rgba(240, 236, 228, 0.6);
+  }
+
+  .tx-body em {
+    color: rgba(240, 236, 228, 0.9);
+    font-style: italic;
+  }
+
+  .tx-body code {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(240, 236, 228, 0.35);
+  }
+
+  .tx-redacted {
+    background: rgba(240, 236, 228, 0.6);
+    color: transparent;
+    user-select: none;
+    border-radius: 1px;
+  }
+
+  .tx-corrupt {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: rgba(240, 236, 228, 0.25);
+    display: block;
+    margin: 8px 0;
+  }
+
+  .tx-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(240, 236, 228, 0.07);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tx-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: rgba(240, 236, 228, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tx-blink {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(240, 236, 228, 0.55);
+    animation: blink-pulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes blink-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.1; }
+  }
+
+  .tx-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    letter-spacing: 0.04em;
+    color: rgba(240, 236, 228, 0.06);
+    line-height: 1;
+  }
+
+  .tx-dots {
+    position: absolute;
+    right: -32px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .tx-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(240, 236, 228, 0.2);
+    transition: background 0.3s, transform 0.3s;
+    flex-shrink: 0;
+  }
+
+  .tx-dot.active {
+    background: rgba(240, 236, 228, 0.9);
+    transform: scale(1.8);
+  }
+
+  .hud-corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+  }
+  .hud-tl { top: 8px; left: 8px; }
+  .hud-tr { top: 8px; right: 8px; transform: scaleX(-1); }
+  .hud-bl { bottom: 8px; left: 8px; transform: scaleY(-1); }
+  .hud-br { bottom: 8px; right: 8px; transform: scale(-1,-1); }
+
+  .tx-glitch {
+    animation: tx-glitch-anim 0.35s steps(1) forwards;
+  }
+
+  @keyframes tx-glitch-anim {
+    0%   { text-shadow: 3px 0 rgba(255,0,80,0.7), -3px 0 rgba(0,200,255,0.7); clip-path: inset(0); }
+    20%  { text-shadow: -4px 0 rgba(255,0,80,0.7), 4px 0 rgba(0,200,255,0.7); clip-path: inset(20% 0 60% 0); }
+    40%  { text-shadow: 2px 0 rgba(255,0,80,0.7), -2px 0 rgba(0,200,255,0.7); clip-path: inset(60% 0 10% 0); }
+    60%  { text-shadow: -2px 0 rgba(255,0,80,0.6); clip-path: inset(40% 0 30% 0); }
+    80%  { text-shadow: none; clip-path: inset(0); }
+    100% { text-shadow: none; clip-path: inset(0); }
+  }
+
+  .tx-label-top {
+    position: absolute;
+    top: -28px;
+    left: 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    color: rgba(240, 236, 228, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tx-label-top::before {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 1px;
+    background: rgba(240, 236, 228, 0.35);
+    flex-shrink: 0;
+  }
