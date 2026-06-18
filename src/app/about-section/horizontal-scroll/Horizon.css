@@ -1,1345 +1,648 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+/* =========================================================================
+   HORIZON — cinematic horizontal journey
+   All styles scoped under .hz to avoid leaking into the rest of the app.
+   ========================================================================= */
 
-/* All styles are scoped under .horizons-root to prevent conflicts */
-.horizons-root * {
-  margin: 0;
-  padding: 0;
+.hz {
+  --hz-bg: #060507;
+  --hz-bg-soft: #0c0a0e;
+  --hz-fg: #f4efe9;
+  --hz-muted: rgba(244, 239, 233, 0.46);
+  --hz-line: rgba(244, 239, 233, 0.12);
+  --hz-accent: #e31b23; /* Changed from #ff5a1f to red */
+  --hz-accent-soft: #ff4757; /* Changed from #ff9d63 to soft red */
+  --hz-glow: rgba(227, 27, 35, 0.45); /* Changed from orangish to red glow */
+
+  --hz-display: "Druk Wide", "Archivo", "Helvetica Neue", Impact, sans-serif;
+  --hz-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+  --hz-sans: var(--font-geist-sans), system-ui, sans-serif;
+
+  position: relative;
+  width: 100%;
+  background: var(--hz-bg);
+  color: var(--hz-fg);
+  cursor: none;
+}
+
+.hz *,
+.hz *::before,
+.hz *::after {
   box-sizing: border-box;
 }
 
-.horizons-root ::selection {
-  background: rgba(255, 100, 50, 0.4);
-  color: white;
+.hz ::selection {
+  background: var(--hz-accent);
+  color: var(--hz-bg);
 }
 
-/* Typography - scoped to horizons-root only */
-.horizons-root h1 {
-  font-family: "Druk Condensed", "Impact", "Helvetica Neue", sans-serif;
-  font-size: 15vw;
-  font-weight: 700;
-  text-transform: uppercase;
-  line-height: 0.82;
-  letter-spacing: -0.02em;
-  text-shadow: 0 0 30px rgba(255, 100, 50, 0.3);
-}
-
-.horizons-root p {
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: clamp(1rem, 1.2vw, 1.2rem);
-  font-weight: 400;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.01em;
-}
-
-.horizons-root {
-  width: 100%;
+/* ---------- Pinned viewport + moving track ---------- */
+.hz-viewport {
   position: relative;
-}
-
-.horizons-sticky {
   width: 100%;
   height: 100vh;
+  height: 100svh;
   overflow: hidden;
-  position: relative;
 }
 
-.horizons-root .horizons-scroller {
-  flex-wrap: nowrap;
-  height: 100vh;
-}
-
-/* Main container - scoped */
-.horizons-root .horizons-container {
+.hz-track {
   position: relative;
-  width: 100%;
+  display: flex;
   height: 100%;
-  background: #000000;
+  width: max-content;
+  will-change: transform;
+}
+
+/* ---------- Sections ---------- */
+.hz-section {
+  position: relative;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100vw;
+  padding: clamp(2rem, 6vw, 7rem);
+}
+
+.hz-section--wide {
+  width: 142vw;
+}
+
+.hz-section--xwide {
+  width: 168vw;
+}
+
+/* depth layers */
+.hz-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.hz-layer--content {
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+  width: 100%;
+}
+
+/* atmospheric base shared across scenes */
+.hz-atmosphere {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    60% 80% at 50% 50%,
+    rgba(227, 27, 35, 0.08),
+    /* Changed from orangish to red */ transparent 70%
+  );
+  filter: blur(40px);
+  opacity: 0.8;
+}
+
+.hz-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* film vignette on top of everything */
+.hz-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 120% at 50% 50%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+/* ---------- Typography ---------- */
+.hz-display {
+  font-family: var(--hz-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.hz-kicker {
+  font-family: var(--hz-mono);
+  font-size: clamp(0.65rem, 0.9vw, 0.8rem);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--hz-accent-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.hz-kicker::before {
+  content: "";
+  width: clamp(28px, 4vw, 56px);
+  height: 1px;
+  background: var(--hz-accent);
+}
+
+.hz-body {
+  font-family: var(--hz-sans);
+  font-size: clamp(1rem, 1.25vw, 1.3rem);
+  line-height: 1.55;
+  color: rgba(244, 239, 233, 0.78);
+  font-weight: 400;
+}
+
+/* char/word reveal primitives */
+.hz-reveal-line {
+  display: block;
   overflow: hidden;
 }
 
-/* Custom Cursor - scoped with enhanced effects */
-.horizons-root .horizons-cursor {
-  position: fixed;
-  width: 30px;
-  height: 30px;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+.hz-char,
+.hz-word {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* =========================================================================
+   SECTION 01 — ARRIVAL
+   ========================================================================= */
+.hz-arrival {
+  background:
+    radial-gradient(
+      80% 120% at 50% 120%,
+      rgba(227, 27, 35, 0.16),
+      /* Changed from orangish to red */ transparent 60%
+    ),
+    var(--hz-bg);
+}
+
+.hz-arrival .hz-beam {
+  position: absolute;
+  top: -30%;
+  left: 50%;
+  width: 60vw;
+  height: 160%;
+  transform: translateX(-50%) rotate(8deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 71, 87, 0.12),
+    /* Changed from soft orange to soft red */ rgba(227, 27, 35, 0.18),
+    /* Changed from orangish to red */ rgba(255, 71, 87, 0.12),
+    /* Changed from soft orange to soft red */ transparent
+  );
+  filter: blur(30px);
+  mix-blend-mode: screen;
+}
+
+.hz-arrival-title {
+  font-size: clamp(4rem, 18vw, 19rem);
+  text-align: center;
+  position: relative;
+}
+
+.hz-arrival-title .hz-outline {
+  -webkit-text-stroke: 1px rgba(244, 239, 233, 0.35);
+  color: transparent;
+}
+
+.hz-enter-hint {
+  display: block;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  text-align: center;
+}
+
+.hz-dust {
+  position: absolute;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  pointer-events: none;
-  z-index: 1000;
-  transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  background: var(--hz-accent-soft);
+  box-shadow: 0 0 12px var(--hz-glow);
+  opacity: 0.7;
+  will-change: transform;
+}
+
+/* =========================================================================
+   SECTION 02 — DIMENSION
+   ========================================================================= */
+.hz-dimension {
+  background: linear-gradient(120deg, #07060a, #0d0a12 60%, #120a0a);
+  perspective: 1200px;
+}
+
+.hz-dimension .hz-perspective-grid {
+  position: absolute;
+  inset: -40% -10%;
+  background-image:
+    linear-gradient(var(--hz-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hz-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: rotateX(62deg) translateZ(-120px);
+  transform-origin: center 70%;
+  mask-image: radial-gradient(60% 60% at 50% 40%, #000 30%, transparent 80%);
+}
+
+.hz-float-shape {
+  position: absolute;
+  border: 1px solid rgba(227, 27, 35, 0.4); /* Changed from orangish to red */
+  background: rgba(227, 27, 35, 0.03); /* Changed from orangish to red */
+  backdrop-filter: blur(4px);
+  border-radius: 18px;
+  will-change: transform;
+  box-shadow: inset 0 0 40px rgba(227, 27, 35, 0.08); /* Changed from orangish to red */
+}
+
+.hz-dimension-title {
+  font-size: clamp(3rem, 11vw, 13rem);
+  text-align: center;
+  position: relative;
+  z-index: 4;
+}
+
+.hz-dimension-title .hz-row-2 {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--hz-accent);
+}
+
+/* =========================================================================
+   SECTION 03 — MANIFESTO
+   ========================================================================= */
+.hz-manifesto {
+  background:
+    radial-gradient(
+      70% 90% at 18% 30%,
+      rgba(227, 27, 35, 0.1),
+      /* Changed from orangish to red */ transparent 60%
+    ),
+    var(--hz-bg-soft);
+}
+
+.hz-manifesto-inner {
+  max-width: min(60vw, 1100px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.8rem);
+}
+
+.hz-manifesto-text {
+  font-family: var(--hz-sans);
+  font-weight: 500;
+  font-size: clamp(1.6rem, 3.4vw, 3.6rem);
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: rgba(244, 239, 233, 0.32);
+}
+
+.hz-manifesto-text .hz-word {
+  color: rgba(244, 239, 233, 0.32);
+  transition: none;
+}
+
+.hz-manifesto-text .hz-accent-word {
+  color: var(--hz-accent);
+}
+
+.hz-manifesto-progress {
+  width: 100%;
+  height: 1px;
+  background: var(--hz-line);
+  position: relative;
+  overflow: hidden;
+}
+
+.hz-manifesto-progress span {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--hz-accent), var(--hz-accent-soft));
+}
+
+/* =========================================================================
+   SECTION 04 — ARCHITECTURE
+   ========================================================================= */
+.hz-architecture {
+  background: linear-gradient(135deg, #0a0809, #100b0c);
+  perspective: 1400px;
+}
+
+.hz-arch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 2rem);
+  width: min(80vw, 1200px);
+  transform-style: preserve-3d;
+  position: relative;
+  z-index: 4;
+}
+
+.hz-arch-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
+  flex-wrap: wrap;
+}
+
+.hz-arch-head h2 {
+  font-family: var(--hz-display);
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: clamp(2.4rem, 6vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.hz-card {
+  position: relative;
+  padding: clamp(1.4rem, 2vw, 2.2rem);
+  border: 1px solid var(--hz-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  min-height: clamp(200px, 26vh, 320px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  will-change: transform;
+  transition:
+    border-color 0.4s ease,
+    background 0.4s ease;
+}
+
+.hz-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 0%),
+    rgba(227, 27, 35, 0.16),
+    /* Changed from orangish to red */ transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.hz-card:hover {
+  border-color: rgba(227, 27, 35, 0.45); /* Changed from orangish to red */
+  background: rgba(227, 27, 35, 0.04); /* Changed from orangish to red */
+}
+
+.hz-card:hover::after {
+  opacity: 1;
+}
+
+.hz-card-index {
+  font-family: var(--hz-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--hz-accent-soft);
+}
+
+.hz-card-title {
+  font-family: var(--hz-display);
+  text-transform: uppercase;
+  font-size: clamp(1.3rem, 2vw, 2rem);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.hz-card-desc {
+  font-family: var(--hz-sans);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--hz-muted);
+  margin: 0;
+}
+
+/* =========================================================================
+   SECTION 05 — REVELATION
+   ========================================================================= */
+.hz-revelation {
+  background:
+    radial-gradient(
+      50% 70% at 50% 50%,
+      rgba(227, 27, 35, 0.22),
+      /* Changed from orangish to red */ transparent 65%
+    ),
+    #050406;
+}
+
+.hz-revelation .hz-converge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 70vh;
+  background: linear-gradient(transparent, var(--hz-accent-soft), transparent);
   transform: translate(-50%, -50%);
-  backdrop-filter: invert(1);
-  mix-blend-mode: difference;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  transform-origin: center;
+  will-change: transform, opacity;
 }
 
-.horizons-root .horizons-cursor.hover {
-  width: 50px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 100, 50, 0.8);
-  box-shadow: 0 0 30px rgba(255, 100, 50, 0.5);
-  backdrop-filter: blur(2px);
+.hz-revelation-title {
+  font-size: clamp(4rem, 20vw, 22rem);
+  text-align: center;
+  position: relative;
+  z-index: 4;
+  text-shadow: 0 0 80px var(--hz-glow);
 }
 
-/* Progress Bar - scoped with enhanced gradient */
-.horizons-root .horizons-progress-bar {
+.hz-revelation-sub {
+  text-align: center;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 4;
+}
+
+.hz-social {
+  display: flex;
+  gap: 2rem;
+}
+
+.hz-social span {
+  font-family: var(--hz-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  color: var(--hz-muted);
+  transition: color 0.3s ease;
+  cursor: none;
+}
+
+.hz-social span:hover {
+  color: var(--hz-accent);
+}
+
+/* =========================================================================
+   HUD — progress, counter, scene index
+   ========================================================================= */
+.hz-progress {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
-  height: 4px;
-  transform: scaleX(0%);
-  transform-origin: 0% 50%;
-  background: linear-gradient(
-    90deg,
-    #ffffff,
-    #ffea94,
-    #ffcc66,
-    #ffaa44,
-    #ff8844,
-    #ff6644,
-    #ff4444,
-    #eb001b
-  );
-  box-shadow:
-    0 0 30px rgba(255, 100, 50, 0.8),
-    0 0 10px rgba(255, 200, 100, 0.5);
-  z-index: 100;
-  will-change: transform;
-  border-radius: 2px;
-}
-
-/* Progress Counter - scoped with glassmorphism */
-.horizons-root .horizons-progress-counter {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 100;
-  background: rgba(10, 10, 10, 0.6);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 3rem;
-  padding: 0.6rem 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-top-color: rgba(255, 255, 255, 0.3);
-  border-left-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 15px 35px -10px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  transition: transform 0.3s ease;
-}
-
-.horizons-root .horizons-progress-counter:hover {
-  transform: scale(1.05);
-}
-
-.horizons-root .horizons-progress-counter span {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: 0.1em;
-  font-family: "Space Mono", monospace;
-}
-
-.horizons-root .horizons-progress-counter h1 {
-  font-size: clamp(2rem, 4vw, 2.5rem);
-  font-weight: 800;
-  background: linear-gradient(145deg, #fff, #e0e0e0, #ffd966);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  line-height: 1;
-  padding: 0;
-  text-shadow: none;
-}
-
-/* Scroller - scoped */
-.horizons-root .horizons-scroller {
-  position: relative;
-  height: 100%;
-  display: flex;
-  will-change: transform;
-  transform: translateX(0);
-  cursor: grab;
-}
-
-.horizons-root .horizons-scroller:active {
-  cursor: grabbing;
-}
-
-/* Sections - scoped, using height: 100% instead of 100vh to avoid conflicts */
-.horizons-root section {
-  position: relative;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-  overflow: hidden;
-  transition: filter 0.5s ease;
-}
-
-/* Made each card 30% larger than before */
-.horizons-root .hero-img,
-.horizons-root .about,
-.horizons-root .banner-img,
-.horizons-root .story,
-.horizons-root .outro {
-  width: 130vw;
-}
-
-.horizons-root .header,
-.horizons-root .concept-img {
-  width: 150vw;
-}
-
-/* Section Labels - enhanced */
-.horizons-root .section-label {
-  position: absolute;
-  bottom: 2rem;
-  left: 2rem;
-  font-family: "Space Mono", monospace;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
-  letter-spacing: 0.2em;
-  z-index: 2;
-  backdrop-filter: blur(10px) saturate(180%);
-  padding: 0.5rem 1rem;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-}
-
-.horizons-root .section-label:hover {
-  color: rgba(255, 255, 255, 1);
-  background: rgba(0, 0, 0, 0.6);
-  border-color: rgba(255, 100, 50, 0.5);
-  letter-spacing: 0.25em;
-}
-
-/* Section 1 - Geometric Abstract */
-.horizons-root .geometric-bg {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, #0a0a2a, #1a0a2a, #2a0a1a);
-  background-size: 200% 200%;
-  animation: horizons-gradientShift 10s ease infinite;
-}
-
-@keyframes horizons-gradientShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.horizons-root .hero-content {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-}
-
-.horizons-root .abstract-shapes {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.horizons-root .shape {
-  position: absolute;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 100, 50, 0.4),
-    rgba(255, 215, 0, 0.15),
-    rgba(255, 80, 120, 0.2)
-  );
-  animation: horizons-float 20s ease-in-out infinite;
-  filter: blur(20px);
-  opacity: 0.7;
-}
-
-.horizons-root .shape-1 {
-  width: 300px;
-  height: 300px;
-  top: 10%;
-  left: 10%;
-  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-  animation-delay: 0s;
-}
-
-.horizons-root .shape-2 {
-  width: 200px;
-  height: 200px;
-  bottom: 20%;
-  right: 15%;
-  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  animation-delay: 2s;
-}
-
-.horizons-root .shape-3 {
-  width: 150px;
-  height: 150px;
-  top: 50%;
-  left: 70%;
-  border-radius: 50% 50% 30% 70% / 40% 60% 40% 60%;
-  animation-delay: 4s;
-}
-
-.horizons-root .shape-4 {
-  width: 250px;
-  height: 250px;
-  bottom: 10%;
-  left: 20%;
-  border-radius: 40% 60% 60% 40% / 40% 50% 50% 60%;
-  animation-delay: 1s;
-}
-
-@keyframes horizons-float {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg) scale(1);
-  }
-  33% {
-    transform: translate(30px, -30px) rotate(120deg) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) rotate(240deg) scale(0.9);
-  }
-}
-
-.horizons-root .hero-glitch {
-  font-size: 6vw;
-  font-weight: 800;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, #fff, #ff6a3d, #ffd966, #ffaa44);
-  background-size: 300% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  position: relative;
-  animation:
-    horizons-glitchText 3s infinite,
-    horizons-gradientFlow 5s ease infinite;
-}
-
-@keyframes horizons-gradientFlow {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes horizons-glitchText {
-  0%,
-  100% {
-    transform: skew(0deg);
-  }
-  95% {
-    transform: skew(0deg);
-  }
-  96% {
-    transform: skew(5deg);
-    opacity: 0.9;
-  }
-  97% {
-    transform: skew(-5deg);
-  }
-  98% {
-    transform: skew(2deg);
-  }
-}
-
-/* Section 2 - Neon Grid */
-.horizons-root .grid-bg {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 100, 50, 0.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 100, 50, 0.15) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: horizons-gridMove 20s linear infinite;
-  box-shadow: inset 0 0 100px rgba(255, 100, 50, 0.1);
-}
-
-@keyframes horizons-gridMove {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(50px, 50px);
-  }
-}
-
-.horizons-root .pulse-ring {
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  border: 2px solid rgba(255, 100, 50, 0.6);
-  border-radius: 50%;
-  animation: horizons-pulseRing 3s ease-out infinite;
-  box-shadow: 0 0 40px rgba(255, 100, 50, 0.3);
-}
-
-@keyframes horizons-pulseRing {
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
-
-.horizons-root .neon-text {
-  font-size: 7vw;
-  font-weight: 800;
-  color: #ff6a3d;
-  text-shadow:
-    0 0 10px #ff6a3d,
-    0 0 20px #ff6a3d,
-    0 0 40px #ff6a3d,
-    0 0 80px #ff6a3d,
-    0 0 120px rgba(255, 106, 61, 0.5);
-  animation: horizons-neonPulse 1.5s ease-in-out infinite alternate;
-  letter-spacing: 0.02em;
-}
-
-@keyframes horizons-neonPulse {
-  from {
-    text-shadow:
-      0 0 10px #ff6a3d,
-      0 0 20px #ff6a3d;
-  }
-  to {
-    text-shadow:
-      0 0 20px #ff6a3d,
-      0 0 40px #ff6a3d,
-      0 0 60px #ff6a3d,
-      0 0 100px #ff6a3d;
-  }
-}
-
-.horizons-root .dot-matrix {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(
-    circle,
-    rgba(255, 100, 50, 0.4) 2px,
-    transparent 2px
-  );
-  background-size: 30px 30px;
-  animation: horizons-dotsMove 10s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes horizons-dotsMove {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 30px 30px;
-  }
-}
-
-/* Header Section */
-.horizons-root .header {
-  background: radial-gradient(circle at 30% 20%, #1a1a1a, #000000);
-  position: relative;
-  overflow: hidden;
-}
-
-.horizons-root .header::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 100, 50, 0.15) 0%,
-    transparent 70%
-  );
-  animation: horizons-rotate 20s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes horizons-rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.horizons-root .glitch-text {
-  font-size: clamp(3rem, 16vw, 9rem);
-  background: linear-gradient(125deg, #fff 30%, #ffb347 60%, #ff6a3d 90%);
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  position: relative;
-  animation:
-    horizons-glitch 3s infinite,
-    horizons-gradientFlow 3s ease infinite;
-}
-
-@keyframes horizons-glitch {
-  0%,
-  100% {
-    transform: skew(0deg);
-  }
-  95% {
-    transform: skew(0deg);
-  }
-  96% {
-    transform: skew(2deg, 1deg);
-    opacity: 0.9;
-  }
-  97% {
-    transform: skew(-2deg, -1deg);
-  }
-  98% {
-    transform: skew(1deg, 0.5deg);
-  }
-}
-
-.horizons-root .scroll-indicator {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 30px;
-  height: 50px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
-  z-index: 2;
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
-}
-
-.horizons-root .scroll-indicator::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 10px;
-  background: linear-gradient(180deg, #fff, #ff6a3d);
-  border-radius: 2px;
-  animation: horizons-scrollPulse 2s ease-in-out infinite;
-}
-
-@keyframes horizons-scrollPulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    opacity: 0.3;
-    transform: translateX(-50%) translateY(10px);
-  }
-}
-
-/* About Section - enhanced */
-.horizons-root .about {
-  background: linear-gradient(135deg, #d0001c, #eb001b, #a00014);
-  background-size: 200% 200%;
-  padding: 4em 3em 2em 3em;
-  position: relative;
-  overflow: hidden;
-  animation: horizons-bgShift 8s ease infinite;
-}
-
-@keyframes horizons-bgShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.horizons-root .about-bg-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(
-    circle at 20% 40%,
-    rgba(255, 255, 255, 0.12) 2px,
-    transparent 2px
-  );
-  background-size: 25px 25px;
-  pointer-events: none;
-  animation: horizons-patternShift 20s linear infinite;
-}
-
-@keyframes horizons-patternShift {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 50px 50px;
-  }
-}
-
-.horizons-root .eyebrow {
-  font-family: "Space Mono", monospace;
-  font-size: 0.8rem;
-  letter-spacing: 0.3em;
-  color: rgba(255, 255, 255, 0.7);
-  text-transform: uppercase;
-  margin-bottom: 1.5rem;
-  display: inline-block;
-  position: relative;
-}
-
-.horizons-root .eyebrow::after {
-  content: "";
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  width: 30px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.5);
+  z-index: 50;
+  background: var(--hz-line);
 }
 
-.horizons-root .about .row {
-  display: flex;
-  justify-content: space-between;
-  gap: 3rem;
-  margin-bottom: 2.5rem;
-  position: relative;
-  z-index: 1;
-}
-
-.horizons-root .about .row p {
-  width: 100%;
-  margin-bottom: 1.2em;
-  color: #fff3e6;
-  font-weight: 400;
-  line-height: 1.7;
-}
-
-.horizons-root .about .row .copy {
-  flex: 3;
-}
-
-.horizons-root .accent-line {
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg, #ffd966, #ff6a3d);
-  margin-top: 1.5rem;
-  animation: horizons-expandWidth 1s ease-out;
-  border-radius: 2px;
-}
-
-@keyframes horizons-expandWidth {
-  from {
-    width: 0;
-    opacity: 0;
-  }
-  to {
-    width: 60px;
-    opacity: 1;
-  }
-}
-
-.horizons-root .about .row .img {
-  flex: 2;
-  aspect-ratio: 7/5;
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  background: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 30px 40px -15px rgba(0, 0, 0, 0.5);
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
-.horizons-root .about .row .img:hover {
-  transform: scale(1.02);
-  box-shadow: 0 35px 45px -15px rgba(0, 0, 0, 0.6);
-}
-
-.horizons-root .abstract-art {
+.hz-progress span {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #ff6a3d, #eb001b, #ffd966);
-  background-size: 200% 200%;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--hz-accent), var(--hz-accent-soft));
+  box-shadow: 0 0 16px var(--hz-glow);
+}
+
+.hz-hud {
+  position: fixed;
+  z-index: 45;
+  bottom: clamp(1.2rem, 3vw, 2.4rem);
+  left: clamp(1.2rem, 3vw, 2.4rem);
+  right: clamp(1.2rem, 3vw, 2.4rem);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+  font-family: var(--hz-mono);
+}
+
+.hz-hud-scene {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  animation: horizons-artShift 4s ease infinite;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  color: var(--hz-muted);
+  text-transform: uppercase;
 }
 
-@keyframes horizons-artShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+.hz-hud-scene b {
+  color: var(--hz-fg);
+  font-weight: 500;
 }
 
-.horizons-root .art-layer {
-  width: 80%;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 3px;
-  animation: horizons-layerPulse 2s ease-in-out infinite;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-
-.horizons-root .art-layer:nth-child(1) {
-  width: 60%;
-  animation-delay: 0s;
-}
-.horizons-root .art-layer:nth-child(2) {
-  width: 80%;
-  animation-delay: 0.3s;
-}
-.horizons-root .art-layer:nth-child(3) {
-  width: 70%;
-  animation-delay: 0.6s;
-}
-
-@keyframes horizons-layerPulse {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scaleX(1);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scaleX(1.15);
-  }
-}
-
-.horizons-root .about h1 {
-  font-size: 10vw;
-  margin-top: 1rem;
-  background: linear-gradient(135deg, #ffe6b0, #fff8e7, #ffd700, #ffaa44);
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  position: relative;
-  z-index: 1;
-  animation: horizons-glowText 3s ease infinite;
-}
-
-@keyframes horizons-glowText {
-  0%,
-  100% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.1);
-  }
-}
-
-/* Banner with Wave Pattern */
-.horizons-root .banner-img {
-  background: linear-gradient(135deg, #0a002a, #1a003a, #2a004a);
-  background-size: 200% 200%;
-  position: relative;
-  overflow: hidden;
-  animation: horizons-bgShift 8s ease infinite;
-}
-
-.horizons-root .wave-bg {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(255, 100, 50, 0.15) 0px,
-    rgba(255, 100, 50, 0.15) 2px,
-    transparent 2px,
-    transparent 10px
-  );
-  animation: horizons-waveMove 10s linear infinite;
-}
-
-@keyframes horizons-waveMove {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 20px 20px;
-  }
-}
-
-.horizons-root .gradient-orb {
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 100, 50, 0.5),
-    rgba(255, 100, 50, 0.1),
-    transparent
-  );
-  border-radius: 50%;
-  animation: horizons-orbFloat 6s ease-in-out infinite;
-  filter: blur(30px);
-}
-
-@keyframes horizons-orbFloat {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(50px, -50px) scale(1.2);
-  }
-}
-
-.horizons-root .banner-content {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-}
-
-.horizons-root .banner-caption span {
-  display: block;
-  font-family: "Inter", sans-serif;
+.hz-hud-counter {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.72rem;
   letter-spacing: 0.2em;
+  color: var(--hz-muted);
 }
 
-.horizons-root .banner-caption span:first-child,
-.horizons-root .banner-caption span:last-child {
-  font-size: 1rem;
-  opacity: 0.7;
-}
-
-.horizons-root .banner-main {
-  font-size: 8vw;
+.hz-hud-counter strong {
+  font-family: var(--hz-display);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
   font-weight: 800;
-  background: linear-gradient(135deg, #fff, #ffd966, #ff6a3d, #ff8844);
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  margin: 1rem 0;
-  animation: horizons-bannerFlow 4s ease infinite;
+  color: var(--hz-fg);
+  line-height: 1;
+  letter-spacing: 0;
 }
 
-@keyframes horizons-bannerFlow {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.horizons-root .particles {
-  position: absolute;
+.hz-intro-overlay {
+  position: fixed;
   inset: 0;
-  pointer-events: none;
-}
-
-.horizons-root .particles::before,
-.horizons-root .particles::after {
-  content: "";
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  animation: horizons-particleFloat 3s ease-in-out infinite;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-.horizons-root .particles::before {
-  top: 20%;
-  left: 30%;
-  animation-delay: 0s;
-}
-.horizons-root .particles::after {
-  bottom: 30%;
-  right: 25%;
-  animation-delay: 1s;
-}
-
-@keyframes horizons-particleFloat {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  50% {
-    transform: translateY(-30px);
-    opacity: 1;
-  }
-}
-
-/* Story Section - enhanced */
-.horizons-root .story {
-  padding: 5rem 3rem;
-  background: radial-gradient(ellipse at 70% 30%, #f8a31c, #d9790e, #b85a08);
-  position: relative;
-  overflow: hidden;
-}
-
-.horizons-root .story::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.05) 0px,
-    rgba(255, 255, 255, 0.05) 2px,
-    transparent 2px,
-    transparent 8px
-  );
-  pointer-events: none;
-}
-
-.horizons-root .story-grid {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-}
-
-.horizons-root .story h1 {
-  font-size: 7vw;
-  font-weight: 800;
-  background: linear-gradient(115deg, #2c1a0a, #140b03, #ffdd99, #ffe6b0);
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-  cursor: pointer;
-  margin: 0.5rem 0;
-  position: relative;
-}
-
-.horizons-root .story h1::before {
-  content: "";
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #fff, #ffd966);
-  transition: width 0.4s ease;
-}
-
-.horizons-root .story h1:hover::before {
-  width: 100%;
-}
-
-.horizons-root .story h1:hover {
-  transform: translateX(20px);
-  background: linear-gradient(115deg, #ffdd99, #ffb347, #fff5cf, #ffe6b0);
-  background-size: 200% auto;
-  background-clip: text;
-}
-
-.horizons-root .story-divider {
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  margin: 0.5rem 0;
-}
-
-.horizons-root .story-accent {
-  position: absolute;
-  bottom: 2rem;
-  right: 2rem;
-  width: 100px;
-  height: 100px;
-  border-right: 2px solid rgba(255, 255, 255, 0.3);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-}
-
-.horizons-root .story-accent:hover {
-  border-color: rgba(255, 100, 50, 0.6);
-  transform: scale(1.05);
-}
-
-/* Concept Section */
-.horizons-root .concept-img {
-  background: linear-gradient(135deg, #0a0a1a, #1a0a2a, #2a0a3a);
-  background-size: 200% 200%;
-  position: relative;
-  overflow: hidden;
-  animation: horizons-bgShift 8s ease infinite;
-}
-
-.horizons-root .vortex-bg {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 100, 50, 0.15) 0%,
-    transparent 70%
-  );
-  animation: horizons-vortexSpin 10s linear infinite;
-}
-
-@keyframes horizons-vortexSpin {
-  from {
-    transform: rotate(0deg) scale(1);
-  }
-  to {
-    transform: rotate(360deg) scale(1.5);
-  }
-}
-
-.horizons-root .ring-container {
-  position: relative;
-  width: 300px;
-  height: 300px;
-  margin: 0 auto;
-}
-
-.horizons-root .ring {
-  position: absolute;
-  inset: 0;
-  border: 2px solid rgba(255, 100, 50, 0.6);
-  border-radius: 50%;
-  animation: horizons-ringExpand 3s ease-out infinite;
-  box-shadow: 0 0 20px rgba(255, 100, 50, 0.3);
-}
-
-.horizons-root .ring:nth-child(2) {
-  animation-delay: 1s;
-  border-color: rgba(255, 215, 0, 0.5);
-}
-
-.horizons-root .ring:nth-child(3) {
-  animation-delay: 2s;
-  border-color: rgba(255, 100, 50, 0.3);
-}
-
-@keyframes horizons-ringExpand {
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-}
-
-.horizons-root .concept-quote {
-  text-align: center;
-  margin-top: 3rem;
-  font-family: "Inter", serif;
-  font-size: 1.2rem;
-  font-style: italic;
-  color: white;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  font-weight: 300;
-  letter-spacing: 0.02em;
-}
-
-.horizons-root .quote-line {
-  display: block;
-  animation: horizons-fadeInUp 0.8s ease-out;
-}
-
-@keyframes horizons-fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Outro Section - enhanced */
-.horizons-root .outro {
-  background: linear-gradient(125deg, #fd5e00, #fb3c00, #c72c00, #a02000);
-  background-size: 200% 200%;
+  z-index: 60;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  animation: horizons-outroShift 5s ease infinite;
+  background: var(--hz-bg);
+  font-family: var(--hz-mono);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--hz-muted);
 }
 
-@keyframes horizons-outroShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.horizons-root .outro::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.2) 0%,
-    transparent 70%
-  );
+/* ---------- custom cursor ---------- */
+.hz-cursor-ring,
+.hz-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
   pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
 }
 
-.horizons-root .outro-content {
-  position: relative;
-  z-index: 2;
-}
-
-.horizons-root .outro-glow {
-  position: absolute;
-  inset: -50%;
-  background: radial-gradient(circle, rgba(255, 100, 50, 0.4), transparent);
-  animation: horizons-glowPulse 3s ease-in-out infinite;
-  pointer-events: none;
-  filter: blur(40px);
-}
-
-@keyframes horizons-glowPulse {
-  0%,
-  100% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
-.horizons-root .outro h1 {
-  font-size: 10vw;
-  background: linear-gradient(145deg, #fff5cf, #ffbc7a, #ffffff, #ffd966);
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  letter-spacing: 0.05em;
-  animation: horizons-subtleGlow 2s ease-in-out infinite alternate;
-  margin-bottom: 1rem;
-}
-
-@keyframes horizons-subtleGlow {
-  0% {
-    filter: brightness(1);
-  }
-  100% {
-    filter: brightness(1.2);
-    text-shadow: 0 0 30px rgba(255, 100, 0, 0.8);
-  }
-}
-
-.horizons-root .outro-line {
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, white, transparent);
-  margin: 1.5rem auto;
-  opacity: 0.5;
-  animation: horizons-lineExpand 1s ease-out;
-  border-radius: 1px;
-}
-
-@keyframes horizons-lineExpand {
-  from {
-    width: 0;
-    opacity: 0;
-  }
-  to {
-    width: 80px;
-    opacity: 0.5;
-  }
-}
-
-.horizons-root .outro p {
-  font-size: 0.9rem;
-  letter-spacing: 0.1em;
-  opacity: 0.8;
-  font-weight: 300;
-}
-
-.horizons-root .social-links {
-  margin-top: 2rem;
+.hz-cursor-ring {
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(244, 239, 233, 0.55);
+  border-radius: 50%;
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
   justify-content: center;
 }
 
-.horizons-root .social-links span {
-  font-size: 1.5rem;
-  opacity: 0.5;
-  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-  cursor: pointer;
-  display: inline-block;
+.hz-cursor-label {
+  font-family: var(--hz-mono);
+  font-size: 0.34rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hz-accent);
+  white-space: nowrap;
 }
 
-.horizons-root .social-links span:hover {
-  opacity: 1;
-  transform: translateY(-8px) scale(1.1);
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+.hz-cursor-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hz-accent);
+  mix-blend-mode: difference;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .horizons-root .about .row {
-    flex-direction: column;
-    gap: 2rem;
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .hz-arch-grid {
+    grid-template-columns: 1fr;
+    width: 86vw;
   }
-
-  .horizons-root .story h1 {
-    font-size: 12vw;
+  .hz-section--wide,
+  .hz-section--xwide {
+    width: 130vw;
   }
+  .hz-manifesto-inner {
+    max-width: 82vw;
+  }
+}
 
-  .horizons-root .horizons-cursor {
+@media (pointer: coarse) {
+  .hz,
+  .hz-social span {
+    cursor: auto;
+  }
+  .hz-cursor-ring,
+  .hz-cursor-dot {
     display: none;
   }
 }
 
-@media (max-width: 768px) {
-  .horizons-root .horizons-progress-counter {
-    bottom: 1rem;
-    right: 1rem;
-    padding: 0.4rem 1rem;
-  }
-
-  .horizons-root .section-label {
-    bottom: 1rem;
-    left: 1rem;
-    font-size: 0.7rem;
-  }
-
-  .horizons-root .hero-glitch {
-    font-size: 12vw;
-  }
-
-  .horizons-root .neon-text {
-    font-size: 12vw;
-  }
-}
-
-/* Performance */
 @media (prefers-reduced-motion: reduce) {
-  .horizons-root * {
+  .hz * {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* ========= ADDITIONAL ENHANCEMENTS: SKILLS MODULE (KEEPS ALL CLASS NAMES, NEW ELEMENTS ADDED WITHOUT CONFLICT) ========= */
-.horizons-root .skills-grid {
-  margin-top: 2rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  z-index: 2;
-  position: relative;
-}
-
-.horizons-root .skill-pill {
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  padding: 0.6rem 1.4rem;
-  border-radius: 40px;
-  font-family: "Space Mono", monospace;
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  border: 1px solid rgba(255, 215, 0, 0.5);
-  transition: all 0.25s ease;
-  color: #fff3e0;
-}
-
-.horizons-root .skill-pill:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 100, 50, 0.3);
-  border-color: #ffaa44;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-}
-
-.horizons-root .about-stats {
-  margin-top: 2rem;
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding-top: 2rem;
-}
-
-.horizons-root .stat-block {
-  flex: 1;
-  min-width: 100px;
-  text-align: left;
-}
-
-.horizons-root .stat-number {
-  font-size: 2.2rem;
-  font-weight: 800;
-  background: linear-gradient(125deg, #ffd966, #ffffff);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  font-family: "Space Mono", monospace;
-}
-
-.horizons-root .stat-label {
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  opacity: 0.7;
-  text-transform: uppercase;
-}
-
-.horizons-root .story-quote {
-  font-size: 1.3rem;
-  font-weight: 400;
-  font-style: italic;
-  margin-top: 2rem;
-  color: #fff5e6;
-  border-left: 3px solid #ffaa44;
-  padding-left: 1.5rem;
-}
-
-.horizons-root .outro-credits {
-  font-size: 0.7rem;
-  margin-top: 1rem;
-  letter-spacing: 0.2em;
-  opacity: 0.6;
 }

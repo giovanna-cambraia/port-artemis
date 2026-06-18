@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import "./AboutSection.css";
 import Horizons from "./horizontal-scroll/Horizon";
 import gsap from "gsap";
+import ArtemisSection from "./artemis-section/ArtemisSection";
 
 /* ─── Types ─── */
 interface MousePos {
@@ -316,7 +317,6 @@ function Counter({ to, suffix = "+" }: { to: number; suffix?: string }) {
 }
 
 const AboutSection = () => {
-  // Refs for all sections
   const heroRef = useRef<HTMLDivElement>(null);
   const manifestoRef = useRef<HTMLDivElement>(null);
   const galleryHeaderRef = useRef<HTMLDivElement>(null);
@@ -324,7 +324,6 @@ const AboutSection = () => {
   const skillsFooterRef = useRef<HTMLDivElement>(null);
   const ctaInnerRef = useRef<HTMLDivElement>(null);
 
-  // Hero panel state
   const [heroVisible, setHeroVisible] = useState(false);
   const tiltRef = useRef<HTMLDivElement>(null);
   const btn1 = useMagnetic();
@@ -351,22 +350,19 @@ const AboutSection = () => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
  
-      // Noise flicker on entry
       tl.fromTo(
         noiseRef.current,
         { opacity: 0 },
         { opacity: 0.06, duration: 0.4 }
       );
  
-      // Corner metadata
       tl.fromTo(
         cornerRef.current,
         { opacity: 0, y: -10 },
         { opacity: 1, y: 0, duration: 0.6 },
         0.2
       );
- 
-      // Side text vertical
+
       tl.fromTo(
         sideTextRef.current,
         { opacity: 0, x: -20 },
@@ -374,7 +370,6 @@ const AboutSection = () => {
         0.3
       );
  
-      // Blood splatter behind whale
       tl.fromTo(
         bloodSplatterRef.current,
         { opacity: 0, scale: 0.6 },
@@ -382,7 +377,6 @@ const AboutSection = () => {
         0.2
       );
  
-      // Whale SVG entrance — dramatic lunge from right
       tl.fromTo(
         whaleRef.current,
         { opacity: 0, x: 200, scale: 0.8, rotate: -8 },
@@ -390,7 +384,6 @@ const AboutSection = () => {
         0.1
       );
  
-      // Headline — character by character stagger via split trick
       const headline = headlineRef.current;
       if (headline) {
         const text = headline.getAttribute("data-text") || "";
@@ -417,7 +410,6 @@ const AboutSection = () => {
         );
       }
  
-      // Sub-headline
       tl.fromTo(
         subRef.current,
         { opacity: 0, y: 30 },
@@ -780,6 +772,10 @@ const AboutSection = () => {
           <span>EST. MMXXV</span>
           <span>v3.0.0</span>
         </div>
+      </div>
+
+        <div>
+        <ArtemisSection/>
       </div>
     </div>
   );
