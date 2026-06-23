@@ -43,7 +43,7 @@ export default function TransmissionWrapper() {
   return (
     <section
       ref={sectionRef}
-      style={{ height: "600vh", position: "relative" }}
+      style={{ height: "500vh", position: "relative" }}
       className="transmission-section"
     >
       <div
@@ -52,7 +52,7 @@ export default function TransmissionWrapper() {
       >
         <Canvas
           shadows
-          camera={{ fov: 45, position: [0, 6, 6], near: 0.1, far: 100 }}
+          camera={{ fov: 55, position: [0, 10, 10], near: 0.1, far: 100 }}
           style={{
             position: "absolute",
             inset: 0,
@@ -60,7 +60,10 @@ export default function TransmissionWrapper() {
             height: "100%",
           }}
         >
-          <Scene sectionRef={sectionRef} progressRef={progressRef} />
+          <Scene
+            sectionRef={sectionRef}
+            progressRef={progressRef}
+          />
         </Canvas>
 
         {/* Cards overlay — plain DOM, inside sticky, z-indexed above canvas */}

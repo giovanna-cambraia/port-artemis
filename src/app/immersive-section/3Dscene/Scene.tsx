@@ -6,7 +6,7 @@ import {
   RandomizedLight,
   Text,
 } from "@react-three/drei";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -165,9 +165,11 @@ function TextBlock({
 export default function Scene({
   sectionRef,
   progressRef,
+  blackHoleRef,
 }: {
   sectionRef: React.RefObject<HTMLElement> | null;
   progressRef: React.RefObject<number>;
+  blackHoleRef?: React.RefObject<THREE.Group | null>;
 }) {
   const { nodes } = useGLTF("/circle_text_13.glb");
   const { camera } = useThree();
@@ -176,12 +178,21 @@ export default function Scene({
   const transmissionMaterial = useRef<any>(null);
   const elapsedTime = useRef(0);
 
+  // Sync the torus group ref outward so BlackHolePostFX can track its
+  // screen-space position. circularText IS the group containing the torus.
+  useEffect(() => {
+    if (blackHoleRef) {
+      (blackHoleRef as React.MutableRefObject<THREE.Group | null>).current =
+        circularText.current;
+    }
+  });
+
   const pauseDuration = 3;
   const oscillationDuration = 2;
   const totalCycleDuration = oscillationDuration + pauseDuration;
 
   useFrame((state, delta) => {
-    const p = progressRef.current;
+    const p = progressRef.current ?? 0;
 
     const diveStart = 0.25;
     const diveProgress = Math.min(
