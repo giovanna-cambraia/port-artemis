@@ -165,13 +165,9 @@ function TextBlock({
 export default function Scene({
   sectionRef,
   progressRef,
-  blackHoleRef,
-  morphProgressRef,
 }: {
   sectionRef: React.RefObject<HTMLElement> | null;
   progressRef: React.RefObject<number>;
-  blackHoleRef?: React.RefObject<THREE.Group | null>;
-  morphProgressRef?: React.RefObject<number>;
 }) {
   const { nodes } = useGLTF("/circle_text_13.glb");
   const { camera } = useThree();
@@ -181,21 +177,12 @@ export default function Scene({
   const transmissionMaterial = useRef<any>(null);
   const elapsedTime = useRef(0);
 
-  // Sync the torus group ref outward so BlackHolePostFX can track its
-  // screen-space position for the lensing center.
-  useEffect(() => {
-    if (blackHoleRef) {
-      (blackHoleRef as React.MutableRefObject<THREE.Group | null>).current =
-        torusGroupRef.current;
-    }
-  });
-
   const pauseDuration = 3;
   const oscillationDuration = 2;
   const totalCycleDuration = oscillationDuration + pauseDuration;
 
   useFrame((state, delta) => {
-    const p = progressRef.current;
+    const p = progressRef.current ?? 0;
 
     const diveStart = 0.25;
     const diveProgress = Math.min(

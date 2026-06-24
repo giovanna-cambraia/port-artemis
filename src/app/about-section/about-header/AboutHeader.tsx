@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import "./AboutSection.css";
-// Horizons import removed — now rendered standalone in hero/page.tsx
+import "../AboutSection.css";
 import gsap from "gsap";
-import ArtemisSection from "./artemis-section/ArtemisSection";
 
 /* ─── Types ─── */
 interface MousePos {
@@ -316,7 +314,7 @@ function Counter({ to, suffix = "+" }: { to: number; suffix?: string }) {
   );
 }
 
-const AboutSection = () => {
+const AboutHeader = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const manifestoRef = useRef<HTMLDivElement>(null);
   const galleryHeaderRef = useRef<HTMLDivElement>(null);
@@ -618,8 +616,6 @@ const AboutSection = () => {
     if (skillsFooterRef.current)
       skillsObserver.observe(skillsFooterRef.current);
 
-    // CTA observer removed — moved to CtaSection.tsx along with the panel
-
     return () => {
       heroObserver.disconnect();
       manifestoObserver.disconnect();
@@ -694,9 +690,8 @@ const AboutSection = () => {
           </div>
         </div>
       </section>
-      
     </div>
   );
 };
 
-export default AboutSection;
+export default AboutHeader;

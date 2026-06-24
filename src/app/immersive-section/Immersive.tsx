@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import "./Immersive.css";
-import TransmissionWrapper from "./3Dscene/TransmissionWrapper";
-import ProjectsSection from "../about-section/AboutSection";
 
+// NOTE: This component is now ONLY the "W" portal zoom beat.
+// TransmissionWrapper (black hole dive) lives as its own sibling section
+// in hero/page.tsx — it is NOT nested in here anymore. See that file for
+// the full page order.
 export function ImmersiveSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
