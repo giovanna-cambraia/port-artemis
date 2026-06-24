@@ -12,6 +12,7 @@ export default function Home() {
       <FeaturesSection />
       <ImmersiveSection />
       <AboutSection />
+      {/* <TransmissionWrapper/> */}
       <Footer />
     </>
   );
