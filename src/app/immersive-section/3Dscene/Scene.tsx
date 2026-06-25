@@ -165,27 +165,17 @@ function TextBlock({
 export default function Scene({
   sectionRef,
   progressRef,
-  blackHoleRef,
 }: {
   sectionRef: React.RefObject<HTMLElement> | null;
   progressRef: React.RefObject<number>;
-  blackHoleRef?: React.RefObject<THREE.Group | null>;
 }) {
   const { nodes } = useGLTF("/circle_text_13.glb");
   const { camera } = useThree();
 
   const circularText = useRef<THREE.Group>(null);
+  const torusGroupRef = useRef<THREE.Group | null>(null);
   const transmissionMaterial = useRef<any>(null);
   const elapsedTime = useRef(0);
-
-  // Sync the torus group ref outward so BlackHolePostFX can track its
-  // screen-space position. circularText IS the group containing the torus.
-  useEffect(() => {
-    if (blackHoleRef) {
-      (blackHoleRef as React.MutableRefObject<THREE.Group | null>).current =
-        circularText.current;
-    }
-  });
 
   const pauseDuration = 3;
   const oscillationDuration = 2;

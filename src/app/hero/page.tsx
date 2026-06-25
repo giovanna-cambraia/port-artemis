@@ -58,6 +58,7 @@ export default function Home() {
       <ScrollSection />
       <TransmissionWrapper />
       <AboutSection />
+      {/* <TransmissionWrapper/> */}
       <Footer />
     </>
   );
