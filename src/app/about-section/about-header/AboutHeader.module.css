@@ -1,0 +1,397 @@
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: #000;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── OVERLAY ─────────────────────────────────────────────────── */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOP BAR ─────────────────────────────────────────────────── */
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.3rem 3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.topLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.22);
+  text-transform: uppercase;
+}
+
+.liveDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #e03030;
+  animation: livePulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(224,48,48,0.5); }
+  50% { opacity: 0.3; box-shadow: 0 0 6px 3px rgba(224,48,48,0); }
+}
+
+.topCenter {
+  font-family: 'Courier New', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.12);
+  text-transform: uppercase;
+}
+
+.topRight {
+  font-family: 'Courier New', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  color: rgba(224,48,48,0.5);
+  text-transform: uppercase;
+}
+
+/* ── MAIN ────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 0 3rem;
+  gap: 4rem;
+}
+
+/* ── LEFT ────────────────────────────────────────────────────── */
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sub {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(0.52rem, 0.8vw, 0.64rem);
+  letter-spacing: 0.28em;
+  color: rgba(255,255,255,0.22);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.name {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 0.88;
+  gap: 0.05em;
+}
+
+.nameFirst {
+  display: block;
+  font-family: 'Arial Black', 'Impact', sans-serif;
+  font-size: clamp(3.8rem, 9vw, 9rem);
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+
+.nameLast {
+  display: block;
+  font-family: 'Arial Black', 'Impact', sans-serif;
+  font-size: clamp(3.8rem, 9vw, 9rem);
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 1.4rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.statValue {
+  font-family: 'Arial Black', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 900;
+  color: #e03030;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.statLabel {
+  font-family: 'Courier New', monospace;
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+}
+
+/* ── RIGHT ───────────────────────────────────────────────────── */
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  align-items: flex-start;
+}
+
+/* Skill box */
+.skillBox {
+  position: relative;
+  width: 100%;
+  padding: 2rem 2.2rem 1.6rem;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* corner brackets */
+.corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: #e03030;
+  border-style: solid;
+  opacity: 0.7;
+}
+.cornerTL { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.cornerTR { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+.cornerBL { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.cornerBR { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+.skillHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.skillHeaderDash {
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem;
+  color: #e03030;
+  opacity: 0.7;
+}
+
+.skillHeaderLabel {
+  font-family: 'Courier New', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+}
+
+.skillCategory {
+  font-family: 'Courier New', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  color: #e03030;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.skillName {
+  font-family: 'Arial Black', 'Impact', sans-serif;
+  font-size: clamp(2rem, 4.5vw, 4rem);
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 1.6rem;
+}
+
+/* glitch effect on transition */
+.glitch {
+  animation: glitchFlash 0.32s steps(2) forwards;
+}
+
+@keyframes glitchFlash {
+  0%   { opacity: 1; transform: translateX(0); filter: none; }
+  20%  { opacity: 0.4; transform: translateX(-4px); filter: hue-rotate(90deg); }
+  40%  { opacity: 0.8; transform: translateX(3px); filter: brightness(2); }
+  60%  { opacity: 0.3; transform: translateX(-2px); }
+  80%  { opacity: 0.9; transform: translateX(1px); filter: none; }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.skillFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 0.9rem;
+}
+
+.skillDots {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.skillDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.skillDotActive {
+  background: #e03030;
+  transform: scale(1.4);
+}
+
+.skillIdx {
+  font-family: 'Courier New', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.2);
+}
+
+/* Stack list */
+.stackList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  width: 100%;
+}
+
+.stackItem {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  color: rgba(255,255,255,0.18);
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+.stackItemActive {
+  color: rgba(255,255,255,0.7);
+}
+
+.stackIdx {
+  color: #e03030;
+  opacity: 0.4;
+  font-size: 0.46rem;
+}
+
+/* ── BOTTOM ──────────────────────────────────────────────────── */
+.bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 1.4rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.ticker {
+  width: 100%;
+  overflow: hidden;
+  padding: 0.5rem 0;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.tickerTrack {
+  display: flex;
+  width: max-content;
+  animation: ticker 22s linear infinite;
+}
+
+.tickerItem {
+  font-family: 'Courier New', monospace;
+  font-size: 0.54rem;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.12);
+  white-space: nowrap;
+  padding: 0 1.4rem;
+  text-transform: uppercase;
+}
+
+.tickerDot { color: #e03030; opacity: 0.5; }
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.333%); }
+}
+
+.scrollHint {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.52rem;
+  letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.15);
+  animation: hintBlink 3s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+.scrollLine {
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+@keyframes hintBlink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ── MOBILE ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .main {
+    grid-template-columns: 1fr;
+    padding: 0 1.4rem;
+    gap: 2rem;
+    align-items: start;
+    padding-top: 2rem;
+  }
+  .topBar { padding: 1.2rem 1.4rem; }
+  .nameLast { -webkit-text-stroke-width: 1px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tickerTrack { animation: none; }
+  .scrollHint  { animation: none; }
+  .liveDot     { animation: none; }
+  .glitch      { animation: none; }
+}

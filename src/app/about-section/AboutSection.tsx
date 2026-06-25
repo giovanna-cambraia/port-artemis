@@ -2,9 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import "./AboutSection.css";
-// Horizons import removed — now rendered standalone in hero/page.tsx
 import gsap from "gsap";
-import ArtemisSection from "./artemis-section/ArtemisSection";
 
 /* ─── Types ─── */
 interface MousePos {
