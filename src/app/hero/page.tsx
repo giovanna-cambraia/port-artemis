@@ -7,46 +7,7 @@ import TransmissionWrapper from "../immersive-section/3Dscene/TransmissionWrappe
 import Footer from "./footer/Footer";
 import ScrollSection from "../about-section/horizontal-scroll/ScrollSection";
 import AboutHeader from "../about-section/about-header/AboutHeader";
-
-function HeaderPlaceholder() {
-  return (
-    <section
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#444",
-        fontFamily: "monospace",
-        fontSize: "1.2rem",
-        border: "1px dashed #333",
-      }}
-    >
-      {/* TODO: Header section — not built yet */}
-      [ HEADER — placeholder ]
-    </section>
-  );
-}
-
-function MinimalStuffPlaceholder() {
-  return (
-    <section
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#444",
-        fontFamily: "monospace",
-        fontSize: "1.2rem",
-        border: "1px dashed #333",
-      }}
-    >
-      {/* TODO: "Minimal stuff" section — not built yet */}
-      [ MINIMAL STUFF — placeholder ]
-    </section>
-  );
-}
+import StatueSection from "../about-section/statue-section/StatueSection";
 
 export default function Home() {
   return (
@@ -56,9 +17,9 @@ export default function Home() {
       <ImmersiveSection />
       <AboutHeader />
       <ScrollSection />
+      <StatueSection />
       <TransmissionWrapper />
       <AboutSection />
-      {/* <TransmissionWrapper/> */}
       <Footer />
     </>
   );
