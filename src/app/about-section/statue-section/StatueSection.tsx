@@ -234,8 +234,8 @@ export default function StatueSection() {
 
       {/* Top — big name bleeding off edges */}
       <div ref={topTextRef} className={styles.topText} style={{ opacity: 0 }}>
-        <span className={styles.topName}>HEAD INTO</span>
-        <span className={styles.topNameOutline}>THE ABYSS</span>
+        <span className={styles.topName}>THE REAL</span>
+        <span className={styles.topNameOutline}>YOU</span>
       </div>
 
       {/* Left vertical text */}
@@ -252,13 +252,7 @@ export default function StatueSection() {
         <span className={styles.verticalText}>ENGINEER</span>
       </div>
 
-      {/* HUD overlays */}
       <div ref={hudRef} className={styles.hud} style={{ opacity: 0 }}>
-        {/* top-left bracket */}
-        <div className={styles.hudTL}>
-          <span className={styles.hudLabel}>// REF: THE REAL YOU</span>
-        </div>
-        {/* top-right */}
         <div className={styles.hudTR}>
           <span className={styles.hudLabel}>DIONYSOS · MARBLE</span>
         </div>
