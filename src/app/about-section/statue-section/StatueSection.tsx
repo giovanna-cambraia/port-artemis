@@ -2,208 +2,252 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import styles from "./StatueSection.module.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function StatueSection() {
+// side: "left" = text left / statue right, "right" = text right / statue left
+const SECTIONS = [
+  {
+    signal: "SIGNAL_01 // ORIGIN",
+    headline: ["HEAD", "INTO THE", "ABYSS."],
+    body: "Started with hardware.\nEnded up everywhere.\nEmbedded systems, backends,\nthe occasional star map.",
+    side: "left",
+  },
+  {
+    signal: "SIGNAL_02 // CRAFT",
+    headline: ["STRUCTURE", "OR", "CHAOS."],
+    body: "NestJS · C · TypeScript · ARM.\nI don't pick tools.\nI pick the right level\nof control.",
+    side: "right",
+  },
+  {
+    signal: "SIGNAL_03 // TRAJECTORY",
+    headline: ["AIMED", "AT", "ORBIT."],
+    body: "ITA. INPE. Robotics.\nSpace engineering.\nEvery project is a stage\nin the launch sequence.",
+    side: "left",
+  },
+  {
+    signal: "SIGNAL_04 // NOW",
+    headline: ["STILL", "TRANS", "MITTING."],
+    body: "Signal ongoing.\nNo end timestamp.\n\n// REF: THE REAL YOU",
+    side: "right",
+  },
+] as const;
+
+export default function StatueScene() {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const leftTextRef = useRef<HTMLDivElement>(null);
-  const rightTextRef = useRef<HTMLDivElement>(null);
-  const topTextRef = useRef<HTMLDivElement>(null);
-  const bottomTextRef = useRef<HTMLDivElement>(null);
-  const hudRef = useRef<HTMLDivElement>(null);
+  const signalRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const headlineRefs = useRef<(HTMLHeadingElement | null)[]>([]);
+  const bodyRefs = useRef<(HTMLParagraphElement | null)[]>([]);
 
   useEffect(() => {
-    if (!canvasRef.current || !sectionRef.current) return;
+    if (!canvasRef.current || !wrapperRef.current) return;
 
-    // ── RENDERER ─────────────────────────────────────────────────
+    // ── RENDERER ──────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x000000, 0);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.8;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     canvasRef.current.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-      45,
+      38,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000,
+      200
     );
-    camera.position.set(0, 0, 5);
+    camera.position.set(0, 0, 6);
 
-    // ── MOUSE TRACKING ───────────────────────────────────────────
-    const mouse = { x: 0, y: 0 };
-    const onMouseMove = (e: MouseEvent) => {
-      mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
-      mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;
-    };
-    window.addEventListener("mousemove", onMouseMove);
+    // ── LIGHTS — much stronger so statue is unmissable ────────────
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
-    // ── LOAD MODEL ───────────────────────────────────────────────
-    const loader = new GLTFLoader();
+    // strong front key
+    const keyLight = new THREE.DirectionalLight(0xffffff, 8);
+    keyLight.position.set(1, 3, 6);
+    scene.add(keyLight);
+
+    // blue rim for iridescent feel
+    const rimBlue = new THREE.DirectionalLight(0x88ccff, 5);
+    rimBlue.position.set(-5, 2, -2);
+    scene.add(rimBlue);
+
+    // red fill
+    const rimRed = new THREE.DirectionalLight(0xff3300, 4);
+    rimRed.position.set(4, -2, -3);
+    scene.add(rimRed);
+
+    // top
+    const topLight = new THREE.DirectionalLight(0xffffff, 4);
+    topLight.position.set(0, 8, 1);
+    scene.add(topLight);
+
+    // glowing point
+    const glow = new THREE.PointLight(0xffffff, 12, 5);
+    glow.position.set(0, 1, 3);
+    scene.add(glow);
+
+    // ── MODEL ─────────────────────────────────────────────────────
     const group = new THREE.Group();
     scene.add(group);
 
-    // subtle red point light inside
-    const redLight = new THREE.PointLight(0xe03030, 0, 3);
-    redLight.position.set(0, 0, 0);
-    group.add(redLight);
-
+    const loader = new GLTFLoader();
     loader.load(
       "/models/marble_torso_from_a_statue_of_dionysos.glb",
       (gltf) => {
         const model = gltf.scene;
 
-        // compute bounding box to center + scale
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 3.2 / maxDim;
 
+        // center and scale to fill more of the screen
         model.position.sub(center);
-        model.scale.setScalar(scale);
+        model.scale.setScalar(4.2 / maxDim);
 
-        // convert every mesh to wireframe edges
+        // bright metallic material — picks up all the colored lights
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
-            const edges = new THREE.EdgesGeometry(mesh.geometry, 15);
-            const mat = new THREE.LineBasicMaterial({
-              color: 0xffffff,
-              transparent: true,
-              opacity: 0.75,
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: 0x888888,    // mid-grey so colors from lights read clearly
+              metalness: 0.9,
+              roughness: 0.15,
+              envMapIntensity: 2,
             });
-            const wireframe = new THREE.LineSegments(edges, mat);
-            wireframe.position.copy(mesh.position);
-            wireframe.rotation.copy(mesh.rotation);
-            wireframe.scale.copy(mesh.scale);
-            mesh.parent?.add(wireframe);
-            mesh.visible = false;
           }
         });
 
         group.add(model);
 
-        // entrance animation
-        group.scale.setScalar(0);
-        gsap.to(group.scale, {
-          x: 1,
-          y: 1,
-          z: 1,
-          duration: 1.4,
-          ease: "power3.out",
-          delay: 0.3,
-        });
-
-        // red light pulse on load
-        gsap.to(redLight, {
-          intensity: 2,
-          duration: 0.8,
-          yoyo: true,
-          repeat: 3,
-          ease: "power2.inOut",
-          delay: 0.3,
-        });
+        // entrance
+        group.position.y = -2.5;
+        group.scale.setScalar(0.3);
+        gsap.to(group.position, { y: 0, duration: 2, ease: "power3.out" });
+        gsap.to(group.scale, { x: 1, y: 1, z: 1, duration: 2, ease: "power3.out" });
       },
       undefined,
-      (err) => console.error("GLB load error:", err),
+      (err) => console.error("GLB error:", err)
     );
 
-    // ── AMBIENT PARTICLES ────────────────────────────────────────
-    const particleCount = 120;
-    const positions = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
-    }
-    const particleGeo = new THREE.BufferGeometry();
-    particleGeo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3),
-    );
-    const particleMat = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.012,
-      transparent: true,
-      opacity: 0.35,
+    // ── CANVAS VISIBILITY ─────────────────────────────────────────
+    const canvasEl = canvasRef.current;
+    ScrollTrigger.create({
+      trigger: wrapperRef.current,
+      start: "top bottom",
+      end: "bottom top",
+      onEnter:      () => gsap.to(canvasEl, { opacity: 1, duration: 0.5 }),
+      onLeave:      () => gsap.to(canvasEl, { opacity: 0, duration: 0.5 }),
+      onEnterBack:  () => gsap.to(canvasEl, { opacity: 1, duration: 0.5 }),
+      onLeaveBack:  () => gsap.to(canvasEl, { opacity: 0, duration: 0.5 }),
     });
-    scene.add(new THREE.Points(particleGeo, particleMat));
 
-    // ── RENDER LOOP ───────────────────────────────────────────────
+    // ── SCROLL → ROTATION ─────────────────────────────────────────
+    const targetRot = { y: -0.4 };
+    ScrollTrigger.create({
+      trigger: wrapperRef.current,
+      start: "top top",
+      end: "bottom bottom",
+      scrub: 2.5,
+      onUpdate: (self) => {
+        targetRot.y = -0.4 + self.progress * Math.PI * 1.6;
+      },
+    });
+
+    // ── TEXT ANIMATIONS ───────────────────────────────────────────
+    SECTIONS.forEach((section, i) => {
+      const signal   = signalRefs.current[i];
+      const headline = headlineRefs.current[i];
+      const body     = bodyRefs.current[i];
+      const lines    = headline?.querySelectorAll(`.${styles.headlineLine}`);
+      const isLeft   = section.side === "left";
+
+      const pct = (v: number) => `${v}%`;
+      const s  = i * 25;       // section start %
+      const e  = (i + 1) * 25; // section end %
+      const inE  = pct(s + 9);
+      const outS = pct(e - 9);
+      const outE = pct(e);
+
+      const wrap = wrapperRef.current!;
+
+      // signal
+      gsap.fromTo(signal,
+        { opacity: 0, x: isLeft ? -24 : 24 },
+        { opacity: 1, x: 0, scrollTrigger: { trigger: wrap, start: pct(s), end: inE, scrub: true } }
+      );
+      gsap.fromTo(signal,
+        { opacity: 1, x: 0 },
+        { opacity: 0, x: isLeft ? -24 : 24, scrollTrigger: { trigger: wrap, start: outS, end: outE, scrub: true } }
+      );
+
+      // headline lines — alternate slide direction
+      lines?.forEach((line, j) => {
+        const xIn  =  isLeft ? -(60 + j * 20) :  (60 + j * 20);
+        const xOut = -xIn * 0.6;
+        gsap.fromTo(line,
+          { opacity: 0, x: xIn, filter: "blur(10px)" },
+          { opacity: 1, x: 0,   filter: "blur(0px)",  scrollTrigger: { trigger: wrap, start: pct(s), end: inE, scrub: true } }
+        );
+        gsap.fromTo(line,
+          { opacity: 1, x: 0,    filter: "blur(0px)" },
+          { opacity: 0, x: xOut, filter: "blur(6px)",  scrollTrigger: { trigger: wrap, start: outS, end: outE, scrub: true } }
+        );
+      });
+
+      // body — slides from opposite side to headline
+      const bodyXIn = isLeft ? 30 : -30;
+      gsap.fromTo(body,
+        { opacity: 0, y: 16, x: bodyXIn },
+        { opacity: 1, y: 0,  x: 0, scrollTrigger: { trigger: wrap, start: pct(s + 4), end: pct(s + 14), scrub: true } }
+      );
+      gsap.fromTo(body,
+        { opacity: 1 },
+        { opacity: 0, scrollTrigger: { trigger: wrap, start: outS, end: outE, scrub: true } }
+      );
+    });
+
+    // ── MOUSE + RENDER LOOP ───────────────────────────────────────
+    const mouse = { x: 0, y: 0 };
+    const onMouse = (e: MouseEvent) => {
+      mouse.x = e.clientX / window.innerWidth - 0.5;
+      mouse.y = e.clientY / window.innerHeight - 0.5;
+    };
+    window.addEventListener("mousemove", onMouse);
+
     let rafId: number;
     const clock = new THREE.Clock();
-    const targetRot = { x: 0, y: 0 };
-    const currentRot = { x: 0, y: 0 };
+    let curY = -0.4, curX = 0;
 
     const animate = () => {
       rafId = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
-      // auto rotate + mouse parallax
-      targetRot.y = t * 0.18 + mouse.x * 0.25;
-      targetRot.x = mouse.y * 0.12;
+      curY += (targetRot.y - curY) * 0.04;
+      curX += (mouse.y * 0.1 - curX) * 0.04;
 
-      currentRot.x += (targetRot.x - currentRot.x) * 0.04;
-      currentRot.y += (targetRot.y - currentRot.y) * 0.04;
+      group.rotation.y = curY + mouse.x * 0.06;
+      group.rotation.x = curX;
+      group.position.y = Math.sin(t * 0.5) * 0.06;
 
-      group.rotation.y = currentRot.y;
-      group.rotation.x = currentRot.x;
-
-      // breathing scale
-      const breathe = 1 + Math.sin(t * 0.8) * 0.008;
-      if (group.scale.x > 0.1) {
-        group.scale.setScalar(group.scale.x > 0.95 ? breathe : group.scale.x);
-      }
-
-      // red light flicker
-      redLight.intensity = Math.max(0, Math.sin(t * 3.5) * 0.4);
+      // orbit colored lights for iridescence
+      rimBlue.position.x = Math.sin(t * 0.4) * 5;
+      rimBlue.position.z = Math.cos(t * 0.4) * 3 - 2;
+      rimRed.position.x  = Math.cos(t * 0.3) * 4;
+      glow.intensity     = 10 + Math.sin(t * 1.8) * 4;
 
       renderer.render(scene, camera);
     };
     animate();
 
-    // ── GSAP INTRO ───────────────────────────────────────────────
-    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    tl.fromTo(
-      topTextRef.current,
-      { opacity: 0, y: -30 },
-      { opacity: 1, y: 0, duration: 0.9 },
-      0.2,
-    )
-      .fromTo(
-        leftTextRef.current,
-        { opacity: 0, x: -30 },
-        { opacity: 1, x: 0, duration: 0.9 },
-        0.4,
-      )
-      .fromTo(
-        rightTextRef.current,
-        { opacity: 0, x: 30 },
-        { opacity: 1, x: 0, duration: 0.9 },
-        0.4,
-      )
-      .fromTo(
-        bottomTextRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.9 },
-        0.6,
-      )
-      .fromTo(
-        hudRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.6 },
-        0.8,
-      );
-
-    // ── RESIZE ───────────────────────────────────────────────────
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -213,10 +257,9 @@ export default function StatueSection() {
 
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mousemove", onMouse);
       window.removeEventListener("resize", onResize);
       ScrollTrigger.getAll().forEach((t) => t.kill());
-      tl.kill();
       renderer.dispose();
       if (canvasRef.current?.contains(renderer.domElement)) {
         canvasRef.current.removeChild(renderer.domElement);
@@ -225,38 +268,60 @@ export default function StatueSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className={styles.section}>
-      {/* Three.js canvas */}
-      <div ref={canvasRef} className={styles.canvas} />
-
-      {/* Noise */}
+    <div ref={wrapperRef} className={styles.wrapper}>
+      <div ref={canvasRef} className={styles.canvas} style={{ opacity: 0 }} />
       <div className={styles.noise} />
+      <div className={styles.chromaLine} />
 
-      {/* Top — big name bleeding off edges */}
-      <div ref={topTextRef} className={styles.topText} style={{ opacity: 0 }}>
-        <span className={styles.topName}>THE REAL</span>
-        <span className={styles.topNameOutline}>YOU</span>
+      <div className={styles.content}>
+        {SECTIONS.map((section, i) => (
+          <div
+            key={i}
+            className={`${styles.section} ${section.side === "right" ? styles.sectionRight : styles.sectionLeft}`}
+          >
+            {/* text block — switches side per section */}
+            <div className={styles.textBlock}>
+              <div
+                ref={(el) => { signalRefs.current[i] = el; }}
+                className={styles.signal}
+              >
+                <span className={styles.signalDash}>——</span>
+                {section.signal}
+              </div>
+
+              <h2
+                ref={(el) => { headlineRefs.current[i] = el; }}
+                className={styles.headline}
+              >
+                {section.headline.map((line, j) => (
+                  <span key={j} className={styles.headlineLine}>{line}</span>
+                ))}
+              </h2>
+
+              <p
+                ref={(el) => { bodyRefs.current[i] = el; }}
+                className={styles.body}
+              >
+                {section.body.split("\n").map((line, j) => (
+                  <span key={j}>{line}<br /></span>
+                ))}
+              </p>
+            </div>
+
+            {/* spacer — statue lives here visually */}
+            <div className={styles.statueSide} />
+
+            <span className={styles.sectionNum}>0{i + 1} / 0{SECTIONS.length}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Left vertical text */}
-      <div ref={leftTextRef} className={styles.leftText} style={{ opacity: 0 }}>
-        <span className={styles.verticalText}>SYSTEMS</span>
+      <div className={styles.hud}>
+        <div className={styles.hudTL}><span className={styles.liveDot} />BROADCAST · LIVE</div>
+        <div className={styles.hudTR}>DIONYSOS · MARBLE</div>
+        <div className={styles.hudBL}>// REF: THE REAL YOU</div>
+        <div className={styles.hudBR}>GIOVANNA CAMBRAIA</div>
       </div>
-
-      {/* Right vertical text */}
-      <div
-        ref={rightTextRef}
-        className={styles.rightText}
-        style={{ opacity: 0 }}
-      >
-        <span className={styles.verticalText}>ENGINEER</span>
-      </div>
-
-      <div ref={hudRef} className={styles.hud} style={{ opacity: 0 }}>
-        <div className={styles.hudTR}>
-          <span className={styles.hudLabel}>DIONYSOS · MARBLE</span>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 }
