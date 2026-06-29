@@ -316,12 +316,7 @@ export default function StatueScene() {
         ))}
       </div>
 
-      <div className={styles.hud}>
-        <div className={styles.hudTL}><span className={styles.liveDot} />BROADCAST · LIVE</div>
-        <div className={styles.hudTR}>DIONYSOS · MARBLE</div>
-        <div className={styles.hudBL}>// REF: THE REAL YOU</div>
-        <div className={styles.hudBR}>GIOVANNA CAMBRAIA</div>
-      </div>
+   
     </div>
   );
 }

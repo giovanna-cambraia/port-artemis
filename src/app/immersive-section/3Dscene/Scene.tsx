@@ -236,8 +236,6 @@ export default function Scene({
       <color args={["black"]} attach="background" />
       <ambientLight intensity={0.5} />
 
-      <TextBlock content="THE ABYSS" y={1.8} size={0.35} />
-      <TextBlock content="DRIFT INTO" y={2.6} size={0.35} />
 
       <group rotation={[-0.01, 0.9, 0.01]}>
         <spotLight

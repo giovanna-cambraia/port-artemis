@@ -196,40 +196,7 @@
   pointer-events: none;
 }
 
-.hudTL,
-.hudTR,
-.hudBL,
-.hudBR {
-  position: absolute;
-  font-family: "Courier New", monospace;
-  font-size: 0.52rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-.hudTL {
-  top: 1.3rem;
-  left: 3.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.2);
-}
-.hudTR {
-  top: 1.3rem;
-  right: 3.5rem;
-  color: rgba(224, 48, 48, 0.4);
-}
-.hudBL {
-  bottom: 1.6rem;
-  left: 3.5rem;
-  color: rgba(224, 48, 48, 0.28);
-  font-size: 0.44rem;
-}
-.hudBR {
-  bottom: 1.6rem;
-  right: 3.5rem;
-  color: rgba(255, 255, 255, 0.12);
-}
+
 
 .liveDot {
   display: inline-block;
@@ -271,9 +238,7 @@
   .hudTL {
     left: 1.4rem;
   }
-  .hudTR {
-    right: 1.4rem;
-  }
+
   .hudBL {
     left: 1.4rem;
   }
