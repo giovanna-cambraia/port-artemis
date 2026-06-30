@@ -10,7 +10,7 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.6s ease;
 }
 .canvas canvas {
   width: 100% !important;
@@ -73,6 +73,69 @@
   }
 }
 
+/* flash on section change */
+.glitchOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(224, 48, 48, 0.06),
+    transparent 40%,
+    transparent 60%,
+    rgba(68, 136, 255, 0.06)
+  );
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+/* ── PROGRESS BAR ────────────────────────────────────────────── */
+.progressTrack {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  z-index: 10;
+}
+.progressFill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #e03030, #ff6644);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+/* ── DOT NAV ─────────────────────────────────────────────────── */
+.dotNav {
+  position: fixed;
+  right: 1.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  pointer-events: none;
+}
+.navDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition:
+    background 0.4s ease,
+    transform 0.4s ease,
+    box-shadow 0.4s ease;
+}
+.dotActive {
+  background: #e03030;
+  transform: scale(2.2);
+  box-shadow: 0 0 8px rgba(224, 48, 48, 0.6);
+}
+
 /* ── CONTENT ─────────────────────────────────────────────────── */
 .content {
   position: relative;
@@ -80,7 +143,6 @@
   pointer-events: none;
 }
 
-/* Each section is 100vh, splits into text | statue */
 .section {
   position: relative;
   height: 100vh;
@@ -89,7 +151,6 @@
   padding: 3rem 3.5rem;
 }
 
-/* text LEFT, statue right */
 .sectionLeft {
   grid-template-columns: 44% 1fr;
   grid-template-areas:
@@ -97,7 +158,6 @@
     "num  statue";
 }
 
-/* text RIGHT, statue left */
 .sectionRight {
   grid-template-columns: 1fr 44%;
   grid-template-areas:
@@ -109,7 +169,7 @@
   grid-area: text;
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: 1.6rem;
 }
 
 .statueSide {
@@ -119,11 +179,15 @@
 .sectionNum {
   grid-area: num;
   font-family: "Courier New", monospace;
-  font-size: 0.54rem;
-  letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.1);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.18);
   align-self: end;
-  /* left sections: align left, right sections: align right */
+  opacity: 0;
+}
+.numSlash {
+  color: rgba(224, 48, 48, 0.5);
+  margin: 0 0.2em;
 }
 .sectionLeft .sectionNum {
   justify-self: start;
@@ -132,15 +196,15 @@
   justify-self: end;
 }
 
-/* ── TEXT ELEMENTS — all start hidden, GSAP drives them ──────── */
+/* ── SIGNAL LABEL ────────────────────────────────────────────── */
 .signal {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   font-family: "Courier New", monospace;
   font-size: 0.58rem;
   letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.32);
   text-transform: uppercase;
   opacity: 0;
 }
@@ -148,31 +212,56 @@
   color: #e03030;
   opacity: 0.7;
 }
+.coords {
+  margin-left: 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(224, 48, 48, 0.55);
+  opacity: 0;
+}
 
+/* ── HEADLINE — masked reveal wrappers ──────────────────────── */
 .headline {
   margin: 0;
   display: flex;
   flex-direction: column;
   line-height: 0.88;
-  gap: 0.02em;
+  gap: 0.04em;
 }
+
+.lineMask {
+  overflow: hidden;
+  /* clip-path animated by GSAP */
+}
+
 .headlineLine {
-  display: block;
+  display: inline-block;
   font-family: "Arial Black", "Impact", sans-serif;
   font-size: clamp(2.8rem, 7.5vw, 8.5rem);
   font-weight: 900;
   color: #fff;
   text-transform: uppercase;
   letter-spacing: -0.03em;
-  opacity: 0;
+  will-change: transform, opacity;
 }
 
-/* right-side sections: right-align text */
 .sectionRight .headlineLine {
   text-align: right;
 }
+.sectionRight .lineMask {
+  display: flex;
+  justify-content: flex-end;
+}
 .sectionRight .signal {
   justify-content: flex-end;
+}
+.sectionRight .coords {
+  border-left: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  margin-left: 0;
+  margin-right: 0.6rem;
+  padding-left: 0;
+  padding-right: 0.6rem;
 }
 .sectionRight .body {
   text-align: right;
@@ -182,38 +271,10 @@
   font-family: "Courier New", monospace;
   font-size: clamp(0.6rem, 1vw, 0.75rem);
   line-height: 2.1;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.05em;
   margin: 0;
   opacity: 0;
-}
-
-/* ── FIXED HUD ───────────────────────────────────────────────── */
-.hud {
-  position: fixed;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-}
-
-
-
-.liveDot {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #e03030;
-  animation: livePulse 1.4s ease-in-out infinite;
-}
-@keyframes livePulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.15;
-  }
 }
 
 /* ── MOBILE ──────────────────────────────────────────────────── */
@@ -235,23 +296,16 @@
   .sectionRight .body {
     text-align: left;
   }
-  .hudTL {
-    left: 1.4rem;
+  .sectionRight .lineMask {
+    justify-content: flex-start;
   }
-
-  .hudBL {
-    left: 1.4rem;
-  }
-  .hudBR {
-    right: 1.4rem;
+  .dotNav {
+    right: 0.8rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .noise {
-    animation: none;
-  }
-  .liveDot {
     animation: none;
   }
   .chromaLine {

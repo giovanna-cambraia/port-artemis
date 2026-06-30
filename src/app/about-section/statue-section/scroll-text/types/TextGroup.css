@@ -1,0 +1,70 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 100px;
+  margin-bottom: 10vh;
+}
+
+.el {
+  white-space: nowrap;
+  filter: blur(0px);
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.el--xl {
+  font-size: clamp(2rem, 20vw, 15rem);
+  opacity: 1;
+  font-family: 'lores-12', sans-serif;
+  font-weight: 400;
+}
+
+.pos-1 {
+  /* Default position */
+}
+
+.pos-2 {
+  margin-left: 25vw;
+}
+
+.pos-3 {
+  margin-left: 70vw;
+}
+
+.pos-4 {
+  margin-left: auto;
+}
+
+.pos-5 {
+  margin-top: 200px;
+  opacity: 1;
+}
+
+.pos-6 {
+  margin-left: auto;
+  margin-top: 200px;
+  opacity: 1;
+}
+
+.pos-7 {
+  margin-top: 200px;
+  opacity: 1;
+  filter: blur(1.2px);
+}
+
+.pos-8 {
+  margin-left: 25vw;
+  margin-top: 50px;
+  opacity: 1;
+  filter: blur(2px);
+}
+
+.pos-9 {
+  margin-left: 25vw;
+  margin-top: 250px;
+}
+
+.pos-10 {
+  margin-left: 70vw;
+  margin-top: 40vh;
+}

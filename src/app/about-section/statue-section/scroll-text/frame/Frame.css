@@ -1,0 +1,88 @@
+.frame {
+  padding: 1rem var(--page-padding) 0;
+  display: grid;
+  z-index: 1000;
+  position: relative;
+  grid-row-gap: 1rem;
+  grid-column-gap: 1.5rem;
+  pointer-events: none;
+  justify-items: start;
+  grid-template-columns: auto auto auto 1fr;
+  grid-template-areas:
+    'title title title'
+    'archive github ...'
+    'tags tags tags'
+    'sponsor sponsor sponsor';
+}
+
+.frame a,
+.frame button {
+  pointer-events: auto;
+}
+
+.frame__title {
+  grid-area: title;
+  font-size: inherit;
+  margin: 0;
+}
+
+.frame__archive {
+  grid-area: archive;
+  justify-self: start;
+}
+
+.frame__github {
+  grid-area: github;
+}
+
+.frame__tags {
+  grid-area: tags;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.frame__demos {
+  grid-area: demos;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.frame__sponsor {
+  grid-area: sponsor;
+  justify-self: start;
+}
+
+@media screen and (min-width: 53em) {
+  .frame {
+    padding: var(--page-padding);
+    position: fixed;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    width: 100%;
+    grid-template-columns: auto auto auto auto 1fr;
+    grid-template-rows: auto auto;
+    align-content: space-between;
+    grid-template-areas:
+      'title archive github sponsor sponsor'
+      'tags tags tags tags ...';
+  }
+
+  .frame__tags {
+    align-self: end;
+  }
+
+  .frame__demos {
+    justify-self: end;
+    text-align: right;
+    max-width: 250px;
+  }
+
+  .frame__sponsor {
+    justify-self: end;
+    text-align: right;
+    max-width: 250px;
+  }
+}

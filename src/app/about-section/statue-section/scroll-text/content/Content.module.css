@@ -1,0 +1,52 @@
+.content {
+  padding: 100vh var(--page-padding) 25vh;
+}
+
+/* Global styles that need to be applied at root level */
+:global(*) {
+  box-sizing: border-box;
+}
+
+:global(:root) {
+  --color-text: #fff;
+  --color-bg: #000;
+  --color-link: #fff;
+  --color-link-hover: #fff;
+  --page-padding: 1.5rem;
+}
+
+:global(body) {
+  margin: 0;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  font-family: "forma-djr-mono", monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-transform: uppercase;
+}
+
+:global(a) {
+  text-decoration: none;
+  color: var(--color-link);
+  outline: none;
+  cursor: pointer;
+}
+
+:global(a:hover) {
+  text-decoration: underline;
+  color: var(--color-link-hover);
+}
+
+:global(a:focus) {
+  outline: none;
+  background: lightgrey;
+}
+
+:global(a:focus:not(:focus-visible)) {
+  background: transparent;
+}
+
+:global(a:focus-visible) {
+  outline: 2px solid red;
+  background: transparent;
+}
