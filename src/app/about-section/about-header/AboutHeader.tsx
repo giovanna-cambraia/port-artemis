@@ -8,9 +8,9 @@ export default function AboutHeader() {
     <GridScan 
       sensitivity={0.55}
       lineThickness={1}
-      linesColor="#ebebeb"
+      linesColor="#28252d"
       gridScale={0.1}
-      scanColor="#2F293A"
+      scanColor="##ebebeb"
       scanOpacity={0.4}
       enablePost
       bloomIntensity={0.6}

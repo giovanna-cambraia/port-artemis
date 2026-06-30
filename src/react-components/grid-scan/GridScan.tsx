@@ -15,6 +15,7 @@ type GridScanProps = {
   showPreview?: boolean;
   modelsPath?: string;
   sensitivity?: number;
+  invertYAxis?: boolean;
 
   lineThickness?: number;
   linesColor?: string;
@@ -316,8 +317,8 @@ export const GridScan: React.FC<GridScanProps> = ({
   modelsPath = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights",
   sensitivity = 0.55,
   lineThickness = 1,
-  linesColor = "#2F293A",
-  scanColor = "#FF9FFC",
+  linesColor = "#28252d",
+  scanColor = "#ebebeb",
   scanOpacity = 0.4,
   gridScale = 0.1,
   lineStyle = "solid",
@@ -337,6 +338,7 @@ export const GridScan: React.FC<GridScanProps> = ({
   enableGyro = false,
   scanOnClick = false,
   snapBackDelay = 250,
+  invertYAxis = false,
   className,
   style,
 }) => {
@@ -608,7 +610,7 @@ export const GridScan: React.FC<GridScanProps> = ({
 
       const skew = new THREE.Vector2(
         lookCurrent.current.x * skewScale,
-        -lookCurrent.current.y * yBoost * skewScale,
+        (invertYAxis ? -1 : 1) * lookCurrent.current.y * yBoost * skewScale,
       );
       material.uniforms.uSkew.value.set(skew.x, skew.y);
       material.uniforms.uTilt.value = tiltCurrent.current * tiltScale;

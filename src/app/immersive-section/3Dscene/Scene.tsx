@@ -2,11 +2,10 @@
 
 import {
   useGLTF,
-  MeshTransmissionMaterial,
   RandomizedLight,
   Text,
 } from "@react-three/drei";
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -236,7 +235,6 @@ export default function Scene({
       <color args={["black"]} attach="background" />
       <ambientLight intensity={0.5} />
 
-
       <group rotation={[-0.01, 0.9, 0.01]}>
         <spotLight
           position={[4, 4, 4]}
@@ -258,38 +256,6 @@ export default function Scene({
           position={[2.5, 8, -2.5]}
           bias={0.001}
         />
-
-        <group ref={circularText} position={[0, 2.2, 0]} scale={1}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={torusMesh.geometry}
-            rotation={[0.026, 0.195, -10.334]}
-          >
-            <MeshTransmissionMaterial
-              background={new THREE.Color("#000000")}
-              isMeshPhysicalMaterial={false}
-              transmissionSampler={false}
-              backside={false}
-              samples={10}
-              resolution={2048}
-              transmission={1}
-              roughness={0}
-              thickness={0.2}
-              ior={1.068}
-              chromaticAberration={0}
-              anisotropy={0}
-              distortion={0.5}
-              distortionScale={0.5}
-              temporalDistortion={0.5}
-              clearcoat={1}
-              attenuationDistance={0.5}
-              attenuationColor="#ffffff"
-              color="#ff0000"
-              ref={transmissionMaterial}
-            />
-          </mesh>
-        </group>
 
         <Tunnel />
       </group>
