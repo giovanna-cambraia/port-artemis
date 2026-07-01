@@ -567,7 +567,10 @@ export const GridScan: React.FC<GridScanProps> = ({
           container.clientHeight,
         );
     };
-    window.addEventListener("resize", onResize);
+
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(container);
+    onResize();
 
     let last = performance.now();
     const tick = () => {
@@ -633,7 +636,7 @@ export const GridScan: React.FC<GridScanProps> = ({
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
       material.dispose();
       (quad.geometry as THREE.BufferGeometry).dispose();
       if (composerRef.current) {
