@@ -1,7 +1,7 @@
 .content {
   position: absolute;
   inset: 0;
-  z-index: 3; /* above the GridScan canvas */
+  z-index: 3; 
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -9,7 +9,7 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 4vw;
-  pointer-events: none; /* let mouse events pass through to GridScan for the interactive effect */
+  pointer-events: none;
 }
 
 .center {
@@ -30,8 +30,8 @@
 }
 
 .hey {
-  font-family: cursive; /* swap for your handwritten-style font */
-  color: #4ade80; /* green like your inspo */
+  font-family: cursive;
+  color: #ff0000; 
   font-size: 1.5rem;
   transform: rotate(-8deg);
   margin: 0 0 -0.5rem 1rem;

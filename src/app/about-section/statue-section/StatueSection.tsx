@@ -5,54 +5,200 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Flip } from "gsap/Flip";
+import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import styles from "./StatueScene.module.css";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, Flip, ScrambleTextPlugin);
 
-const SECTIONS = [
-  {
-    signal: "SIGNAL_01 // ORIGIN",
-    coords: "23.4°S 45.5°W",
-    headline: ["HEAD", "INTO THE", "ABYSS."],
-    body: "Started with hardware.\nEnded up everywhere.\nEmbedded systems, backends,\nthe occasional star map.",
-    side: "left",
-  },
-  {
-    signal: "SIGNAL_02 // CRAFT",
-    coords: "[ENCRYPTED]",
-    headline: ["STRUCTURE", "OR", "CHAOS."],
-    body: "NestJS · C · TypeScript · ARM.\nI don't pick tools.\nI pick the right level\nof control.",
-    side: "right",
-  },
-  {
-    signal: "SIGNAL_03 // TRAJECTORY",
-    coords: "ALT. 408KM",
-    headline: ["AIMED", "AT", "ORBIT."],
-    body: "ITA. INPE. Robotics.\nSpace engineering.\nEvery project is a stage\nin the launch sequence.",
-    side: "left",
-  },
-  {
-    signal: "SIGNAL_04 // NOW",
-    coords: "ONGOING",
-    headline: ["STILL", "TRANS", "MITTING."],
-    body: "Signal ongoing.\nNo end timestamp.\n\n// REF: THE REAL YOU",
-    side: "right",
-  },
-] as const;
+// ── FLATTENED TEXT ITEMS (from SECTIONS) ──────────────────────────
+// Each item gets position/altPosition to flip between.
+// The "pos-*" classes map to CSS grid positions defined in the module.
+const textItems = [
+  // SECTION 0: "HEAD INTO THE ABYSS."
+  { text: "HEAD", position: "pos-1", altPosition: "pos-5", flipEase: "expo.inOut", scrambleDuration: 1.2 },
+  { text: "INTO THE", position: "pos-2", altPosition: "pos-6", flipEase: "power3.inOut", scrambleDuration: 1.3 },
+  { text: "ABYSS.", position: "pos-3", altPosition: "pos-7", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
+  { text: "Started with hardware. Ended up everywhere. Embedded systems, backends, the occasional star map.", position: "pos-4", altPosition: "pos-8", flipEase: "sine.inOut", scrambleDuration: 1.1 },
+  
+  // SECTION 1: "STRUCTURE OR CHAOS."
+  { text: "STRUCTURE", position: "pos-9", altPosition: "pos-13", flipEase: "expo.inOut", scrambleDuration: 1.2 },
+  { text: "OR", position: "pos-10", altPosition: "pos-14", flipEase: "power3.inOut", scrambleDuration: 1.3 },
+  { text: "CHAOS.", position: "pos-11", altPosition: "pos-15", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
+  { text: "NestJS · C · TypeScript · ARM. I don't pick tools. I pick the right level of control.", position: "pos-12", altPosition: "pos-16", flipEase: "sine.inOut", scrambleDuration: 1.1 },
+  
+  // SECTION 2: "AIMED AT ORBIT."
+  { text: "AIMED", position: "pos-17", altPosition: "pos-21", flipEase: "expo.inOut", scrambleDuration: 1.2 },
+  { text: "AT", position: "pos-18", altPosition: "pos-22", flipEase: "power3.inOut", scrambleDuration: 1.3 },
+  { text: "ORBIT.", position: "pos-19", altPosition: "pos-23", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
+  { text: "ITA. INPE. Robotics. Space engineering. Every project is a stage in the launch sequence.", position: "pos-20", altPosition: "pos-24", flipEase: "sine.inOut", scrambleDuration: 1.1 },
+  
+  // SECTION 3: "STILL TRANSMITTING."
+  { text: "STILL", position: "pos-25", altPosition: "pos-29", flipEase: "expo.inOut", scrambleDuration: 1.2 },
+  { text: "TRANS", position: "pos-26", altPosition: "pos-30", flipEase: "power3.inOut", scrambleDuration: 1.3 },
+  { text: "MITTING.", position: "pos-27", altPosition: "pos-31", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
+  { text: "Signal ongoing. No end timestamp. // REF: THE REAL YOU", position: "pos-28", altPosition: "pos-32", flipEase: "sine.inOut", scrambleDuration: 1.1 },
+];
+
+// ── TEXTGROUP COMPONENT (inline, matches ScrollDemoPage's version) ──
+const TextGroup: React.FC<{ items: typeof textItems }> = ({ items }) => {
+  return (
+    <div className={styles.textGroup}>
+      {items.map((item, index) => (
+        <span
+          key={index}
+          className={`${styles.textEl} ${styles[item.position]} ${item.isLarge ? styles.large : ""}`}
+          data-alt-pos={item.altPosition}
+          data-flip-ease={item.flipEase}
+          data-scramble-duration={item.scrambleDuration}
+        >
+          {item.text}
+        </span>
+      ))}
+    </div>
+  );
+};
 
 export default function StatueScene() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const maskRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const signalRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const coordRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const lineWrapRefs = useRef<(HTMLDivElement | null)[][]>([[], [], [], []]);
-  const bodyRefs = useRef<(HTMLParagraphElement | null)[]>([]);
-  const numRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const contentRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const dotRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const glitchOverlayRef = useRef<HTMLDivElement>(null);
+  
+  // ── REFS FOR SCRAMBLE/FLIP LOGIC ──────────────────────────────────
+  const textElementsRef = useRef<NodeListOf<Element> | null>(null);
 
+  // ── SCRAMBLE/FLIP FUNCTIONS (ported from ScrollDemoPage) ──────────
+  const storeOriginalText = () => {
+    if (!textElementsRef.current) return;
+    textElementsRef.current.forEach((el) => {
+      const element = el as HTMLElement & { dataset: { text?: string } };
+      if (!element.dataset.text) {
+        element.dataset.text = element.textContent || "";
+      }
+    });
+  };
+
+  const resetTextElements = () => {
+    if (!textElementsRef.current) return;
+    textElementsRef.current.forEach((el) => {
+      gsap.set(el, {
+        clearProps: "transform,opacity,filter",
+      });
+    });
+  };
+
+  const initFlips = () => {
+    if (!textElementsRef.current || !wrapperRef.current) return;
+    resetTextElements();
+
+    textElementsRef.current.forEach((el) => {
+      const element = el as HTMLElement & {
+        dataset: { altPos?: string; flipEase?: string };
+      };
+
+      const originalClass = [...element.classList].find((c) =>
+        c.startsWith("pos-"),
+      );
+      const targetClass = element.dataset.altPos;
+      const flipEase = element.dataset.flipEase || "expo.inOut";
+
+      if (!originalClass || !targetClass) return;
+
+      // Store current position, swap classes
+      element.classList.add(targetClass);
+      element.classList.remove(originalClass);
+
+      const flipState = Flip.getState(el, {
+        props: "opacity, filter, width",
+      });
+
+      element.classList.add(originalClass);
+      element.classList.remove(targetClass);
+
+      // Flip TO alt position on scroll
+      Flip.to(flipState, {
+        ease: flipEase,
+        scrollTrigger: {
+          trigger: wrapperRef.current,
+          start: "clamp(bottom bottom-=10%)",
+          end: "clamp(center center)",
+          scrub: true,
+        },
+      });
+
+      // Flip FROM alt position back to original
+      Flip.from(flipState, {
+        ease: flipEase,
+        scrollTrigger: {
+          trigger: wrapperRef.current,
+          start: "clamp(center center)",
+          end: "clamp(top top)",
+          scrub: true,
+        },
+      });
+    });
+  };
+
+  const scramble = (
+    el: Element,
+    config: { duration?: number; revealDelay?: number } = {},
+  ) => {
+    const element = el as HTMLElement & {
+      dataset: { text?: string; scrambleDuration?: string };
+    };
+
+    const text = element.dataset.text ?? element.textContent ?? "";
+    const duration =
+      config.duration ??
+      (element.dataset.scrambleDuration
+        ? parseFloat(element.dataset.scrambleDuration)
+        : 1);
+    const revealDelay = config.revealDelay ?? 0;
+
+    gsap.killTweensOf(el);
+
+    gsap.fromTo(
+      el,
+      { scrambleText: { text: "", chars: "" } },
+      {
+        scrambleText: {
+          text,
+          chars: "upperAndLowerCase",
+          revealDelay,
+        },
+        duration,
+      },
+    );
+  };
+
+  const killScrambleTriggers = () => {
+    ScrollTrigger.getAll().forEach((st) => {
+      if (st.vars.id === "scramble") {
+        st.kill();
+      }
+    });
+  };
+
+  const initScramble = () => {
+    if (!textElementsRef.current || !wrapperRef.current) return;
+    killScrambleTriggers();
+
+    textElementsRef.current.forEach((el) => {
+      ScrollTrigger.create({
+        id: "scramble",
+        trigger: wrapperRef.current,
+        start: "clamp(bottom bottom-=10%)",
+        end: "clamp(center center)",
+        onEnter: () => scramble(el),
+        onEnterBack: () => scramble(el),
+      });
+    });
+  };
+
+  // ── THREE.JS SETUP ──────────────────────────────────────────────────
   useEffect(() => {
     if (!canvasRef.current || !wrapperRef.current) return;
 
@@ -98,7 +244,7 @@ export default function StatueScene() {
     glow.position.set(0, 1, 3);
     scene.add(glow);
 
-    // ── AMBIENT PARTICLE FIELD — depth + life ─────────────────────
+    // ── AMBIENT PARTICLE FIELD ─────────────────────────────────────
     const particleCount = 400;
     const particlePositions = new Float32Array(particleCount * 3);
     const particleSpeeds = new Float32Array(particleCount);
@@ -123,7 +269,7 @@ export default function StatueScene() {
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    // red signal particles — sparse, bright
+    // red signal particles
     const redCount = 30;
     const redPositions = new Float32Array(redCount * 3);
     for (let i = 0; i < redCount; i++) {
@@ -217,7 +363,6 @@ export default function StatueScene() {
         const p = self.progress;
         targetRot.y = -0.4 + p * Math.PI * 2.2;
 
-        // camera dolly in/out per section for dynamism
         const beat = p * 4;
         const localBeat = beat % 1;
         targetCam.z = 6.5 - Math.sin(localBeat * Math.PI) * 1.2;
@@ -256,192 +401,6 @@ export default function StatueScene() {
         }
         lastBeat = beat;
       },
-    });
-
-    // ── TEXT ANIMATIONS — masked reveals, longer choreography ──────
-    SECTIONS.forEach((section, i) => {
-      const mask = maskRefs.current[i];
-      const signal = signalRefs.current[i];
-      const coord = coordRefs.current[i];
-      const lines = lineWrapRefs.current[i];
-      const body = bodyRefs.current[i];
-      const num = numRefs.current[i];
-      const isLeft = section.side === "left";
-      const wrap = wrapperRef.current!;
-
-      const pct = (v: number) => `${v}%`;
-      const s = i * 25;
-      const e = (i + 1) * 25;
-
-      // ---- ENTRANCE (first 12% of this beat) ----
-      const inA = pct(s);
-      const inB = pct(s + 5);
-      const inC = pct(s + 9);
-      const inD = pct(s + 12);
-
-      // signal label — typewriter-ish slide + scale flicker
-      gsap.fromTo(
-        signal,
-        { opacity: 0, x: isLeft ? -30 : 30, letterSpacing: "0.5em" },
-        {
-          opacity: 1,
-          x: 0,
-          letterSpacing: "0.22em",
-          scrollTrigger: { trigger: wrap, start: inA, end: inB, scrub: true },
-        },
-      );
-
-      // coords — delayed flicker in
-      gsap.fromTo(
-        coord,
-        { opacity: 0 },
-        {
-          opacity: 1,
-          scrollTrigger: {
-            trigger: wrap,
-            start: pct(s + 2),
-            end: pct(s + 6),
-            scrub: true,
-          },
-        },
-      );
-
-      // headline lines — masked reveal (clip-path wipe) + stagger + slight rotation
-      lines.forEach((lineWrap, j) => {
-        if (!lineWrap) return;
-        const inner = lineWrap.querySelector(`.${styles.headlineLine}`);
-        const lineDelayStart = s + 1 + j * 2.2;
-
-        // mask wipe on the wrapper
-        gsap.fromTo(
-          lineWrap,
-          { clipPath: isLeft ? "inset(0 100% 0 0)" : "inset(0 0 0 100%)" },
-          {
-            clipPath: "inset(0 0% 0 0)",
-            scrollTrigger: {
-              trigger: wrap,
-              start: pct(lineDelayStart),
-              end: pct(lineDelayStart + 3.5),
-              scrub: true,
-            },
-          },
-        );
-        // inner text counter-slides + rotates for depth
-        gsap.fromTo(
-          inner,
-          { x: isLeft ? -40 : 40, rotateZ: isLeft ? -3 : 3, opacity: 0.3 },
-          {
-            x: 0,
-            rotateZ: 0,
-            opacity: 1,
-            scrollTrigger: {
-              trigger: wrap,
-              start: pct(lineDelayStart),
-              end: pct(lineDelayStart + 3.5),
-              scrub: true,
-            },
-          },
-        );
-      });
-
-      // body — fade + slide, delayed after headline
-      gsap.fromTo(
-        body,
-        { opacity: 0, y: 24, x: isLeft ? 20 : -20 },
-        {
-          opacity: 1,
-          y: 0,
-          x: 0,
-          scrollTrigger: {
-            trigger: wrap,
-            start: pct(s + 10),
-            end: inD,
-            scrub: true,
-          },
-        },
-      );
-
-      // number — counts up feel via opacity + scale pop
-      gsap.fromTo(
-        num,
-        { opacity: 0, scale: 1.6 },
-        {
-          opacity: 1,
-          scale: 1,
-          scrollTrigger: {
-            trigger: wrap,
-            start: pct(s + 8),
-            end: pct(s + 13),
-            scrub: true,
-          },
-        },
-      );
-
-      // ---- HOLD (middle ~60%) — nothing, stays visible ----
-
-      // ---- EXIT (last 10% of this beat) ----
-      const outA = pct(e - 10);
-      const outB = pct(e - 5);
-      const outC = pct(e);
-
-      gsap.fromTo(
-        [signal, coord],
-        { opacity: 1 },
-        {
-          opacity: 0,
-          scrollTrigger: { trigger: wrap, start: outA, end: outB, scrub: true },
-        },
-      );
-
-      lines.forEach((lineWrap, j) => {
-        if (!lineWrap) return;
-        const inner = lineWrap.querySelector(`.${styles.headlineLine}`);
-        gsap.fromTo(
-          lineWrap,
-          { clipPath: "inset(0 0% 0 0)" },
-          {
-            clipPath: isLeft ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)",
-            scrollTrigger: {
-              trigger: wrap,
-              start: pct(e - 9 + j * 1),
-              end: pct(e - 5 + j * 1),
-              scrub: true,
-            },
-          },
-        );
-        gsap.fromTo(
-          inner,
-          { x: 0, opacity: 1 },
-          {
-            x: isLeft ? 50 : -50,
-            opacity: 0,
-            scrollTrigger: {
-              trigger: wrap,
-              start: pct(e - 9 + j * 1),
-              end: pct(e - 5 + j * 1),
-              scrub: true,
-            },
-          },
-        );
-      });
-
-      gsap.fromTo(
-        body,
-        { opacity: 1, y: 0 },
-        {
-          opacity: 0,
-          y: -16,
-          scrollTrigger: { trigger: wrap, start: outA, end: outB, scrub: true },
-        },
-      );
-      gsap.fromTo(
-        num,
-        { opacity: 1 },
-        {
-          opacity: 0,
-          scrollTrigger: { trigger: wrap, start: outB, end: outC, scrub: true },
-        },
-      );
     });
 
     // ── MOUSE PARALLAX ──────────────────────────────────────────────
@@ -495,7 +454,6 @@ export default function StatueScene() {
       redParticles.rotation.y = -t * 0.02;
       (redMat as THREE.PointsMaterial).opacity = 0.6 + Math.sin(t * 2) * 0.25;
 
-      // orbit colored lights
       rimBlue.position.x = Math.sin(t * 0.4) * 5;
       rimBlue.position.z = Math.cos(t * 0.4) * 3 - 2;
       rimRed.position.x = Math.cos(t * 0.3) * 4;
@@ -505,14 +463,37 @@ export default function StatueScene() {
     };
     animate();
 
+    // ── INIT SCRAMBLE/FLIP (after DOM is ready) ─────────────────────
+    const initTextAnimations = () => {
+      if (contentRef.current) {
+        textElementsRef.current = contentRef.current.querySelectorAll(`.${styles.textEl}`);
+        storeOriginalText();
+        initFlips();
+        initScramble();
+      }
+    };
+
+    // Small delay to ensure DOM is rendered
+    const textInitTimer = setTimeout(initTextAnimations, 50);
+
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      ScrollTrigger.refresh(true);
+      
+      // Re-init flips and scramble on resize
+      if (contentRef.current) {
+        textElementsRef.current = contentRef.current.querySelectorAll(`.${styles.textEl}`);
+        storeOriginalText();
+        initFlips();
+        initScramble();
+      }
     };
     window.addEventListener("resize", onResize);
 
     return () => {
+      clearTimeout(textInitTimer);
       cancelAnimationFrame(rafId);
       window.removeEventListener("mousemove", onMouse);
       window.removeEventListener("resize", onResize);
@@ -538,7 +519,7 @@ export default function StatueScene() {
 
       {/* dot nav */}
       <div className={styles.dotNav}>
-        {SECTIONS.map((_, i) => (
+        {[0, 1, 2, 3].map((_, i) => (
           <span
             key={i}
             ref={(el) => {
@@ -549,73 +530,9 @@ export default function StatueScene() {
         ))}
       </div>
 
-      <div className={styles.content}>
-        {SECTIONS.map((section, i) => (
-          <div
-            key={i}
-            className={`${styles.section} ${section.side === "right" ? styles.sectionRight : styles.sectionLeft}`}
-          >
-            <div className={styles.textBlock}>
-              <div
-                ref={(el) => {
-                  signalRefs.current[i] = el;
-                }}
-                className={styles.signal}
-              >
-                <span className={styles.signalDash}>——</span>
-                {section.signal}
-                <span
-                  ref={(el) => {
-                    coordRefs.current[i] = el;
-                  }}
-                  className={styles.coords}
-                >
-                  {section.coords}
-                </span>
-              </div>
-
-              <h2 className={styles.headline}>
-                {section.headline.map((line, j) => (
-                  <div
-                    key={j}
-                    ref={(el) => {
-                      lineWrapRefs.current[i][j] = el;
-                    }}
-                    className={styles.lineMask}
-                  >
-                    <span className={styles.headlineLine}>{line}</span>
-                  </div>
-                ))}
-              </h2>
-
-              <p
-                ref={(el) => {
-                  bodyRefs.current[i] = el;
-                }}
-                className={styles.body}
-              >
-                {section.body.split("\n").map((line, j) => (
-                  <span key={j}>
-                    {line}
-                    <br />
-                  </span>
-                ))}
-              </p>
-            </div>
-
-            <div className={styles.statueSide} />
-
-            <span
-              ref={(el) => {
-                numRefs.current[i] = el;
-              }}
-              className={styles.sectionNum}
-            >
-              0{i + 1} <span className={styles.numSlash}>/</span> 0
-              {SECTIONS.length}
-            </span>
-          </div>
-        ))}
+      {/* ── REPLACED TEXT CONTENT ───────────────────────────────────── */}
+      <div className={styles.content} ref={contentRef}>
+        <TextGroup items={textItems} />
       </div>
     </div>
   );
