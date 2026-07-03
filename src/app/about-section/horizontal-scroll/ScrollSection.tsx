@@ -44,7 +44,6 @@ export default function ScrollSection() {
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
-    // ── THREE SETUP ──────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -55,13 +54,19 @@ export default function ScrollSection() {
       65,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1000,
     );
     camera.position.z = 20;
 
-    // ── CENTRAL CLUSTER — tighter, more dramatic ─────────────────
     const clusterCubes: THREE.LineSegments[] = [];
-    const clusterData: { rx: number; ry: number; floatOff: number; initX: number; initY: number; initZ: number }[] = [];
+    const clusterData: {
+      rx: number;
+      ry: number;
+      floatOff: number;
+      initX: number;
+      initY: number;
+      initZ: number;
+    }[] = [];
 
     const clusterCount = 22;
     for (let i = 0; i < clusterCount; i++) {
@@ -75,7 +80,6 @@ export default function ScrollSection() {
       });
       const cube = new THREE.LineSegments(edges, mat);
 
-      // tighter radial spread around center
       const angle = (i / clusterCount) * Math.PI * 2;
       const radius = Math.random() * 5 + 1.5;
       const ix = Math.cos(angle) * radius;
@@ -83,7 +87,11 @@ export default function ScrollSection() {
       const iz = (Math.random() - 0.5) * 6;
 
       cube.position.set(ix, iy, iz);
-      cube.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      cube.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+      );
 
       scene.add(cube);
       clusterCubes.push(cube);
@@ -97,7 +105,6 @@ export default function ScrollSection() {
       });
     }
 
-    // ── BACKGROUND SCATTER — wide, faint ────────────────────────
     const bgCubes: THREE.LineSegments[] = [];
     const bgData: { rx: number; ry: number; floatOff: number }[] = [];
 
@@ -114,9 +121,13 @@ export default function ScrollSection() {
       cube.position.set(
         (Math.random() - 0.5) * 40,
         (Math.random() - 0.5) * 22,
-        (Math.random() - 0.5) * 16 - 6
+        (Math.random() - 0.5) * 16 - 6,
       );
-      cube.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      cube.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+      );
       scene.add(cube);
       bgCubes.push(cube);
       bgData.push({
@@ -126,14 +137,16 @@ export default function ScrollSection() {
       });
     }
 
-    // ── RED ACCENT SPHERE (glitch core) ─────────────────────────
     const coreGeo = new THREE.IcosahedronGeometry(0.6, 1);
     const coreEdges = new THREE.EdgesGeometry(coreGeo);
-    const coreMat = new THREE.LineBasicMaterial({ color: 0xe03030, transparent: true, opacity: 0.9 });
+    const coreMat = new THREE.LineBasicMaterial({
+      color: 0xe03030,
+      transparent: true,
+      opacity: 0.9,
+    });
     const core = new THREE.LineSegments(coreEdges, coreMat);
     scene.add(core);
 
-    // ── SCROLL STATE ─────────────────────────────────────────────
     const state = { progress: 0 };
 
     ScrollTrigger.create({
@@ -146,71 +159,98 @@ export default function ScrollSection() {
       },
     });
 
-    // ── BEAT TRANSITIONS ─────────────────────────────────────────
+    const total = BEATS.length;
+
+    leftRefs.current.forEach((el, i) => {
+      if (!el) return;
+      gsap.set(el, {
+        opacity: i === 0 ? 1 : 0,
+        x: i === 0 ? 0 : -50,
+        filter: i === 0 ? "blur(0px)" : "blur(6px)",
+      });
+    });
+
+    rightRefs.current.forEach((el, i) => {
+      if (!el) return;
+      gsap.set(el, {
+        opacity: i === 0 ? 1 : 0,
+        x: i === 0 ? 0 : 50,
+        filter: i === 0 ? "blur(0px)" : "blur(6px)",
+      });
+    });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 1.4,
+      },
+    });
+
     BEATS.forEach((_, i) => {
       const leftEl = leftRefs.current[i];
       const rightEl = rightRefs.current[i];
       if (!leftEl || !rightEl) return;
 
-      const total = BEATS.length;
       const start = i / total;
       const end = (i + 1) / total;
       const mid = (start + end) / 2;
+      const segment = end - start;
 
-      // fade IN — left slides from left, right from right
-      gsap.fromTo(leftEl,
-        { opacity: 0, x: -50, filter: "blur(6px)" },
-        {
-          opacity: 1, x: 0, filter: "blur(0px)",
-          scrollTrigger: {
-            trigger: containerRef.current,
-            start: `${start * 100}% top`,
-            end: `${mid * 100}% top`,
-            scrub: true,
+      if (i > 0) {
+        tl.to(
+          leftEl,
+          {
+            opacity: 1,
+            x: 0,
+            filter: "blur(0px)",
+            duration: segment / 2,
+            ease: "none",
           },
-        }
-      );
-      gsap.fromTo(rightEl,
-        { opacity: 0, x: 50, filter: "blur(6px)" },
-        {
-          opacity: 1, x: 0, filter: "blur(0px)",
-          scrollTrigger: {
-            trigger: containerRef.current,
-            start: `${start * 100}% top`,
-            end: `${mid * 100}% top`,
-            scrub: true,
-          },
-        }
-      );
+          start,
+        );
 
-      // fade OUT
-      gsap.fromTo(leftEl,
-        { opacity: 1, x: 0, filter: "blur(0px)" },
-        {
-          opacity: 0, x: -50, filter: "blur(6px)",
-          scrollTrigger: {
-            trigger: containerRef.current,
-            start: `${mid * 100}% top`,
-            end: `${end * 100}% top`,
-            scrub: true,
+        tl.to(
+          rightEl,
+          {
+            opacity: 1,
+            x: 0,
+            filter: "blur(0px)",
+            duration: segment / 2,
+            ease: "none",
           },
-        }
-      );
-      gsap.fromTo(rightEl,
-        { opacity: 1, x: 0, filter: "blur(0px)" },
-        {
-          opacity: 0, x: 50, filter: "blur(6px)",
-          scrollTrigger: {
-            trigger: containerRef.current,
-            start: `${mid * 100}% top`,
-            end: `${end * 100}% top`,
-            scrub: true,
+          start,
+        );
+      }
+
+      if (i < total - 1) {
+        tl.to(
+          leftEl,
+          {
+            opacity: 0,
+            x: -50,
+            filter: "blur(6px)",
+            duration: segment / 2,
+            ease: "none",
           },
-        }
-      );
+          mid,
+        );
+
+        tl.to(
+          rightEl,
+          {
+            opacity: 0,
+            x: 50,
+            filter: "blur(6px)",
+            duration: segment / 2,
+            ease: "none",
+          },
+          mid,
+        );
+      }
     });
 
-    // ── ANIMATE ──────────────────────────────────────────────────
     let rafId: number;
     const clock = new THREE.Clock();
 
@@ -219,21 +259,19 @@ export default function ScrollSection() {
       const t = clock.getElapsedTime();
       const p = state.progress;
 
-      // camera: slow zoom + subtle sway
       camera.position.z = 20 - p * 5;
       camera.position.y = Math.sin(t * 0.15) * 0.3;
       camera.rotation.z = Math.sin(t * 0.1) * 0.008;
 
-      // rotate whole cluster group slowly with scroll
       const clusterGroup = new THREE.Euler(0, p * Math.PI * 0.5, 0);
 
       clusterCubes.forEach((cube, i) => {
         const d = clusterData[i];
         cube.rotation.x += d.rx;
         cube.rotation.y += d.ry;
-        // float in place
+
         cube.position.y = d.initY + Math.sin(t * 0.5 + d.floatOff) * 0.25;
-        // orbit around center as scroll progresses
+
         const angle = Math.atan2(d.initX, d.initZ) + p * Math.PI * 0.4;
         const r = Math.sqrt(d.initX * d.initX + d.initZ * d.initZ);
         cube.position.x = Math.sin(angle) * r;
@@ -247,7 +285,6 @@ export default function ScrollSection() {
         cube.position.y += Math.sin(t * 0.3 + d.floatOff) * 0.001;
       });
 
-      // core glitch
       core.rotation.x = t * 0.6;
       core.rotation.y = t * 0.9;
       const coreMat2 = core.material as THREE.LineBasicMaterial;
@@ -279,55 +316,58 @@ export default function ScrollSection() {
   return (
     <section ref={containerRef} className={styles.section}>
       <div className={styles.sticky}>
-
-        {/* Three.js canvas — center */}
         <div ref={canvasRef} className={styles.canvas} />
 
-        {/* Noise overlay */}
         <div className={styles.noise} />
 
-        {/* Layout grid: left | center | right */}
         <div className={styles.layout}>
-
-          {/* LEFT column — sub copy */}
           <div className={styles.left}>
             {BEATS.map((beat, i) => (
               <div
                 key={i}
-                ref={(el) => { leftRefs.current[i] = el; }}
+                ref={(el) => {
+                  leftRefs.current[i] = el;
+                }}
                 className={styles.leftContent}
               >
                 <p className={styles.sub}>
                   {beat.sub.split("\n").map((line, j) => (
-                    <span key={j}>{line}<br /></span>
+                    <span key={j}>
+                      {line}
+                      <br />
+                    </span>
                   ))}
                 </p>
               </div>
             ))}
           </div>
 
-          {/* CENTER — spacer so Three.js canvas shows through */}
           <div className={styles.center} />
 
-          {/* RIGHT column — signal tag + headline */}
           <div className={styles.right}>
             {BEATS.map((beat, i) => (
               <div
                 key={i}
-                ref={(el) => { rightRefs.current[i] = el; }}
+                ref={(el) => {
+                  rightRefs.current[i] = el;
+                }}
                 className={styles.rightContent}
               >
                 <div className={styles.signalRow}>
                   <div className={styles.signalBar} />
                   <div className={styles.signalKanji}>0{i + 1}</div>
                   <div className={styles.signalMeta}>
-                    <span className={styles.signalCode}>{beat.signal.split("_")[0]}_{beat.signal.split("_")[1]}</span>
+                    <span className={styles.signalCode}>
+                      {beat.signal.split("_")[0]}_{beat.signal.split("_")[1]}
+                    </span>
                     <span className={styles.signalTag}>{beat.tag}</span>
                   </div>
                 </div>
                 <h2 className={styles.headline}>
                   {beat.headline.split("\n").map((line, j) => (
-                    <span key={j} className={styles.headlineLine}>{line}</span>
+                    <span key={j} className={styles.headlineLine}>
+                      {line}
+                    </span>
                   ))}
                 </h2>
               </div>
@@ -335,13 +375,11 @@ export default function ScrollSection() {
           </div>
         </div>
 
-        {/* Bottom scroll indicator */}
         <div className={styles.scrollHint}>
           <span className={styles.scrollLine} />
           SCROLL · TRAVERSE
           <span className={styles.scrollLine} />
         </div>
-
       </div>
     </section>
   );
