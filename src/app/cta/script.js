@@ -139,7 +139,7 @@ const setupHand = (image) => {
 
   const ctx = canvas.getContext("2d");
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  ctx.font = `${cellSize * 0.9}px monospace`; // scale font with cell size
+  ctx.font = `${cellSize * 0.9}px monospace`; 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
 

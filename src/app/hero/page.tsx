@@ -8,6 +8,7 @@ import Footer from "./footer/Footer";
 import ScrollSection from "../about-section/horizontal-scroll/ScrollSection";
 import AboutHeader from "../about-section/about-header/AboutHeader";
 import StatueSection from "../about-section/statue-section/StatueSection";
+import WorkSection from "../about-section/work-section/WorkSection";
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
       <ScrollSection />
       <StatueSection />
       <TransmissionWrapper />
+      <WorkSection/>
       <Footer />
     </>
   );
