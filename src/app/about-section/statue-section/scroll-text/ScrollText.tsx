@@ -1,368 +1,493 @@
-import React, { useRef, useEffect } from "react";
+"use client";
+
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { Flip } from "gsap/Flip";
 import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
-
-import { Frame } from "./frame/Frame"; 
-import { TextGroup } from "./text-group/TextGroup"; 
-import { Grid } from "./grid/Grid"; 
-import { Related } from "./related/Related"; 
-import styles from "./ScrollDemoPage.module.css";
+import "./scroll-text-motion.css";
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother, Flip, ScrambleTextPlugin);
 
-const textItems = [
+type TextItem = {
+  text: string;
+  pos: string;
+  altPos: string;
+  xl?: boolean;
+  flipEase?: string;
+  scrambleDuration?: number;
+};
+
+const GROUPS: TextItem[][] = [
+  [
+    { text: "Signal", pos: "pos-4", altPos: "pos-2" },
+    { text: "Vacant orbit", pos: "pos-4", altPos: "pos-2" },
+    { text: "Quantum waves", pos: "pos-4", altPos: "pos-2" },
+  ],
+  [
+    { text: "Neural glow", pos: "pos-1", altPos: "pos-3" },
+    { text: "Micro distortions", pos: "pos-1", altPos: "pos-3" },
+    { text: "Data streams", pos: "pos-1", altPos: "pos-3" },
+    { text: "Spark", pos: "pos-1", altPos: "pos-3" },
+    { text: "Cold radiance", pos: "pos-1", altPos: "pos-3" },
+  ],
+  [
+    {
+      text: "M",
+      pos: "pos-1",
+      altPos: "pos-2",
+      xl: true,
+      scrambleDuration: 2.5,
+    },
+  ],
+  [
+    {
+      text: "アクセス権限がありません",
+      pos: "pos-1",
+      altPos: "pos-3",
+      scrambleDuration: 0,
+    },
+    { text: "█", pos: "pos-1", altPos: "pos-3", scrambleDuration: 0 },
+  ],
+  [
+    { text: "Beacon", pos: "pos-2", altPos: "pos-5" },
+    { text: "Synthetic veil", pos: "pos-2", altPos: "pos-5" },
+    { text: "Hidden strata", pos: "pos-2", altPos: "pos-5" },
+  ],
+  [
+    {
+      text: "S",
+      pos: "pos-3",
+      altPos: "pos-9",
+      xl: true,
+      scrambleDuration: 2.5,
+    },
+  ],
+  [
+    { text: "Nebula", pos: "pos-3", altPos: "pos-2" },
+    { text: "Digital scatter", pos: "pos-3", altPos: "pos-2" },
+    { text: "Orbital drift", pos: "pos-3", altPos: "pos-2" },
+    { text: "Photon shards", pos: "pos-3", altPos: "pos-2" },
+  ],
+  [
+    {
+      text: "操作は許可されていません",
+      pos: "pos-1",
+      altPos: "pos-3",
+      scrambleDuration: 0,
+    },
+    { text: "█", pos: "pos-1", altPos: "pos-3", scrambleDuration: 0 },
+  ],
+  [
+    { text: "Anomaly", pos: "pos-2", altPos: "pos-4" },
+    { text: "Dark offset", pos: "pos-2", altPos: "pos-4" },
+    { text: "Gradual decay", pos: "pos-2", altPos: "pos-4" },
+    { text: "Temporal imprint", pos: "pos-2", altPos: "pos-4" },
+    { text: "Stable rupture", pos: "pos-2", altPos: "pos-4" },
+    { text: "Harmonic field", pos: "pos-2", altPos: "pos-4" },
+  ],
+  [
+    {
+      text: "A",
+      pos: "pos-1",
+      altPos: "pos-3",
+      xl: true,
+      scrambleDuration: 2.5,
+    },
+  ],
+  [
+    { text: "Latent energy", pos: "pos-2", altPos: "pos-9" },
+    { text: "Spectral imprint", pos: "pos-2", altPos: "pos-9" },
+    { text: "Muted emission", pos: "pos-2", altPos: "pos-9" },
+    { text: "Archived potential", pos: "pos-2", altPos: "pos-9" },
+    { text: "Quantum impulse", pos: "pos-2", altPos: "pos-9" },
+    { text: "Distributed field", pos: "pos-2", altPos: "pos-9" },
+  ],
+  [
+    {
+      text: "B",
+      pos: "pos-3",
+      altPos: "pos-10",
+      xl: true,
+      scrambleDuration: 2.5,
+      flipEase: "expo.in",
+    },
+  ],
+  [
+    { text: "Flare", pos: "pos-4", altPos: "pos-3" },
+    { text: "Phase transit", pos: "pos-4", altPos: "pos-3" },
+    { text: "Slow orbit", pos: "pos-4", altPos: "pos-3" },
+    { text: "Merged signal", pos: "pos-4", altPos: "pos-3" },
+  ],
+  [
+    {
+      text: "権限が不足しています",
+      pos: "pos-1",
+      altPos: "pos-3",
+      scrambleDuration: 0,
+    },
+    { text: "█", pos: "pos-1", altPos: "pos-3", scrambleDuration: 0 },
+  ],
+  [
+    { text: "Latent charge", pos: "pos-3", altPos: "pos-5" },
+    { text: "Nano beacon", pos: "pos-3", altPos: "pos-5" },
+    { text: "Photon trail", pos: "pos-3", altPos: "pos-5" },
+    { text: "Diffuse render", pos: "pos-3", altPos: "pos-5" },
+  ],
+  [
+    {
+      text: "N",
+      pos: "pos-2",
+      altPos: "pos-3",
+      xl: true,
+      scrambleDuration: 2.5,
+    },
+  ],
+  [
+    { text: "Silent current", pos: "pos-3", altPos: "pos-6" },
+    { text: "Orbital marker", pos: "pos-3", altPos: "pos-6" },
+    { text: "Radiant vector", pos: "pos-3", altPos: "pos-6" },
+    { text: "Soft projection", pos: "pos-3", altPos: "pos-6" },
+  ],
+  [
+    { text: "Quantum residue", pos: "pos-2", altPos: "pos-7" },
+    { text: "Signal anchor", pos: "pos-2", altPos: "pos-7" },
+    { text: "Luminous path", pos: "pos-2", altPos: "pos-7" },
+    { text: "Ambient blur", pos: "pos-2", altPos: "pos-7" },
+  ],
+  [
+    { text: "Dormant voltage", pos: "pos-3", altPos: "pos-8" },
+    { text: "Micro relay", pos: "pos-3", altPos: "pos-8" },
+    { text: "Spectral trace", pos: "pos-3", altPos: "pos-8" },
+    { text: "Diffuse mapping", pos: "pos-3", altPos: "pos-8" },
+    { text: "Residual energy", pos: "pos-3", altPos: "pos-8" },
+    { text: "Nano transmitter", pos: "pos-3", altPos: "pos-8" },
+    { text: "Photon residue", pos: "pos-3", altPos: "pos-8" },
+    { text: "Soft raster", pos: "pos-3", altPos: "pos-8" },
+    { text: "Stored impulse", pos: "pos-3", altPos: "pos-8" },
+    { text: "Quantum locator", pos: "pos-3", altPos: "pos-8" },
+    { text: "Radiant filament", pos: "pos-3", altPos: "pos-8" },
+    { text: "Light diffusion", pos: "pos-3", altPos: "pos-8" },
+    { text: "Static potential", pos: "pos-3", altPos: "pos-8" },
+    { text: "Signal node", pos: "pos-3", altPos: "pos-8" },
+    { text: "Energy wake", pos: "pos-3", altPos: "pos-8" },
+    { text: "Blurred output", pos: "pos-3", altPos: "pos-8" },
+    { text: "Hidden current", pos: "pos-3", altPos: "pos-8" },
+    { text: "Data beacon", pos: "pos-3", altPos: "pos-8" },
+    { text: "Lumen echo", pos: "pos-3", altPos: "pos-8" },
+    { text: "Soft synthesis", pos: "pos-3", altPos: "pos-8" },
+    { text: "Quantum latency", pos: "pos-3", altPos: "pos-8" },
+    { text: "Neural marker", pos: "pos-3", altPos: "pos-8" },
+    { text: "Optic trail", pos: "pos-3", altPos: "pos-8" },
+    { text: "Diffuse signal", pos: "pos-3", altPos: "pos-8" },
+  ],
+  [
+    { text: "Residual charge", pos: "pos-1", altPos: "pos-1" },
+    { text: "Optical trace", pos: "pos-1", altPos: "pos-2" },
+    { text: "Soft output", pos: "pos-1", altPos: "pos-4" },
+    { text: "Stored voltage", pos: "pos-1", altPos: "pos-5" },
+    { text: "Nano impulse", pos: "pos-1", altPos: "pos-6" },
+    { text: "Diffuse field", pos: "pos-1", altPos: "pos-4" },
+  ],
+];
+
+const RELATED_ITEMS = [
   {
-    text: "creative",
-    position: "pos-2",
-    altPosition: "pos-3",
-    isLarge: true,
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.2,
+    title: "Hover Animations for Terminal-like Typography",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2024/06/terminalhover_feat.jpg",
+    href: "https://tympanus.net/Development/LineTextHoverAnimations/index.html",
   },
   {
-    text: "coding",
-    position: "pos-3",
-    altPosition: "pos-10",
-    flipEase: "power3.inOut",
-    scrambleDuration: 1.5,
+    title: "Blurry Text Reveal on Scroll",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2024/04/blurrytext_featured.jpg",
+    href: "https://tympanus.net/Development/ScrollBlurTypography/",
   },
   {
-    text: "with",
-    position: "pos-4",
-    altPosition: "pos-2",
-    flipEase: "sine.inOut",
-    scrambleDuration: 0.8,
+    title: "Some On-Scroll Text Highlight Animations",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2024/04/TextHighlight.jpg",
+    href: "https://tympanus.net/Development/OnScrollTextHighlight/",
   },
   {
-    text: "gsap",
-    position: "pos-1",
-    altPosition: "pos-5",
-    isLarge: true,
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.3,
+    title: "On-Scroll Expanding Image Animation within Typography",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2024/04/expandimage_feat.jpg",
+    href: "https://tympanus.net/Development/ImageExpansionTypography/",
   },
   {
-    text: "scroll",
-    position: "pos-6",
-    altPosition: "pos-7",
-    flipEase: "power2.inOut",
-    scrambleDuration: 1.0,
+    title: "Inspiration for Text Block Transitions",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2023/07/textbocktransitions.jpg",
+    href: "https://tympanus.net/Development/TextBlockTransitions/index.html",
   },
   {
-    text: "driven",
-    position: "pos-8",
-    altPosition: "pos-9",
-    flipEase: "back.inOut",
-    scrambleDuration: 1.1,
+    title: "Shuffling Typography Animation",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2023/02/typeshuffle.jpg",
+    href: "https://tympanus.net/Development/TypeShuffleAnimation/",
   },
   {
-    text: "animation",
-    position: "pos-9",
-    altPosition: "pos-6",
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.4,
+    title: "On-Scroll Text Repetition Animation",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2022/04/TextRep_feat.jpg",
+    href: "https://tympanus.net/Development/TextRepetitionEffect/index.html",
+  },
+  {
+    title: "Kinetic Typography Page Transition",
+    img: "https://tympanus.net/codrops/wp-content/uploads/2021/09/KineticTypePageTransition_featured.jpg",
+    href: "https://tympanus.net/Development/KineticTypePageTransition/",
   },
 ];
 
-const gridItems = [
-  {
-    id: 1,
-    title: "Scroll Trigger Demo",
-    imageUrl: "https://picsum.photos/400/300?random=1",
-    link: "#scroll-trigger",
-  },
-  {
-    id: 2,
-    title: "Flip Animation",
-    imageUrl: "https://picsum.photos/400/300?random=2",
-    link: "#flip",
-  },
-  {
-    id: 3,
-    title: "Scramble Text",
-    imageUrl: "https://picsum.photos/400/300?random=3",
-    link: "#scramble",
-  },
-  {
-    id: 4,
-    title: "Scroll Smoother",
-    imageUrl: "https://picsum.photos/400/300?random=4",
-    link: "#smooth",
-  },
-];
-
-const frameTags = ["Animation", "GSAP", "Scroll", "FLIP"];
-
-export const ScrollDemoPage: React.FC = () => {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLSpanElement>(null);
-  const relatedRef = useRef<HTMLDivElement>(null);
-
-  const textElementsRef = useRef<NodeListOf<Element> | null>(null);
-  const gridItemsRef = useRef<NodeListOf<Element> | null>(null);
-
-  const storeOriginalText = () => {
-    if (!textElementsRef.current) return;
-    textElementsRef.current.forEach((el) => {
-      const element = el as HTMLElement & { dataset: { text?: string } };
-      if (!element.dataset.text) {
-        element.dataset.text = element.textContent || "";
-      }
-    });
-    if (logoRef.current) {
-      logoRef.current.dataset.text = logoRef.current.textContent || "";
-    }
-  };
-
-  const resetTextElements = () => {
-    if (!textElementsRef.current) return;
-    textElementsRef.current.forEach((el) => {
-      gsap.set(el, {
-        clearProps: "transform,opacity,filter",
-      });
-    });
-  };
-
-  const initFlips = () => {
-    if (!textElementsRef.current) return;
-    resetTextElements();
-
-    textElementsRef.current.forEach((el) => {
-      const element = el as HTMLElement & {
-        dataset: { altPos?: string; flipEase?: string };
-      };
-
-      const originalClass = [...element.classList].find((c) =>
-        c.startsWith("pos-"),
-      );
-      const targetClass = element.dataset.altPos;
-      const flipEase = element.dataset.flipEase || "expo.inOut";
-
-      if (!originalClass || !targetClass) return;
-
-      element.classList.add(targetClass);
-      element.classList.remove(originalClass);
-
-      const flipState = Flip.getState(el, {
-        props: "opacity, filter, width",
-      });
-
-      element.classList.add(originalClass);
-      element.classList.remove(targetClass);
-
-      Flip.to(flipState, {
-        ease: flipEase,
-        scrollTrigger: {
-          trigger: el,
-          start: "clamp(bottom bottom-=10%)",
-          end: "clamp(center center)",
-          scrub: true,
-        },
-      });
-
-      Flip.from(flipState, {
-        ease: flipEase,
-        scrollTrigger: {
-          trigger: el,
-          start: "clamp(center center)",
-          end: "clamp(top top)",
-          scrub: true,
-        },
-      });
-    });
-  };
-
-  const scramble = (
-    el: Element,
-    config: { duration?: number; revealDelay?: number } = {},
-  ) => {
-    const element = el as HTMLElement & {
-      dataset: { text?: string; scrambleDuration?: string };
-    };
-
-    const text = element.dataset.text ?? element.textContent ?? "";
-    const duration =
-      config.duration ??
-      (element.dataset.scrambleDuration
-        ? parseFloat(element.dataset.scrambleDuration)
-        : 1);
-    const revealDelay = config.revealDelay ?? 0;
-
-    gsap.killTweensOf(el);
-
-    gsap.fromTo(
-      el,
-      { scrambleText: { text: "", chars: "" } },
-      {
-        scrambleText: {
-          text,
-          chars: "upperAndLowerCase",
-          revealDelay,
-        },
-        duration,
-      },
-    );
-  };
-
-  const killScrambleTriggers = () => {
-    ScrollTrigger.getAll().forEach((st) => {
-      if (st.vars.id === "scramble") {
-        st.kill();
-      }
-    });
-  };
-
-  const initScramble = () => {
-    if (!textElementsRef.current) return;
-    killScrambleTriggers();
-
-    textElementsRef.current.forEach((el) => {
-      ScrollTrigger.create({
-        id: "scramble",
-        trigger: el,
-        start: "top bottom",
-        end: "bottom top",
-        onEnter: () => scramble(el),
-        onEnterBack: () => scramble(el),
-      });
-    });
-
-    if (logoRef.current) {
-      scramble(logoRef.current, { revealDelay: 0.5 });
-    }
-  };
-
-  const initRelatedDemos = () => {
-    if (!gridItemsRef.current || !relatedRef.current) return;
-
-    gsap.set(gridItemsRef.current, {
-      xPercent: 100,
-      scale: 0,
-      opacity: 0,
-    });
-
-    ScrollTrigger.create({
-      trigger: relatedRef.current,
-      start: "top center+=25%",
-      onEnter: () => {
-        if (!logoRef.current || !gridItemsRef.current) return;
-
-        gsap.to(logoRef.current, {
-          duration: 0.7,
-          ease: "expo",
-          opacity: 0,
-        });
-
-        gsap.fromTo(
-          gridItemsRef.current,
-          {
-            xPercent: 100,
-            scale: 0,
-            opacity: 0,
-          },
-          {
-            duration: 0.7,
-            ease: "expo",
-            stagger: 0.1,
-            xPercent: 0,
-            scale: 1,
-            opacity: 1,
-          },
-        );
-      },
-      onLeaveBack: () => {
-        if (!logoRef.current || !gridItemsRef.current) return;
-
-        gsap.to(logoRef.current, {
-          duration: 0.5,
-          ease: "power3.in",
-          opacity: 1,
-        });
-
-        gsap.to(gridItemsRef.current, {
-          duration: 0.5,
-          ease: "power3.in",
-          scale: 0,
-          opacity: 0,
-          xPercent: 100,
-          stagger: 0.05,
-        });
-      },
-    });
-  };
-
-  const getDomReferences = () => {
-    if (contentRef.current) {
-      textElementsRef.current = contentRef.current.querySelectorAll(".el");
-      const relatedEl = contentRef.current.querySelector(".related");
-      if (relatedEl) {
-        relatedRef.current = relatedEl as HTMLDivElement;
-        gridItemsRef.current = relatedEl.querySelectorAll(".grid__item");
-      }
-    }
-  };
-  const initAnimations = () => {
-    ScrollSmoother.create({
-      smooth: 1,
-      normalizeScroll: true,
-    });
-
-    getDomReferences();
-
-    storeOriginalText();
-    initFlips();
-    initScramble();
-    initRelatedDemos();
-  };
-
-  const handleResize = () => {
-    ScrollTrigger.refresh(true);
-    getDomReferences();
-    initFlips();
-    initScramble();
-  };
-
-  const cleanup = () => {
-    ScrollTrigger.getAll().forEach((st) => st.kill());
-    gsap.killTweensOf("*");
-  };
+export default function ScrollTextMotion() {
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      initAnimations();
-    }, 100);
+    const root = rootRef.current;
+    if (!root) return;
 
-    window.addEventListener("resize", handleResize);
+    const ctx = gsap.context(() => {
+      const smoother = ScrollSmoother.create({
+        smooth: 1,
+        normalizeScroll: true,
+        wrapper: "#smooth-wrapper",
+        content: "#smooth-content",
+      });
 
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", handleResize);
-      cleanup();
-    };
+      const textElements = root.querySelectorAll<HTMLElement>(".el");
+      const logoEl = root.querySelector<HTMLElement>(".logo > span");
+      const relatedEl = root.querySelector<HTMLElement>(".related");
+      const relatedItems =
+        relatedEl?.querySelectorAll<HTMLElement>(".grid__item") ?? [];
+
+      textElements.forEach((el) => {
+        el.dataset.text = el.textContent || "";
+      });
+      if (logoEl) logoEl.dataset.text = logoEl.textContent || "";
+
+      function resetTextElements() {
+        textElements.forEach((el) => {
+          gsap.set(el, { clearProps: "transform,opacity,filter" });
+        });
+      }
+
+      function initFlips() {
+        resetTextElements();
+
+        textElements.forEach((el) => {
+          const originalClass = [...el.classList].find((c) =>
+            c.startsWith("pos-"),
+          );
+          const targetClass = el.dataset.altPos;
+          const flipEase = el.dataset.flipEase || "expo.inOut";
+
+          if (!originalClass || !targetClass || originalClass === targetClass)
+            return;
+
+          el.classList.add(targetClass);
+          el.classList.remove(originalClass);
+
+          const flipState = Flip.getState(el, {
+            props: "opacity, filter, width",
+          });
+
+          el.classList.add(originalClass);
+          el.classList.remove(targetClass);
+
+          Flip.to(flipState, {
+            ease: flipEase,
+            scrollTrigger: {
+              trigger: el,
+              start: "clamp(bottom bottom-=10%)",
+              end: "clamp(center center)",
+              scrub: true,
+            },
+          });
+          Flip.from(flipState, {
+            ease: flipEase,
+            scrollTrigger: {
+              trigger: el,
+              start: "clamp(center center)",
+              end: "clamp(top top)",
+              scrub: true,
+            },
+          });
+        });
+      }
+
+      function scramble(
+        el: HTMLElement,
+        opts: { duration?: number; revealDelay?: number } = {},
+      ) {
+        const text = el.dataset.text ?? el.textContent ?? "";
+        const finalDuration =
+          opts.duration ??
+          (el.dataset.scrambleDuration
+            ? parseFloat(el.dataset.scrambleDuration)
+            : 1);
+
+        gsap.killTweensOf(el);
+        gsap.fromTo(
+          el,
+          { scrambleText: { text: "", chars: "" } },
+          {
+            scrambleText: {
+              text,
+              chars: "upperAndLowerCase",
+              revealDelay: opts.revealDelay ?? 0,
+            },
+            duration: finalDuration,
+          },
+        );
+      }
+
+      function killScrambleTriggers() {
+        ScrollTrigger.getAll().forEach((st) => {
+          if (st.vars.id === "scramble") st.kill();
+        });
+      }
+
+      function initScramble() {
+        killScrambleTriggers();
+        textElements.forEach((el) => {
+          ScrollTrigger.create({
+            id: "scramble",
+            trigger: el,
+            start: "top bottom",
+            end: "bottom top",
+            onEnter: () => scramble(el),
+            onEnterBack: () => scramble(el),
+          });
+        });
+        if (logoEl) scramble(logoEl, { revealDelay: 0.5 });
+      }
+
+      function initRelatedDemos() {
+        if (!relatedEl || !relatedItems.length) return;
+
+        gsap.set(relatedItems, { xPercent: 100, scale: 0, opacity: 0 });
+
+        ScrollTrigger.create({
+          trigger: relatedEl,
+          start: "top center+=25%",
+          onEnter: () => {
+            if (logoEl)
+              gsap.to(logoEl, { duration: 0.7, ease: "expo", opacity: 0 });
+            gsap.fromTo(
+              relatedItems,
+              { xPercent: 100, scale: 0, opacity: 0 },
+              {
+                duration: 0.7,
+                ease: "expo",
+                stagger: 0.1,
+                xPercent: 0,
+                scale: 1,
+                opacity: 1,
+              },
+            );
+          },
+          onLeaveBack: () => {
+            if (logoEl)
+              gsap.to(logoEl, { duration: 0.5, ease: "power3.in", opacity: 1 });
+            gsap.to(relatedItems, {
+              duration: 0.5,
+              ease: "power3.in",
+              scale: 0,
+              opacity: 0,
+              xPercent: 100,
+              stagger: 0.05,
+            });
+          },
+        });
+      }
+
+      initFlips();
+      initScramble();
+      initRelatedDemos();
+
+      const handleResize = () => {
+        ScrollTrigger.refresh(true);
+        initFlips();
+        initScramble();
+      };
+      window.addEventListener("resize", handleResize);
+
+      return () => {
+        window.removeEventListener("resize", handleResize);
+        smoother.kill();
+      };
+    }, root);
+
+    return () => ctx.revert();
   }, []);
 
   return (
-    <div className={styles.page}>
-      <Frame
-        title="GSAP FLIP"
-        archiveLink="#archive"
-        githubLink="#github"
-        tags={frameTags}
-        sponsor={<div id="cdawrap">Sponsor Content</div>}
-      />
+    <div ref={rootRef}>
+      <header className="frame">
+        <h1 className="frame__title">
+          On-Scroll Text Motion inspired by{" "}
+          <a href="https://www.instagram.com/p/DQkL7XUjEtN/">satto.studio</a>
+        </h1>
+        <a className="frame__archive" href="https://tympanus.net/codrops/hub/">
+          All demos
+        </a>
+        <a
+          className="frame__github"
+          href="https://github.com/codrops/ScrollTextMotion"
+        >
+          GitHub
+        </a>
+        <nav className="frame__tags">
+          <a href="https://tympanus.net/codrops/demos/?tag=scroll">#scroll</a>
+          <a href="https://tympanus.net/codrops/demos/?tag=typography">
+            #typography
+          </a>
+          <a href="https://tympanus.net/codrops/demos/?tag=gsap">#gsap</a>
+        </nav>
+      </header>
 
-      <div className={styles.content} ref={contentRef}>
-        <TextGroup items={textItems} />
+      <div className="logo fixed">
+        <span>Mens Absens</span>
+      </div>
 
-        <Related ref={relatedRef}>
-          <Grid items={gridItems} columns={4} />
-        </Related>
+      <div id="smooth-wrapper">
+        <main id="smooth-content">
+          <div className="content">
+            {GROUPS.map((group, gi) => (
+              <div className="group" key={gi}>
+                {group.map((item, ii) => (
+                  <div
+                    key={ii}
+                    className={`el ${item.xl ? "el--xl" : ""} ${item.pos}`}
+                    data-alt-pos={item.altPos}
+                    data-flip-ease={item.flipEase}
+                    data-scramble-duration={item.scrambleDuration ?? 1}
+                  >
+                    {item.text}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <section className="related">
+            <p>You might also like</p>
+            <div className="grid">
+              {RELATED_ITEMS.map((it, i) => (
+                <a
+                  className="grid__item"
+                  href={it.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  key={i}
+                >
+                  <div
+                    className="grid__item-img"
+                    style={{ backgroundImage: `url(${it.img})` }}
+                  />
+                  <h3 className="grid__item-title">{it.title}</h3>
+                </a>
+              ))}
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   );
-};
-
-export default ScrollDemoPage;
+}

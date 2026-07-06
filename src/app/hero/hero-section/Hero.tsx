@@ -121,10 +121,9 @@ export default function HeroSection() {
           </div>
         </nav>
       </div>
-      {/* Animated Wave Background */}
       <div className="hero-wave-background">
         <Waves
-          lineColor="rgba(255, 255, 255, 0.15)"
+          lineColor="white"
           backgroundColor="transparent"
           waveSpeedX={0.015}
           waveSpeedY={0.01}

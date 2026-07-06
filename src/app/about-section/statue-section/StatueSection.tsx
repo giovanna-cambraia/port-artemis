@@ -16,45 +16,150 @@ gsap.registerPlugin(ScrollTrigger, Flip, ScrambleTextPlugin);
 // The "pos-*" classes map to CSS grid positions defined in the module.
 const textItems = [
   // SECTION 0: "HEAD INTO THE ABYSS."
-  { text: "HEAD", position: "pos-1", altPosition: "pos-5", flipEase: "expo.inOut", scrambleDuration: 1.2 },
-  { text: "INTO THE", position: "pos-2", altPosition: "pos-6", flipEase: "power3.inOut", scrambleDuration: 1.3 },
-  { text: "ABYSS.", position: "pos-3", altPosition: "pos-7", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
-  { text: "Started with hardware. Ended up everywhere. Embedded systems, backends, the occasional star map.", position: "pos-4", altPosition: "pos-8", flipEase: "sine.inOut", scrambleDuration: 1.1 },
-  
+  {
+    text: "HEAD",
+    position: "pos-1",
+    altPosition: "pos-5",
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.2,
+  },
+  {
+    text: "INTO THE",
+    position: "pos-2",
+    altPosition: "pos-6",
+    flipEase: "power3.inOut",
+    scrambleDuration: 1.3,
+  },
+  {
+    text: "ABYSS.",
+    position: "pos-3",
+    altPosition: "pos-7",
+    isLarge: true,
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.4,
+  },
+  {
+    text: "Started with hardware. Ended up everywhere. Embedded systems, backends, the occasional star map.",
+    position: "pos-4",
+    altPosition: "pos-8",
+    flipEase: "sine.inOut",
+    scrambleDuration: 1.1,
+  },
+
   // SECTION 1: "STRUCTURE OR CHAOS."
-  { text: "STRUCTURE", position: "pos-9", altPosition: "pos-13", flipEase: "expo.inOut", scrambleDuration: 1.2 },
-  { text: "OR", position: "pos-10", altPosition: "pos-14", flipEase: "power3.inOut", scrambleDuration: 1.3 },
-  { text: "CHAOS.", position: "pos-11", altPosition: "pos-15", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
-  { text: "NestJS · C · TypeScript · ARM. I don't pick tools. I pick the right level of control.", position: "pos-12", altPosition: "pos-16", flipEase: "sine.inOut", scrambleDuration: 1.1 },
-  
+  {
+    text: "STRUCTURE",
+    position: "pos-9",
+    altPosition: "pos-13",
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.2,
+  },
+  {
+    text: "OR",
+    position: "pos-10",
+    altPosition: "pos-14",
+    flipEase: "power3.inOut",
+    scrambleDuration: 1.3,
+  },
+  {
+    text: "CHAOS.",
+    position: "pos-11",
+    altPosition: "pos-15",
+    isLarge: true,
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.4,
+  },
+  {
+    text: "NestJS · C · TypeScript · ARM. I don't pick tools. I pick the right level of control.",
+    position: "pos-12",
+    altPosition: "pos-16",
+    flipEase: "sine.inOut",
+    scrambleDuration: 1.1,
+  },
+
   // SECTION 2: "AIMED AT ORBIT."
-  { text: "AIMED", position: "pos-17", altPosition: "pos-21", flipEase: "expo.inOut", scrambleDuration: 1.2 },
-  { text: "AT", position: "pos-18", altPosition: "pos-22", flipEase: "power3.inOut", scrambleDuration: 1.3 },
-  { text: "ORBIT.", position: "pos-19", altPosition: "pos-23", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
-  { text: "ITA. INPE. Robotics. Space engineering. Every project is a stage in the launch sequence.", position: "pos-20", altPosition: "pos-24", flipEase: "sine.inOut", scrambleDuration: 1.1 },
-  
+  {
+    text: "AIMED",
+    position: "pos-17",
+    altPosition: "pos-21",
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.2,
+  },
+  {
+    text: "AT",
+    position: "pos-18",
+    altPosition: "pos-22",
+    flipEase: "power3.inOut",
+    scrambleDuration: 1.3,
+  },
+  {
+    text: "ORBIT.",
+    position: "pos-19",
+    altPosition: "pos-23",
+    isLarge: true,
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.4,
+  },
+  {
+    text: "ITA. INPE. Robotics. Space engineering. Every project is a stage in the launch sequence.",
+    position: "pos-20",
+    altPosition: "pos-24",
+    flipEase: "sine.inOut",
+    scrambleDuration: 1.1,
+  },
+
   // SECTION 3: "STILL TRANSMITTING."
-  { text: "STILL", position: "pos-25", altPosition: "pos-29", flipEase: "expo.inOut", scrambleDuration: 1.2 },
-  { text: "TRANS", position: "pos-26", altPosition: "pos-30", flipEase: "power3.inOut", scrambleDuration: 1.3 },
-  { text: "MITTING.", position: "pos-27", altPosition: "pos-31", isLarge: true, flipEase: "expo.inOut", scrambleDuration: 1.4 },
-  { text: "Signal ongoing. No end timestamp. // REF: THE REAL YOU", position: "pos-28", altPosition: "pos-32", flipEase: "sine.inOut", scrambleDuration: 1.1 },
+  {
+    text: "STILL",
+    position: "pos-25",
+    altPosition: "pos-29",
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.2,
+  },
+  {
+    text: "TRANS",
+    position: "pos-26",
+    altPosition: "pos-30",
+    flipEase: "power3.inOut",
+    scrambleDuration: 1.3,
+  },
+  {
+    text: "MITTING.",
+    position: "pos-27",
+    altPosition: "pos-31",
+    isLarge: true,
+    flipEase: "expo.inOut",
+    scrambleDuration: 1.4,
+  },
+  {
+    text: "Signal ongoing. No end timestamp. // REF: THE REAL YOU",
+    position: "pos-28",
+    altPosition: "pos-32",
+    flipEase: "sine.inOut",
+    scrambleDuration: 1.1,
+  },
 ];
 
 // ── TEXTGROUP COMPONENT (inline, matches ScrollDemoPage's version) ──
 const TextGroup: React.FC<{ items: typeof textItems }> = ({ items }) => {
   return (
     <div className={styles.textGroup}>
-      {items.map((item, index) => (
-        <span
-          key={index}
-          className={`${styles.textEl} ${styles[item.position]} ${item.isLarge ? styles.large : ""}`}
-          data-alt-pos={item.altPosition}
-          data-flip-ease={item.flipEase}
-          data-scramble-duration={item.scrambleDuration}
-        >
-          {item.text}
-        </span>
-      ))}
+      {items.map((item, index) => {
+        const posClass = styles[item.position] || "";
+        const altClass = styles[item.altPosition || item.position] || "";
+        return (
+          <span
+            key={index}
+            className={`${styles.textEl} el ${posClass} ${item.isLarge ? styles.large : ""}`}
+            data-pos={posClass}
+            data-alt-pos={altClass}
+            data-flip-ease={item.flipEase || "expo.inOut"}
+            data-scramble-duration={item.scrambleDuration || 1}
+          >
+            {item.text}
+          </span>
+        );
+      })}
     </div>
   );
 };
@@ -66,7 +171,7 @@ export default function StatueScene() {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const dotRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const glitchOverlayRef = useRef<HTMLDivElement>(null);
-  
+
   // ── REFS FOR SCRAMBLE/FLIP LOGIC ──────────────────────────────────
   const textElementsRef = useRef<NodeListOf<Element> | null>(null);
 
@@ -96,16 +201,21 @@ export default function StatueScene() {
 
     textElementsRef.current.forEach((el) => {
       const element = el as HTMLElement & {
-        dataset: { altPos?: string; flipEase?: string };
+        dataset: {
+          pos?: string;
+          altPos?: string;
+          flipEase?: string;
+        };
       };
 
-      const originalClass = [...element.classList].find((c) =>
-        c.startsWith("pos-"),
-      );
+      // Use dataset.pos instead of finding class
+      const originalClass = element.dataset.pos;
       const targetClass = element.dataset.altPos;
       const flipEase = element.dataset.flipEase || "expo.inOut";
 
-      if (!originalClass || !targetClass) return;
+      // Skip if no classes or they're the same
+      if (!originalClass || !targetClass || originalClass === targetClass)
+        return;
 
       // Store current position, swap classes
       element.classList.add(targetClass);
@@ -466,7 +576,7 @@ export default function StatueScene() {
     // ── INIT SCRAMBLE/FLIP (after DOM is ready) ─────────────────────
     const initTextAnimations = () => {
       if (contentRef.current) {
-        textElementsRef.current = contentRef.current.querySelectorAll(`.${styles.textEl}`);
+        textElementsRef.current = contentRef.current.querySelectorAll(".el");
         storeOriginalText();
         initFlips();
         initScramble();
@@ -481,10 +591,10 @@ export default function StatueScene() {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       ScrollTrigger.refresh(true);
-      
+
       // Re-init flips and scramble on resize
       if (contentRef.current) {
-        textElementsRef.current = contentRef.current.querySelectorAll(`.${styles.textEl}`);
+        textElementsRef.current = contentRef.current.querySelectorAll(".el");
         storeOriginalText();
         initFlips();
         initScramble();
