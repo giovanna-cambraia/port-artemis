@@ -168,7 +168,6 @@ export default function Scene({
   sectionRef: React.RefObject<HTMLElement> | null;
   progressRef: React.RefObject<number>;
 }) {
-  const { nodes } = useGLTF("/circle_text_13.glb");
   const { camera } = useThree();
 
   const circularText = useRef<THREE.Group>(null);
@@ -228,12 +227,11 @@ export default function Scene({
     }
   });
 
-  const torusMesh = nodes.Torus as THREE.Mesh;
 
   return (
     <>
       <color args={["black"]} attach="background" />
-      <ambientLight intensity={0.5} />
+    
 
       <group rotation={[-0.01, 0.9, 0.01]}>
         <spotLight

@@ -66,7 +66,6 @@ export default function TransmissionWrapper() {
           />
         </Canvas>
 
-        {/* Cards overlay — plain DOM, inside sticky, z-indexed above canvas */}
         <div
           style={{
             position: "absolute",
