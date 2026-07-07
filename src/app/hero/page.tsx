@@ -4,7 +4,6 @@ import { ImmersiveSection } from "../immersive-section/Immersive";
 import TransmissionWrapper from "../immersive-section/3Dscene/TransmissionWrapper";
 import Footer from "./footer/Footer";
 import ScrollSection from "../about-section/horizontal-scroll/ScrollSection";
-import AboutHeader from "../about-section/about-header/AboutHeader";
 import StatueSection from "../about-section/statue-section/StatueSection";
 import WorkSection from "../about-section/work-section/WorkSection";
 import CTA from "../cta/CTA";
@@ -15,7 +14,6 @@ export default function Home() {
       <HeroSection />
       <FeaturesSection />
       <ImmersiveSection />
-      <AboutHeader />
       <ScrollSection />
       <StatueSection />
       <TransmissionWrapper />

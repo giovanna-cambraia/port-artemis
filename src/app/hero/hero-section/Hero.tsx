@@ -123,7 +123,7 @@ export default function HeroSection() {
       </div>
       <div className="hero-wave-background">
         <Waves
-          lineColor="white"
+          lineColor="gray"
           backgroundColor="transparent"
           waveSpeedX={0.015}
           waveSpeedY={0.01}
