@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { GridScan } from "../../react-components/grid-scan/GridScan"; 
+import { GridScan } from "../../react-components/grid-scan/GridScan";
 import "./Immersive.css";
 import styles from "../immersive-section/about-header/AboutHeader.module.css";
+import { LogoCard } from "./Logo";
 
 export function ImmersiveSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,11 +29,9 @@ export function ImmersiveSection() {
     return Math.max(0, Math.min(1, (progress - start) / (end - start)));
   }
 
-  // W zoom occupies the first ~55% of scroll
   const zoomPhase = phase(0, 0.5);
   const wFadeOut = phase(0.4, 0.55);
 
-  // About content arrives in the remaining scroll, with parallax offsets
   const aboutReveal = phase(0.45, 0.65);
   const leftParallax = phase(0.45, 1);
   const rightParallax = phase(0.45, 1);
@@ -44,10 +43,9 @@ export function ImmersiveSection() {
     <section
       ref={containerRef}
       className="immersive-section"
-      style={{ height: "250vh" }} // longer track: W beat + about beat
+      style={{ height: "250vh" }}
     >
       <div className="sticky-container">
-        {/* Background grid — present throughout, more visible as W fades */}
         <div
           style={{
             position: "absolute",
@@ -75,7 +73,6 @@ export function ImmersiveSection() {
           />
         </div>
 
-        {/* W letter zoom */}
         <div
           className="zoom-layer"
           style={{ opacity: 1 - wFadeOut, zIndex: 5 }}
@@ -98,7 +95,6 @@ export function ImmersiveSection() {
           </div>
         </div>
 
-        {/* About content — fades/parallaxes in as W dissolves */}
         <div
           className={styles.content}
           style={{
@@ -117,15 +113,7 @@ export function ImmersiveSection() {
             <h1 className={styles.name}>I&apos;m Artem</h1>
           </div>
 
-          <div
-            className={styles.center}
-            style={{
-              transform: `rotate(-1.5deg) translateY(${
-                (1 - aboutReveal) * 40
-              }px)`,
-            }}
-          />
-
+          <LogoCard aboutReveal={aboutReveal} />
           <div
             className={styles.right}
             style={{
