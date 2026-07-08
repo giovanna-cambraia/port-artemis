@@ -1,8 +1,4 @@
-/* ==================================================================
-   StatueScene.css — plain stylesheet (no CSS Modules) so GSAP's
-   string selectors (".about-hero", ".timeline-entry", etc.) keep
-   working without hashed class-name breakage.
-   ================================================================== */
+
 
 .statue-scene {
   --bg: #0a0a0a;
@@ -20,7 +16,6 @@
   overflow-x: clip;
 }
 
-/* ================== HEADER ================== */
 .statue-scene header {
   position: fixed;
   top: 0;
@@ -102,12 +97,11 @@
   font-size: 0.9rem;
 }
 
-/* ================== PINNED PORTRAIT ================== */
 .statue-scene .about-portrait-wrapper {
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translateX(-50%) scale(0.9);
+  transform: scale(0.9);
   width: min(38vw, 420px);
   opacity: 0;
   z-index: 3;
@@ -129,7 +123,6 @@
   background: transparent;
 }
 
-/* ================== HERO ================== */
 .statue-scene .about-hero {
   position: relative;
   height: 100vh;
@@ -177,7 +170,6 @@
   -webkit-text-stroke: 0px var(--accent);
 }
 
-/* ================== INTRO / BIO ================== */
 .statue-scene .about-intro {
   position: relative;
   min-height: 100vh;
@@ -188,14 +180,23 @@
 
 .statue-scene .intro-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: 1fr min(32vw, 380px) 1fr;
+  gap: 2rem;
   width: 100%;
   align-items: start;
 }
 
 .statue-scene .intro-left {
   max-width: 480px;
+}
+
+.statue-scene .intro-center {
+  pointer-events: none;
+}
+
+.statue-scene .intro-right {
+  max-width: 340px;
+  justify-self: end;
 }
 
 .statue-scene .small-title {
@@ -237,7 +238,6 @@
   color: #fff;
 }
 
-/* ── stack log (was: ingredients log) ───────────────────────────── */
 .statue-scene .stack-log {
   border-top: 1px solid var(--hair);
 }
@@ -252,9 +252,9 @@
 
 .statue-scene .stack-item {
   display: grid;
-  grid-template-columns: 60px 1fr;
+  grid-template-columns: 40px 1fr; 
   gap: 1rem;
-  padding: 1.1rem 0;
+  padding: 0.8rem 0;
   border-top: 1px solid var(--hair);
 }
 
@@ -276,41 +276,62 @@
 
 .statue-scene .stack-text p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.78rem; 
   line-height: 1.5;
   color: var(--muted);
 }
 
-/* ================== TIMELINE ================== */
 .statue-scene .timeline-section {
   position: relative;
-  padding: 4rem 3.5rem 8rem;
-}
-
-.statue-scene .timeline-main-title {
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  margin-bottom: 3rem;
-  font-weight: 800;
+  padding: 0 3.5rem; 
 }
 
 .statue-scene .timeline-entry {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 3rem;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  padding: 4rem 0;
-  border-top: 1px solid var(--hair);
+  opacity: 0;
+  padding: 0; 
+  border-top: none; 
 }
 
-.statue-scene .timeline-entry:first-child {
-  border-top: none;
+.statue-scene .timeline-entry.active {
+  opacity: 1;
+}
+
+.statue-scene .timeline-entry.side-left .timeline-right {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.statue-scene .timeline-entry.side-right .timeline-right {
+  grid-column: 2;
+  justify-self: end;
 }
 
 .statue-scene .timeline-left {
-  position: relative;
+  display: none;
 }
 
-.statue-scene .timeline-date {
+.statue-scene .timeline-entry .timeline-right {
+  grid-column: 1 / -1;
+  max-width: 480px;
+}
+
+.statue-scene .timeline-entry.side-left .timeline-right {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.statue-scene .timeline-entry.side-right .timeline-right {
+  grid-column: 2;
+  justify-self: end;
+}
+
+.statue-scene .timeline-entry .timeline-date {
   font-family: var(--mono);
   font-size: 0.75rem;
   letter-spacing: 0.2em;
@@ -318,27 +339,19 @@
   margin-bottom: 0.8rem;
 }
 
-.statue-scene .timeline-img {
-  width: 100%;
-  border-radius: 4px;
-  display: block;
-  filter: grayscale(0.2);
-}
-
-.statue-scene .timeline-title {
+.statue-scene .timeline-entry .timeline-title {
   font-size: clamp(1.4rem, 2.4vw, 2.2rem);
   margin: 0 0 0.8rem;
   font-weight: 700;
 }
 
-.statue-scene .timeline-description {
+.statue-scene .timeline-entry .timeline-description {
   font-family: var(--mono);
   font-size: 0.9rem;
   line-height: 1.8;
   color: var(--muted);
 }
 
-/* ================== SOCIAL SIDEBAR ================== */
 .statue-scene .social-sidebar {
   position: fixed;
   right: 2rem;
@@ -378,7 +391,6 @@
   height: 18px;
 }
 
-/* ================== FOOTER ================== */
 .statue-scene footer {
   border-top: 1px solid var(--hair);
   padding: 3rem 3.5rem;
@@ -415,7 +427,6 @@
   color: var(--fg);
 }
 
-/* ================== MOBILE ================== */
 @media (max-width: 768px) {
   .statue-scene .desktop-nav {
     display: none;
@@ -435,17 +446,39 @@
 
   .statue-scene .intro-grid {
     grid-template-columns: 1fr;
+    gap: 2rem;
   }
 
-  .statue-scene .about-intro,
-  .statue-scene .timeline-section {
+  .statue-scene .intro-center {
+    display: none;
+  }
+
+  .statue-scene .about-intro {
     padding: 3rem 1.4rem;
+  }
+
+  .statue-scene .timeline-section {
+    padding: 0 1.4rem;
   }
 
   .statue-scene .timeline-entry {
     grid-template-columns: 1fr;
     gap: 1.5rem;
     padding: 2.5rem 0;
+    height: auto; 
+    position: relative;
+    opacity: 1; 
+  }
+
+  .statue-scene .timeline-entry .timeline-right {
+    grid-column: 1;
+    max-width: 100%;
+  }
+
+  .statue-scene .timeline-entry.side-left .timeline-right,
+  .statue-scene .timeline-entry.side-right .timeline-right {
+    grid-column: 1;
+    justify-self: start;
   }
 
   .statue-scene .social-sidebar {
