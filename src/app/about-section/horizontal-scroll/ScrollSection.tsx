@@ -2,11 +2,108 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import styles from "./ScrollSection.module.css";
 
 gsap.registerPlugin(ScrollTrigger);
+
+// ─── CUSTOM SHADERS ──────────────────────────────────────────
+
+const VignetteShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    intensity: { value: 0.65 },
+    roundness: { value: 0.8 },
+    smoothness: { value: 0.4 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float intensity;
+    uniform float roundness;
+    uniform float smoothness;
+    varying vec2 vUv;
+
+    void main() {
+      vec4 color = texture2D(tDiffuse, vUv);
+      vec2 center = vUv - 0.5;
+      float dist = length(center);
+      float vignette = smoothstep(roundness, roundness - smoothness, dist);
+      vignette = mix(1.0, vignette, intensity);
+      gl_FragColor = vec4(color.rgb * vignette, color.a);
+    }
+  `,
+};
+
+const ChromaticAberrationShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    intensity: { value: 0.002 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float intensity;
+    varying vec2 vUv;
+
+    void main() {
+      vec2 offset = (vUv - 0.5) * intensity;
+      float r = texture2D(tDiffuse, vUv + offset).r;
+      float g = texture2D(tDiffuse, vUv).g;
+      float b = texture2D(tDiffuse, vUv - offset).b;
+      gl_FragColor = vec4(r, g, b, 1.0);
+    }
+  `,
+};
+
+const GrainShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    intensity: { value: 0.035 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float intensity;
+    varying vec2 vUv;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    }
+
+    void main() {
+      vec4 color = texture2D(tDiffuse, vUv);
+      float grain = hash(vUv + fract(vec2(float(gl_FragCoord.x), float(gl_FragCoord.y)) * 0.5));
+      grain = (grain - 0.5) * intensity;
+      gl_FragColor = vec4(color.rgb + grain, color.a);
+    }
+  `,
+};
+
+// ─── BEATS DATA ──────────────────────────────────────────────
 
 const BEATS = [
   {
@@ -35,6 +132,8 @@ const BEATS = [
   },
 ];
 
+// ─── COMPONENT ─────────────────────────────────────────────────
+
 export default function ScrollSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -44,12 +143,23 @@ export default function ScrollSection() {
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // ── RENDERER ──────────────────────────────────────────────
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      powerPreference: "high-performance",
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
     canvasRef.current.appendChild(renderer.domElement);
 
+    // ── SCENE ──────────────────────────────────────────────────
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    // ── CAMERA ─────────────────────────────────────────────────
     const camera = new THREE.PerspectiveCamera(
       65,
       window.innerWidth / window.innerHeight,
@@ -58,6 +168,48 @@ export default function ScrollSection() {
     );
     camera.position.z = 20;
 
+    // ── POSTPROCESSING ────────────────────────────────────────
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    // Bloom — subtle, only affects bright objects (core + emissive stuff)
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      0.25, // strength
+      0.4, // radius
+      0.3, // threshold — only bloom pixels above this brightness
+    );
+    composer.addPass(bloomPass);
+
+    // Vignette
+    const vignettePass = new ShaderPass(VignetteShader);
+    vignettePass.uniforms.intensity.value = 0.6;
+    composer.addPass(vignettePass);
+
+    // Chromatic Aberration
+    const chromaPass = new ShaderPass(ChromaticAberrationShader);
+    chromaPass.uniforms.intensity.value = 0.0015;
+    composer.addPass(chromaPass);
+
+    // Film Grain
+    const grainPass = new ShaderPass(GrainShader);
+    grainPass.uniforms.intensity.value = 0.03;
+    composer.addPass(grainPass);
+
+    // ── LIGHTS (for atmospheric depth) ──────────────────────
+    const ambientLight = new THREE.AmbientLight(0x222244, 0.5);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xff6644, 0.8);
+    dirLight.position.set(10, 10, 10);
+    scene.add(dirLight);
+
+    const backLight = new THREE.DirectionalLight(0x4488ff, 0.3);
+    backLight.position.set(-5, -5, -10);
+    scene.add(backLight);
+
+    // ── CLUSTER CUBES (main) ──────────────────────────────────
     const clusterCubes: THREE.LineSegments[] = [];
     const clusterData: {
       rx: number;
@@ -74,9 +226,9 @@ export default function ScrollSection() {
       const geo = new THREE.BoxGeometry(size, size, size);
       const edges = new THREE.EdgesGeometry(geo);
       const mat = new THREE.LineBasicMaterial({
-        color: 0xffffff,
+        color: 0x8899bb,
         transparent: true,
-        opacity: Math.random() * 0.5 + 0.2,
+        opacity: Math.random() * 0.4 + 0.15,
       });
       const cube = new THREE.LineSegments(edges, mat);
 
@@ -105,6 +257,7 @@ export default function ScrollSection() {
       });
     }
 
+    // ── BACKGROUND CUBES ──────────────────────────────────────
     const bgCubes: THREE.LineSegments[] = [];
     const bgData: { rx: number; ry: number; floatOff: number }[] = [];
 
@@ -113,9 +266,9 @@ export default function ScrollSection() {
       const geo = new THREE.BoxGeometry(size, size, size);
       const edges = new THREE.EdgesGeometry(geo);
       const mat = new THREE.LineBasicMaterial({
-        color: 0xffffff,
+        color: 0x446688,
         transparent: true,
-        opacity: Math.random() * 0.12 + 0.04,
+        opacity: Math.random() * 0.08 + 0.02,
       });
       const cube = new THREE.LineSegments(edges, mat);
       cube.position.set(
@@ -137,16 +290,23 @@ export default function ScrollSection() {
       });
     }
 
-    const coreGeo = new THREE.IcosahedronGeometry(0.6, 1);
+    // ── CORE (glowing red icosahedron) ───────────────────────
+    const coreGeo = new THREE.IcosahedronGeometry(0.7, 1);
     const coreEdges = new THREE.EdgesGeometry(coreGeo);
     const coreMat = new THREE.LineBasicMaterial({
-      color: 0xe03030,
+      color: 0xff3030,
       transparent: true,
       opacity: 0.9,
     });
     const core = new THREE.LineSegments(coreEdges, coreMat);
     scene.add(core);
 
+    // Inner glow (small point light inside core)
+    const glowLight = new THREE.PointLight(0xff3030, 0.5, 5);
+    glowLight.position.copy(core.position);
+    scene.add(glowLight);
+
+    // ── SCROLL STATE ───────────────────────────────────────────
     const state = { progress: 0 };
 
     ScrollTrigger.create({
@@ -156,9 +316,12 @@ export default function ScrollSection() {
       scrub: 1.4,
       onUpdate: (self) => {
         state.progress = self.progress;
+        // Pulse bloom with scroll
+        bloomPass.strength = 0.2 + state.progress * 0.3;
       },
     });
 
+    // ── TEXT ANIMATIONS ──────────────────────────────────────
     const total = BEATS.length;
 
     leftRefs.current.forEach((el, i) => {
@@ -251,6 +414,7 @@ export default function ScrollSection() {
       }
     });
 
+    // ── ANIMATION LOOP ────────────────────────────────────────
     let rafId: number;
     const clock = new THREE.Clock();
 
@@ -259,12 +423,12 @@ export default function ScrollSection() {
       const t = clock.getElapsedTime();
       const p = state.progress;
 
+      // Camera movement
       camera.position.z = 20 - p * 5;
       camera.position.y = Math.sin(t * 0.15) * 0.3;
       camera.rotation.z = Math.sin(t * 0.1) * 0.008;
 
-      const clusterGroup = new THREE.Euler(0, p * Math.PI * 0.5, 0);
-
+      // Cluster rotation & float
       clusterCubes.forEach((cube, i) => {
         const d = clusterData[i];
         cube.rotation.x += d.rx;
@@ -278,6 +442,7 @@ export default function ScrollSection() {
         cube.position.z = Math.cos(angle) * r;
       });
 
+      // Background drift
       bgCubes.forEach((cube, i) => {
         const d = bgData[i];
         cube.rotation.x += d.rx;
@@ -285,23 +450,34 @@ export default function ScrollSection() {
         cube.position.y += Math.sin(t * 0.3 + d.floatOff) * 0.001;
       });
 
+      // Core animation
       core.rotation.x = t * 0.6;
       core.rotation.y = t * 0.9;
       const coreMat2 = core.material as THREE.LineBasicMaterial;
       coreMat2.opacity = 0.6 + Math.sin(t * 4) * 0.35;
       core.scale.setScalar(1 + Math.sin(t * 3.5) * 0.08);
+      glowLight.position.copy(core.position);
 
-      renderer.render(scene, camera);
+      // Pulse bloom intensity slightly with core
+      bloomPass.strength = 0.2 + p * 0.3 + Math.sin(t * 2) * 0.03;
+
+      // Render via composer
+      composer.render();
     };
     animate();
 
+    // ── RESIZE ──────────────────────────────────────────────────
     const onResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
     };
     window.addEventListener("resize", onResize);
 
+    // ── CLEANUP ─────────────────────────────────────────────────
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
@@ -312,6 +488,8 @@ export default function ScrollSection() {
       }
     };
   }, []);
+
+  // ─── RENDER ────────────────────────────────────────────────────
 
   return (
     <section ref={containerRef} className={styles.section}>

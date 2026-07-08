@@ -1,649 +1,360 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { Suspense, useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Flip } from "gsap/Flip";
-import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
-import styles from "./StatueScene.module.css";
+import { Canvas } from "@react-three/fiber";
+import { Environment, useGLTF } from "@react-three/drei";
+import "./StatueScene.css";
 
-gsap.registerPlugin(ScrollTrigger, Flip, ScrambleTextPlugin);
+gsap.registerPlugin(ScrollTrigger);
 
-// ── FLATTENED TEXT ITEMS (from SECTIONS) ──────────────────────────
-// Each item gets position/altPosition to flip between.
-// The "pos-*" classes map to CSS grid positions defined in the module.
-const textItems = [
-  // SECTION 0: "HEAD INTO THE ABYSS."
-  {
-    text: "HEAD",
-    position: "pos-1",
-    altPosition: "pos-5",
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.2,
-  },
-  {
-    text: "INTO THE",
-    position: "pos-2",
-    altPosition: "pos-6",
-    flipEase: "power3.inOut",
-    scrambleDuration: 1.3,
-  },
-  {
-    text: "ABYSS.",
-    position: "pos-3",
-    altPosition: "pos-7",
-    isLarge: true,
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.4,
-  },
-  {
-    text: "Started with hardware. Ended up everywhere. Embedded systems, backends, the occasional star map.",
-    position: "pos-4",
-    altPosition: "pos-8",
-    flipEase: "sine.inOut",
-    scrambleDuration: 1.1,
-  },
+const MODEL_PATH = "/models/marble_torso_from_a_statue_of_dionysos.glb";
 
-  // SECTION 1: "STRUCTURE OR CHAOS."
-  {
-    text: "STRUCTURE",
-    position: "pos-9",
-    altPosition: "pos-13",
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.2,
-  },
-  {
-    text: "OR",
-    position: "pos-10",
-    altPosition: "pos-14",
-    flipEase: "power3.inOut",
-    scrambleDuration: 1.3,
-  },
-  {
-    text: "CHAOS.",
-    position: "pos-11",
-    altPosition: "pos-15",
-    isLarge: true,
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.4,
-  },
-  {
-    text: "NestJS · C · TypeScript · ARM. I don't pick tools. I pick the right level of control.",
-    position: "pos-12",
-    altPosition: "pos-16",
-    flipEase: "sine.inOut",
-    scrambleDuration: 1.1,
-  },
+function DionysosModel() {
+  const { scene } = useGLTF(MODEL_PATH);
+  return <primitive object={scene} />;
+}
 
-  // SECTION 2: "AIMED AT ORBIT."
-  {
-    text: "AIMED",
-    position: "pos-17",
-    altPosition: "pos-21",
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.2,
-  },
-  {
-    text: "AT",
-    position: "pos-18",
-    altPosition: "pos-22",
-    flipEase: "power3.inOut",
-    scrambleDuration: 1.3,
-  },
-  {
-    text: "ORBIT.",
-    position: "pos-19",
-    altPosition: "pos-23",
-    isLarge: true,
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.4,
-  },
-  {
-    text: "ITA. INPE. Robotics. Space engineering. Every project is a stage in the launch sequence.",
-    position: "pos-20",
-    altPosition: "pos-24",
-    flipEase: "sine.inOut",
-    scrambleDuration: 1.1,
-  },
+useGLTF.preload(MODEL_PATH);
 
-  // SECTION 3: "STILL TRANSMITTING."
+// ── TIMELINE DATA ──────────────────────────────────────────────────
+const timelineEntries = [
   {
-    text: "STILL",
-    position: "pos-25",
-    altPosition: "pos-29",
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.2,
+    date: "2018",
+    title: "First Line of Code",
+    description:
+      "Started with hardware. Ended up everywhere. Embedded systems, backends, the occasional star map.",
+    img: "/images/timeline-1.jpg",
   },
   {
-    text: "TRANS",
-    position: "pos-26",
-    altPosition: "pos-30",
-    flipEase: "power3.inOut",
-    scrambleDuration: 1.3,
+    date: "2020",
+    title: "Structure or Chaos",
+    description:
+      "NestJS · C · TypeScript · ARM. I don't pick tools. I pick the right level of control.",
+    img: "/images/timeline-2.jpg",
   },
   {
-    text: "MITTING.",
-    position: "pos-27",
-    altPosition: "pos-31",
-    isLarge: true,
-    flipEase: "expo.inOut",
-    scrambleDuration: 1.4,
+    date: "2022",
+    title: "Aimed at Orbit",
+    description:
+      "ITA. INPE. Robotics. Space engineering. Every project is a stage in the launch sequence.",
+    img: "/images/timeline-3.jpg",
   },
   {
-    text: "Signal ongoing. No end timestamp. // REF: THE REAL YOU",
-    position: "pos-28",
-    altPosition: "pos-32",
-    flipEase: "sine.inOut",
-    scrambleDuration: 1.1,
+    date: "2026",
+    title: "Still Transmitting",
+    description: "Signal ongoing. No end timestamp.",
+    img: "/images/timeline-4.jpg",
   },
 ];
 
-// ── TEXTGROUP COMPONENT (inline, matches ScrollDemoPage's version) ──
-const TextGroup: React.FC<{ items: typeof textItems }> = ({ items }) => {
-  return (
-    <div className={styles.textGroup}>
-      {items.map((item, index) => {
-        const posClass = styles[item.position] || "";
-        const altClass = styles[item.altPosition || item.position] || "";
-        return (
-          <span
-            key={index}
-            className={`${styles.textEl} el ${posClass} ${item.isLarge ? styles.large : ""}`}
-            data-pos={posClass}
-            data-alt-pos={altClass}
-            data-flip-ease={item.flipEase || "expo.inOut"}
-            data-scramble-duration={item.scrambleDuration || 1}
-          >
-            {item.text}
-          </span>
-        );
-      })}
-    </div>
-  );
-};
+// ── "BUILT WITH" LOG (replaces the ingredients log) ─────────────────
+const stackLog = [
+  {
+    qty: "6+",
+    label: "TypeScript & NestJS",
+    text: "Backend services built for scale and clarity.",
+  },
+  {
+    qty: "4+",
+    label: "Embedded C",
+    text: "Firmware close to the metal, where it counts.",
+  },
+  {
+    qty: "3",
+    label: "Space Projects",
+    text: "ITA, INPE, and orbital robotics work.",
+  },
+  {
+    qty: "2",
+    label: "React + NestJS",
+    text: "Front-ends paired with APIs that don't fall over.",
+  },
+  {
+    qty: "∞",
+    label: "Curiosity",
+    text: "Still learning, still transmitting.",
+  },
+];
 
 export default function StatueScene() {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
-  const dotRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const glitchOverlayRef = useRef<HTMLDivElement>(null);
+  const headerHeightRef = useRef(0);
 
-  // ── REFS FOR SCRAMBLE/FLIP LOGIC ──────────────────────────────────
-  const textElementsRef = useRef<NodeListOf<Element> | null>(null);
-
-  // ── SCRAMBLE/FLIP FUNCTIONS (ported from ScrollDemoPage) ──────────
-  const storeOriginalText = () => {
-    if (!textElementsRef.current) return;
-    textElementsRef.current.forEach((el) => {
-      const element = el as HTMLElement & { dataset: { text?: string } };
-      if (!element.dataset.text) {
-        element.dataset.text = element.textContent || "";
-      }
-    });
-  };
-
-  const resetTextElements = () => {
-    if (!textElementsRef.current) return;
-    textElementsRef.current.forEach((el) => {
-      gsap.set(el, {
-        clearProps: "transform,opacity,filter",
-      });
-    });
-  };
-
-  const initFlips = () => {
-    if (!textElementsRef.current || !wrapperRef.current) return;
-    resetTextElements();
-
-    textElementsRef.current.forEach((el) => {
-      const element = el as HTMLElement & {
-        dataset: {
-          pos?: string;
-          altPos?: string;
-          flipEase?: string;
-        };
-      };
-
-      // Use dataset.pos instead of finding class
-      const originalClass = element.dataset.pos;
-      const targetClass = element.dataset.altPos;
-      const flipEase = element.dataset.flipEase || "expo.inOut";
-
-      // Skip if no classes or they're the same
-      if (!originalClass || !targetClass || originalClass === targetClass)
-        return;
-
-      // Store current position, swap classes
-      element.classList.add(targetClass);
-      element.classList.remove(originalClass);
-
-      const flipState = Flip.getState(el, {
-        props: "opacity, filter, width",
-      });
-
-      element.classList.add(originalClass);
-      element.classList.remove(targetClass);
-
-      // Flip TO alt position on scroll
-      Flip.to(flipState, {
-        ease: flipEase,
-        scrollTrigger: {
-          trigger: wrapperRef.current,
-          start: "clamp(bottom bottom-=10%)",
-          end: "clamp(center center)",
-          scrub: true,
-        },
-      });
-
-      // Flip FROM alt position back to original
-      Flip.from(flipState, {
-        ease: flipEase,
-        scrollTrigger: {
-          trigger: wrapperRef.current,
-          start: "clamp(center center)",
-          end: "clamp(top top)",
-          scrub: true,
-        },
-      });
-    });
-  };
-
-  const scramble = (
-    el: Element,
-    config: { duration?: number; revealDelay?: number } = {},
-  ) => {
-    const element = el as HTMLElement & {
-      dataset: { text?: string; scrambleDuration?: string };
-    };
-
-    const text = element.dataset.text ?? element.textContent ?? "";
-    const duration =
-      config.duration ??
-      (element.dataset.scrambleDuration
-        ? parseFloat(element.dataset.scrambleDuration)
-        : 1);
-    const revealDelay = config.revealDelay ?? 0;
-
-    gsap.killTweensOf(el);
-
-    gsap.fromTo(
-      el,
-      { scrambleText: { text: "", chars: "" } },
-      {
-        scrambleText: {
-          text,
-          chars: "upperAndLowerCase",
-          revealDelay,
-        },
-        duration,
-      },
-    );
-  };
-
-  const killScrambleTriggers = () => {
-    ScrollTrigger.getAll().forEach((st) => {
-      if (st.vars.id === "scramble") {
-        st.kill();
-      }
-    });
-  };
-
-  const initScramble = () => {
-    if (!textElementsRef.current || !wrapperRef.current) return;
-    killScrambleTriggers();
-
-    textElementsRef.current.forEach((el) => {
-      ScrollTrigger.create({
-        id: "scramble",
-        trigger: wrapperRef.current,
-        start: "clamp(bottom bottom-=10%)",
-        end: "clamp(center center)",
-        onEnter: () => scramble(el),
-        onEnterBack: () => scramble(el),
-      });
-    });
-  };
-
-  // ── THREE.JS SETUP ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!canvasRef.current || !wrapperRef.current) return;
+    const header = wrapperRef.current?.querySelector(
+      "header",
+    ) as HTMLElement | null;
+    headerHeightRef.current = header ? header.offsetHeight - 1 : 0;
 
-    // ── RENDERER ──────────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.8;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    canvasRef.current.appendChild(renderer.domElement);
+    // ── MOBILE NAV TOGGLE ────────────────────────────────────────────
+    const hamburger = wrapperRef.current?.querySelector(".hamburger");
+    const mobileMenu = wrapperRef.current?.querySelector(".mobile-nav");
+    const onHamburgerClick = () => mobileMenu?.classList.toggle("show");
+    hamburger?.addEventListener("click", onHamburgerClick);
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      38,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      200,
-    );
-    camera.position.set(0, 0, 6.5);
+    // ── REUSABLE PIN + ANIMATE HELPER (ported from main.js) ─────────
+    function pinAndAnimate({
+      trigger,
+      endTrigger,
+      pin,
+      animations,
+      markers = false,
+    }: {
+      trigger: string;
+      endTrigger: string;
+      pin: string;
+      animations: { target: string; vars: gsap.TweenVars }[];
+      markers?: boolean;
+    }) {
+      const headerOffset = headerHeightRef.current;
 
-    // ── LIGHTS ────────────────────────────────────────────────────
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger,
+          start: `top top+=${headerOffset}`,
+          endTrigger,
+          end: `top top+=${headerOffset}`,
+          scrub: true,
+          pin,
+          pinSpacing: false,
+          markers,
+          invalidateOnRefresh: true,
+        },
+      });
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 8);
-    keyLight.position.set(1, 3, 6);
-    scene.add(keyLight);
+      animations.forEach(({ target, vars }) => {
+        tl.to(target, vars, 0);
+      });
 
-    const rimBlue = new THREE.DirectionalLight(0x88ccff, 5);
-    rimBlue.position.set(-5, 2, -2);
-    scene.add(rimBlue);
-
-    const rimRed = new THREE.DirectionalLight(0xff3300, 4);
-    rimRed.position.set(4, -2, -3);
-    scene.add(rimRed);
-
-    const topLight = new THREE.DirectionalLight(0xffffff, 4);
-    topLight.position.set(0, 8, 1);
-    scene.add(topLight);
-
-    const glow = new THREE.PointLight(0xffffff, 12, 5);
-    glow.position.set(0, 1, 3);
-    scene.add(glow);
-
-    // ── AMBIENT PARTICLE FIELD ─────────────────────────────────────
-    const particleCount = 400;
-    const particlePositions = new Float32Array(particleCount * 3);
-    const particleSpeeds = new Float32Array(particleCount);
-    for (let i = 0; i < particleCount; i++) {
-      particlePositions[i * 3] = (Math.random() - 0.5) * 16;
-      particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 12;
-      particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
-      particleSpeeds[i] = Math.random() * 0.3 + 0.05;
+      return tl;
     }
-    const particleGeo = new THREE.BufferGeometry();
-    particleGeo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(particlePositions, 3),
-    );
-    const particleMat = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.018,
-      transparent: true,
-      opacity: 0.4,
-      sizeAttenuation: true,
-    });
-    const particles = new THREE.Points(particleGeo, particleMat);
-    scene.add(particles);
 
-    // red signal particles
-    const redCount = 30;
-    const redPositions = new Float32Array(redCount * 3);
-    for (let i = 0; i < redCount; i++) {
-      redPositions[i * 3] = (Math.random() - 0.5) * 12;
-      redPositions[i * 3 + 1] = (Math.random() - 0.5) * 8;
-      redPositions[i * 3 + 2] = (Math.random() - 0.5) * 6 - 1;
-    }
-    const redGeo = new THREE.BufferGeometry();
-    redGeo.setAttribute("position", new THREE.BufferAttribute(redPositions, 3));
-    const redMat = new THREE.PointsMaterial({
-      color: 0xe03030,
-      size: 0.035,
-      transparent: true,
-      opacity: 0.85,
-      sizeAttenuation: true,
-    });
-    const redParticles = new THREE.Points(redGeo, redMat);
-    scene.add(redParticles);
+    const ctx = gsap.context(() => {
+      // ── INITIAL LOAD-IN (ported from runInitialAnimations) ────────
+      const onLoadTl = gsap.timeline({ defaults: { ease: "power2.out" } });
+      onLoadTl
+        .to("header", { "--border-width": "100%", duration: 3 }, 0)
+        .from(
+          ".desktop-nav a, .social-sidebar a",
+          {
+            y: -100,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power3.out",
+          },
+          0,
+        )
+        .to(".social-sidebar", { "--border-height": "100%", duration: 10 }, 0)
+        .to(".about-hero-content h1", { opacity: 1, duration: 1 }, 0)
+        .to(
+          ".about-hero-content h1",
+          {
+            delay: 0.5,
+            duration: 1.2,
+            color: "var(--accent)",
+            "-webkit-text-stroke": "0px var(--accent)",
+          },
+          0,
+        )
+        .from(
+          ".about-hero-content .line",
+          {
+            x: 100,
+            delay: 1,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power3.out",
+          },
+          0,
+        )
+        .to(
+          ".about-portrait-wrapper",
+          {
+            opacity: 1,
+            scale: 1,
+            delay: 1.5,
+            duration: 1.3,
+            ease: "power3.out",
+          },
+          0,
+        )
+        .to(
+          ".about-stamp",
+          {
+            opacity: 1,
+            scale: 1,
+            delay: 2,
+            duration: 0.2,
+            ease: "back.out(3)",
+          },
+          0,
+        )
+        .to(
+          ".about-stamp",
+          {
+            y: "+=5",
+            x: "-=3",
+            repeat: 2,
+            yoyo: true,
+            duration: 0.05,
+            ease: "power1.inOut",
+          },
+          0,
+        );
 
-    // ── MODEL ─────────────────────────────────────────────────────
-    const group = new THREE.Group();
-    scene.add(group);
-    let modelLoaded = false;
+      // ── SCROLL-DRIVEN PIN CHAIN ──────────────────────────────────
+      ScrollTrigger.matchMedia({
+        "(min-width: 769px)": function () {
+          pinAndAnimate({
+            trigger: ".about-hero",
+            endTrigger: ".about-intro",
+            pin: ".about-portrait-wrapper",
+            animations: [
+              { target: ".about-portrait", vars: { rotate: 0, scale: 0.8 } },
+            ],
+          });
 
-    const loader = new GLTFLoader();
-    loader.load(
-      "/models/marble_torso_from_a_statue_of_dionysos.glb",
-      (gltf) => {
-        const model = gltf.scene;
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
+          pinAndAnimate({
+            trigger: ".about-intro",
+            endTrigger: ".timeline-entry:nth-child(even)",
+            pin: ".about-portrait-wrapper",
+            animations: [
+              { target: ".about-portrait", vars: { rotate: 8, scale: 0.65 } },
+              { target: ".about-portrait-wrapper", vars: { x: "30%" } },
+            ],
+          });
 
-        model.position.sub(center);
-        model.scale.setScalar(4.2 / maxDim);
+          pinAndAnimate({
+            trigger: ".timeline-entry:nth-child(even)",
+            endTrigger: ".timeline-entry:nth-child(odd)",
+            pin: ".about-portrait-wrapper",
+            animations: [
+              { target: ".about-portrait", vars: { rotate: -8, scale: 0.65 } },
+              { target: ".about-portrait-wrapper", vars: { x: "-25%" } },
+            ],
+          });
+        },
 
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.material = new THREE.MeshStandardMaterial({
-              color: 0x888888,
-              metalness: 0.9,
-              roughness: 0.15,
-              envMapIntensity: 2,
-            });
-          }
-        });
+        "(max-width: 768px)": function () {
+          gsap.to(".about-portrait-wrapper", {
+            opacity: 1,
+            duration: 1,
+            delay: 0.5,
+          });
+        },
+      });
 
-        group.add(model);
-        modelLoaded = true;
-
-        group.position.y = -2.5;
-        group.scale.setScalar(0.3);
-        gsap.to(group.position, { y: 0, duration: 2.2, ease: "power3.out" });
-        gsap.to(group.scale, {
-          x: 1,
-          y: 1,
-          z: 1,
-          duration: 2.2,
+      // ── TIMELINE ENTRY REVEALS ────────────────────────────────────
+      gsap.utils.toArray<HTMLElement>(".timeline-entry").forEach((entry) => {
+        gsap.from(entry.querySelectorAll(".timeline-right > *"), {
+          y: 40,
+          opacity: 0,
+          duration: 0.8,
+          stagger: 0.1,
           ease: "power3.out",
+          scrollTrigger: {
+            trigger: entry,
+            start: "top 75%",
+            toggleActions: "play none none reverse",
+          },
         });
-      },
-      undefined,
-      (err) => console.error("GLB error:", err),
-    );
+      });
 
-    // ── CANVAS VISIBILITY ─────────────────────────────────────────
-    const canvasEl = canvasRef.current;
-    ScrollTrigger.create({
-      trigger: wrapperRef.current,
-      start: "top bottom",
-      end: "bottom top",
-      onEnter: () => gsap.to(canvasEl, { opacity: 1, duration: 0.6 }),
-      onLeave: () => gsap.to(canvasEl, { opacity: 0, duration: 0.6 }),
-      onEnterBack: () => gsap.to(canvasEl, { opacity: 1, duration: 0.6 }),
-      onLeaveBack: () => gsap.to(canvasEl, { opacity: 0, duration: 0.6 }),
-    });
-
-    // ── SCROLL → ROTATION + CAMERA DOLLY ──────────────────────────
-    const targetRot = { y: -0.4 };
-    const targetCam = { z: 6.5, x: 0, fov: 38 };
-    const targetTilt = { z: 0 };
-
-    ScrollTrigger.create({
-      trigger: wrapperRef.current,
-      start: "top top",
-      end: "bottom bottom",
-      scrub: 2,
-      onUpdate: (self) => {
-        const p = self.progress;
-        targetRot.y = -0.4 + p * Math.PI * 2.2;
-
-        const beat = p * 4;
-        const localBeat = beat % 1;
-        targetCam.z = 6.5 - Math.sin(localBeat * Math.PI) * 1.2;
-        targetCam.x = Math.sin(p * Math.PI * 2) * 0.4;
-        targetTilt.z = Math.sin(p * Math.PI * 3) * 0.025;
-
-        // progress bar
-        if (progressBarRef.current) {
-          progressBarRef.current.style.transform = `scaleX(${p})`;
-        }
-        // active dot
-        const activeBeat = Math.min(3, Math.floor(p * 4));
-        dotRefs.current.forEach((d, i) => {
-          if (!d) return;
-          d.classList.toggle(styles.dotActive, i === activeBeat);
-        });
-      },
-    });
-
-    // ── GLITCH PULSE ON SECTION CHANGE ─────────────────────────────
-    let lastBeat = -1;
-    const glitchEl = glitchOverlayRef.current;
-    ScrollTrigger.create({
-      trigger: wrapperRef.current,
-      start: "top top",
-      end: "bottom bottom",
-      scrub: true,
-      onUpdate: (self) => {
-        const beat = Math.min(3, Math.floor(self.progress * 4));
-        if (beat !== lastBeat && lastBeat !== -1 && glitchEl) {
-          gsap.fromTo(
-            glitchEl,
-            { opacity: 0.5 },
-            { opacity: 0, duration: 0.35, ease: "power2.out" },
-          );
-        }
-        lastBeat = beat;
-      },
-    });
-
-    // ── MOUSE PARALLAX ──────────────────────────────────────────────
-    const mouse = { x: 0, y: 0 };
-    const onMouse = (e: MouseEvent) => {
-      mouse.x = e.clientX / window.innerWidth - 0.5;
-      mouse.y = e.clientY / window.innerHeight - 0.5;
-    };
-    window.addEventListener("mousemove", onMouse);
-
-    // ── RENDER LOOP ───────────────────────────────────────────────
-    let rafId: number;
-    const clock = new THREE.Clock();
-    let curY = -0.4,
-      curX = 0,
-      curCamZ = 6.5,
-      curCamX = 0,
-      curTiltZ = 0;
-
-    const animate = () => {
-      rafId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
-
-      curY += (targetRot.y - curY) * 0.045;
-      curX += (mouse.y * 0.12 - curX) * 0.05;
-      curCamZ += (targetCam.z - curCamZ) * 0.05;
-      curCamX += (targetCam.x - curCamX) * 0.04;
-      curTiltZ += (targetTilt.z - curTiltZ) * 0.04;
-
-      if (modelLoaded) {
-        group.rotation.y = curY + mouse.x * 0.08;
-        group.rotation.x = curX;
-        group.position.y = Math.sin(t * 0.5) * 0.07;
-      }
-
-      camera.position.z = curCamZ;
-      camera.position.x = curCamX + mouse.x * 0.15;
-      camera.rotation.z = curTiltZ;
-      camera.lookAt(0, 0, 0);
-
-      // particle drift
-      const posAttr = particleGeo.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < particleCount; i++) {
-        const idx = i * 3;
-        posAttr.array[idx + 1] += particleSpeeds[i] * 0.003;
-        if (posAttr.array[idx + 1] > 6) posAttr.array[idx + 1] = -6;
-      }
-      posAttr.needsUpdate = true;
-      particles.rotation.y = t * 0.01;
-
-      redParticles.rotation.y = -t * 0.02;
-      (redMat as THREE.PointsMaterial).opacity = 0.6 + Math.sin(t * 2) * 0.25;
-
-      rimBlue.position.x = Math.sin(t * 0.4) * 5;
-      rimBlue.position.z = Math.cos(t * 0.4) * 3 - 2;
-      rimRed.position.x = Math.cos(t * 0.3) * 4;
-      glow.intensity = 10 + Math.sin(t * 1.8) * 4;
-
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // ── INIT SCRAMBLE/FLIP (after DOM is ready) ─────────────────────
-    const initTextAnimations = () => {
-      if (contentRef.current) {
-        textElementsRef.current = contentRef.current.querySelectorAll(".el");
-        storeOriginalText();
-        initFlips();
-        initScramble();
-      }
-    };
-
-    // Small delay to ensure DOM is rendered
-    const textInitTimer = setTimeout(initTextAnimations, 50);
-
-    const onResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      ScrollTrigger.refresh(true);
-
-      // Re-init flips and scramble on resize
-      if (contentRef.current) {
-        textElementsRef.current = contentRef.current.querySelectorAll(".el");
-        storeOriginalText();
-        initFlips();
-        initScramble();
-      }
-    };
-    window.addEventListener("resize", onResize);
+      ScrollTrigger.refresh();
+    }, wrapperRef);
 
     return () => {
-      clearTimeout(textInitTimer);
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("mousemove", onMouse);
-      window.removeEventListener("resize", onResize);
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-      renderer.dispose();
-      if (canvasRef.current?.contains(renderer.domElement)) {
-        canvasRef.current.removeChild(renderer.domElement);
-      }
+      hamburger?.removeEventListener("click", onHamburgerClick);
+      ctx.revert();
     };
   }, []);
 
   return (
-    <div ref={wrapperRef} className={styles.wrapper}>
-      <div ref={canvasRef} className={styles.canvas} style={{ opacity: 0 }} />
-      <div className={styles.noise} />
-      <div className={styles.chromaLine} />
-      <div ref={glitchOverlayRef} className={styles.glitchOverlay} />
+    <div ref={wrapperRef} className="statue-scene" id="smooth-wrapper">
+      <main id="smooth-content">
+        <div className="about-portrait-wrapper">
+          <div className="about-portrait">
+            <Canvas camera={{ position: [0, 0, 3.2], fov: 35 }} dpr={[1, 2]}>
+              <ambientLight intensity={0.7} />
+              <directionalLight position={[3, 5, 2]} intensity={1.4} />
+              <directionalLight position={[-3, -1, -2]} intensity={0.3} />
+              <Suspense fallback={null}>
+                <DionysosModel />
+                <Environment preset="studio" />
+              </Suspense>
+            </Canvas>
+          </div>
+        </div>
 
-      {/* progress bar */}
-      <div className={styles.progressTrack}>
-        <div ref={progressBarRef} className={styles.progressFill} />
-      </div>
+        <section className="about-hero vintage-hero">
+          <div className="about-hero-content">
+            <div className="about-stamp">EST. 2018</div>
+            <h1>
+              <span className="line">Head Into</span>
+              <span className="line highlight">The Story</span>
+            </h1>
+          </div>
+        </section>
 
-      {/* dot nav */}
-      <div className={styles.dotNav}>
-        {[0, 1, 2, 3].map((_, i) => (
-          <span
-            key={i}
-            ref={(el) => {
-              dotRefs.current[i] = el;
-            }}
-            className={styles.navDot}
-          />
-        ))}
-      </div>
+        <section className="about-intro" id="work">
+          <div className="intro-grid">
+            <div className="intro-left">
+              <p className="small-title">About Me</p>
+              <h2 className="main-heading">Who I Am</h2>
+              <p className="description">
+                A short bio goes here — background, focus areas, and what drives
+                the work. Keep it a couple of sentences; the timeline below does
+                the storytelling.
+              </p>
+              <a href="#timeline" className="cta-box">
+                See the Timeline
+              </a>
+            </div>
 
-      {/* ── REPLACED TEXT CONTENT ───────────────────────────────────── */}
-      <div className={styles.content} ref={contentRef}>
-        <TextGroup items={textItems} />
-      </div>
+            <div className="intro-right">
+              <div className="stack-log">
+                <h3 className="stack-title">Built With</h3>
+
+                {stackLog.map((item, i) => (
+                  <div className="stack-item" key={i}>
+                    <div className="stack-qty">{item.qty}</div>
+                    <div className="stack-text">
+                      <strong>{item.label}</strong>
+                      <p>{item.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="timeline-section" id="timeline">
+          <h2 className="timeline-main-title">My Timeline</h2>
+
+          {timelineEntries.map((entry, i) => (
+            <div className="timeline-entry" key={i}>
+              <div className="timeline-left">
+                <div className="timeline-date">{entry.date}</div>
+                <img
+                  src={entry.img}
+                  alt={entry.title}
+                  className="timeline-img"
+                />
+              </div>
+
+              <div className="timeline-right">
+                <h3 className="timeline-title">{entry.title}</h3>
+                <p className="timeline-description">{entry.description}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+      </main>
     </div>
   );
 }
