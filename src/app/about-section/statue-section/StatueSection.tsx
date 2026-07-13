@@ -6,14 +6,15 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { dionysosVert, dionysosFrag, uniforms } from "./shaders/dionysosShaders";
 import "./StatueScene.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const MODEL_PATH = "/models/marble_torso_from_a_statue_of_dionysos.glb";
 
-// Shared proxy object GSAP will tween — lives outside React so both
-// GSAP (DOM-side) and the R3F component (inside Canvas) can read/write it.
+
+
 const portraitState = {
   rotationY: 0,
   scale: 0.8,
@@ -31,26 +32,47 @@ function DionysosModel() {
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
 
-    console.log("📐 Model size:", size);
-    console.log("📍 Model center:", center);
-
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 2.5;
+    const targetSize = 3.0;
 
     if (maxDim > 0) {
       const fitScale = targetSize / maxDim;
       groupRef.current.position.sub(center.clone().multiplyScalar(fitScale));
-      // Bake the fit scale into a base multiplier we apply on top of
-      // portraitState.scale each frame (see useFrame below).
+      groupRef.current.scale.set(fitScale, fitScale, fitScale);
       groupRef.current.userData.baseScale = fitScale;
-      console.log("📏 Base scale:", fitScale);
     }
     fitted.current = true;
+
+    groupRef.current.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: dionysosVert,
+          fragmentShader: dionysosFrag,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+      }
+    });
+
+    gsap.fromTo(
+      uniforms.uProgress,
+      { value: 0 },
+      {
+        value: 1,
+        duration: 2.4,
+        ease: "power2.out",
+      },
+    );
   }, [scene]);
 
-  // Apply GSAP-driven rotation/scale to the actual 3D object every frame.
-  useFrame(() => {
+  useFrame(({ camera }) => {
     if (!groupRef.current) return;
+
+    uniforms.uTime.value = performance.now() / 1000;
+    uniforms.uCameraPos.value.copy(camera.position);
+
     const base = groupRef.current.userData.baseScale ?? 1;
     const s = base * portraitState.scale;
     groupRef.current.scale.set(s, s, s);
@@ -89,7 +111,6 @@ const timelineEntries = [
   },
 ];
 
-// ── "BUILT WITH" LOG ────────────────────────────────────────────────
 const stackLog = [
   {
     qty: "6+",
@@ -128,33 +149,16 @@ export default function StatueScene() {
     ) as HTMLElement | null;
     headerHeightRef.current = header ? header.offsetHeight - 1 : 0;
 
-    // ── MOBILE NAV TOGGLE ────────────────────────────────────────────
     const hamburger = wrapperRef.current?.querySelector(".hamburger");
     const mobileMenu = wrapperRef.current?.querySelector(".mobile-nav");
     const onHamburgerClick = () => mobileMenu?.classList.toggle("show");
     hamburger?.addEventListener("click", onHamburgerClick);
 
     const ctx = gsap.context(() => {
-      // ── Set xPercent base once on mount ──────────────────────────
       gsap.set(".about-portrait-wrapper", { xPercent: -50 });
 
-      // ── INITIAL LOAD-IN ──────────────────────────────────────────
       const onLoadTl = gsap.timeline({
         defaults: { ease: "power2.out" },
-        onComplete: () => {
-          console.log("✅ onLoadTl complete - portrait should be visible");
-          const wrapper = document.querySelector(".about-portrait-wrapper");
-          if (wrapper) {
-            console.log(
-              "Portrait opacity:",
-              window.getComputedStyle(wrapper).opacity,
-            );
-            console.log(
-              "Portrait transform:",
-              window.getComputedStyle(wrapper).transform,
-            );
-          }
-        },
       });
 
       onLoadTl
@@ -194,7 +198,6 @@ export default function StatueScene() {
           },
           0,
         )
-        // Hero: offset torso to the right, set initial 3D rotation/scale
         .fromTo(
           ".about-portrait-wrapper",
           { x: "0vw" },
@@ -233,7 +236,7 @@ export default function StatueScene() {
           0,
         );
 
-      // ── Hero -> Intro: bring portrait back to center ──────────────
+      // ── PIN 1: Hero → Intro ──────────────────────────────────────────
       const heroToIntroTl = gsap.timeline({
         scrollTrigger: {
           trigger: ".about-hero",
@@ -251,16 +254,41 @@ export default function StatueScene() {
       heroToIntroTl.to(portraitState, { rotationY: 0, scale: 0.8 }, 0);
       heroToIntroTl.to(".about-portrait-wrapper", { x: "0vw" }, 0);
 
-      // ── TIMELINE: one-at-a-time entries ──────────────────────────
+      // ── PIN 2: Intro → Timeline End ──────────────────────────────────
+      // Extends pinning across the entire timeline journey
+      const introToTimelineTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".about-intro",
+          start: `top top+=${headerHeightRef.current}`,
+          endTrigger: ".timeline-section",
+          end: "bottom bottom",
+          scrub: true,
+          pin: ".about-portrait-wrapper",
+          pinSpacing: false,
+          invalidateOnRefresh: true,
+          markers: false,
+        },
+      });
+
+      // ── CONTINUOUS ROTATION DRIVER ────────────────────────────────
+      ScrollTrigger.create({
+        trigger: wrapperRef.current,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 1.5,
+        onUpdate: (self) => {
+          portraitState.rotationY = self.progress * Math.PI * 2.2;
+        },
+      });
+
       const entries = gsap.utils.toArray<HTMLElement>(".timeline-entry");
 
       entries.forEach((entry, i) => {
         const side = i % 2 === 0 ? "side-left" : "side-right";
         entry.classList.add(side);
-        const xTarget = i % 2 === 0 ? "-22vw" : "22vw";
-        const rotateTarget = i % 2 === 0 ? 8 : -8;
 
-        // Create ScrollTrigger for each entry
+        const xTarget = i % 2 === 0 ? "22vw" : "-22vw";
+
         ScrollTrigger.create({
           trigger: entry,
           start: "top top",
@@ -268,7 +296,6 @@ export default function StatueScene() {
           onToggle: (self) => {
             entry.classList.toggle("active", self.isActive);
 
-            // When this entry becomes active, move portrait to match
             if (self.isActive) {
               gsap.to(".about-portrait-wrapper", {
                 x: xTarget,
@@ -276,10 +303,19 @@ export default function StatueScene() {
                 ease: "power2.out",
               });
               gsap.to(portraitState, {
-                rotationY: THREE.MathUtils.degToRad(rotateTarget),
                 scale: 0.8,
                 duration: 0.6,
                 ease: "power2.out",
+              });
+
+              const beat = self.progress * 4;
+              const localBeat = beat % 1;
+              const dissolveDip = localBeat < 0.15 ? 1 - localBeat / 0.15 : 0;
+
+              gsap.to(uniforms.uProgress, {
+                value: 1 - dissolveDip * 0.85,
+                duration: 0.3,
+                overwrite: "auto",
               });
             }
           },
@@ -290,7 +326,6 @@ export default function StatueScene() {
               ease: "power2.out",
             });
             gsap.to(portraitState, {
-              rotationY: THREE.MathUtils.degToRad(rotateTarget),
               scale: 0.8,
               duration: 0.6,
               ease: "power2.out",
@@ -303,7 +338,6 @@ export default function StatueScene() {
               ease: "power2.out",
             });
             gsap.to(portraitState, {
-              rotationY: THREE.MathUtils.degToRad(rotateTarget),
               scale: 0.8,
               duration: 0.6,
               ease: "power2.out",
@@ -312,7 +346,6 @@ export default function StatueScene() {
         });
       });
 
-      // ── TIMELINE ENTRY REVEALS ────────────────────────────────────
       entries.forEach((entry) => {
         const textElements = entry.querySelectorAll(".timeline-right > *");
         gsap.from(textElements, {
@@ -406,11 +439,13 @@ export default function StatueScene() {
 
         <section className="timeline-section" id="timeline">
           {timelineEntries.map((entry, i) => (
-            <div className="timeline-entry" key={i}>
-              <div className="timeline-right">
-                <div className="timeline-date">{entry.date}</div>
-                <h3 className="timeline-title">{entry.title}</h3>
-                <p className="timeline-description">{entry.description}</p>
+            <div className="timeline-entry-outer" key={i}>
+              <div className="timeline-entry">
+                <div className="timeline-right">
+                  <div className="timeline-date">{entry.date}</div>
+                  <h3 className="timeline-title">{entry.title}</h3>
+                  <p className="timeline-description">{entry.description}</p>
+                </div>
               </div>
             </div>
           ))}

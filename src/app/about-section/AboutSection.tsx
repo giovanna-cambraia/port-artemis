@@ -516,9 +516,7 @@ const AboutSection = () => {
     });
   };
 
-  // Intersection Observer for scroll animations
   useEffect(() => {
-    // Hero observer
     const heroObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -532,7 +530,7 @@ const AboutSection = () => {
 
     if (heroRef.current) heroObserver.observe(heroRef.current);
 
-    // Manifesto observer
+  
     const manifestoObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -553,7 +551,6 @@ const AboutSection = () => {
 
     if (manifestoRef.current) manifestoObserver.observe(manifestoRef.current);
 
-    // Gallery header observer
     const galleryObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
