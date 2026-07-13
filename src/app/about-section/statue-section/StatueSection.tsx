@@ -1,456 +1,328 @@
-"use client";
+"use client"
 
-import { Suspense, useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, useGLTF } from "@react-three/drei";
-import * as THREE from "three";
-import { dionysosVert, dionysosFrag, uniforms } from "./shaders/dionysosShaders";
-import "./StatueScene.css";
+import { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import './StatueScene.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const MODEL_PATH = "/models/marble_torso_from_a_statue_of_dionysos.glb";
+const PLAQUE_TITLES = [
+  'Torso, marble',
+  'Chest, detail',
+  'Absence, form',
+  'Surface, tool marks',
+  'Fragment, complete',
+];
 
+const SECTIONS = [
+  {
+    id: 's1',
+    eyebrow: 'Excavated fragment — 01',
+    title: ['What the', 'stone kept'],
+    body: 'A body without a name. Two thousand years of weather sanded away everything but the parts that mattered most.',
+  },
+  {
+    id: 's2',
+    eyebrow: '02 — The torso',
+    title: ['Muscle carved', 'into memory'],
+    body: 'Every plane of the chest was cut to catch light at a single hour of a single day, in a workshop that no longer has a name.',
+  },
+  {
+    id: 's3',
+    eyebrow: '03 — Loss as form',
+    title: ['The missing', 'parts speak'],
+    body: 'No head, no arms, no legend. What survives is turned into the subject itself — absence, sculpted.',
+  },
+  {
+    id: 's4',
+    eyebrow: '04 — Surface',
+    title: ['Marble', 'remembers heat'],
+    body: 'Under raking light the tool marks resurface — a record of hands that stopped moving centuries ago.',
+  },
+  {
+    id: 's5',
+    eyebrow: '05 — Closing',
+    title: ['Still standing,', 'still unfinished'],
+    body: 'A fragment outlives the story built around it. This is the last of it, held here — turning, quietly, for anyone who scrolls this far.',
+  },
+];
 
-
-const portraitState = {
-  rotationY: 0,
-  scale: 0.8,
-};
-
-function DionysosModel() {
-  const { scene } = useGLTF(MODEL_PATH);
-  const groupRef = useRef<THREE.Group>(null);
-  const fitted = useRef(false);
-
-  useEffect(() => {
-    if (!groupRef.current || fitted.current) return;
-
-    const box = new THREE.Box3().setFromObject(groupRef.current);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 3.0;
-
-    if (maxDim > 0) {
-      const fitScale = targetSize / maxDim;
-      groupRef.current.position.sub(center.clone().multiplyScalar(fitScale));
-      groupRef.current.scale.set(fitScale, fitScale, fitScale);
-      groupRef.current.userData.baseScale = fitScale;
-    }
-    fitted.current = true;
-
-    groupRef.current.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-        mesh.material = new THREE.ShaderMaterial({
-          uniforms,
-          vertexShader: dionysosVert,
-          fragmentShader: dionysosFrag,
-          transparent: true,
-          side: THREE.DoubleSide,
-        });
-      }
-    });
-
-    gsap.fromTo(
-      uniforms.uProgress,
-      { value: 0 },
-      {
-        value: 1,
-        duration: 2.4,
-        ease: "power2.out",
-      },
-    );
-  }, [scene]);
-
-  useFrame(({ camera }) => {
-    if (!groupRef.current) return;
-
-    uniforms.uTime.value = performance.now() / 1000;
-    uniforms.uCameraPos.value.copy(camera.position);
-
-    const base = groupRef.current.userData.baseScale ?? 1;
-    const s = base * portraitState.scale;
-    groupRef.current.scale.set(s, s, s);
-    groupRef.current.rotation.y = portraitState.rotationY;
-  });
-
-  return <primitive ref={groupRef} object={scene} />;
+interface TorsoScrollProps {
+  modelUrl?: string;
 }
 
-useGLTF.preload(MODEL_PATH);
-
-// ── TIMELINE DATA ──────────────────────────────────────────────────
-const timelineEntries = [
-  {
-    date: "2018",
-    title: "First Line of Code",
-    description:
-      "Started with hardware. Ended up everywhere. Embedded systems, backends, the occasional star map.",
-  },
-  {
-    date: "2020",
-    title: "Structure or Chaos",
-    description:
-      "NestJS · C · TypeScript · ARM. I don't pick tools. I pick the right level of control.",
-  },
-  {
-    date: "2022",
-    title: "Aimed at Orbit",
-    description:
-      "ITA. INPE. Robotics. Space engineering. Every project is a stage in the launch sequence.",
-  },
-  {
-    date: "2026",
-    title: "Still Transmitting",
-    description: "Signal ongoing. No end timestamp.",
-  },
-];
-
-const stackLog = [
-  {
-    qty: "6+",
-    label: "TypeScript & NestJS",
-    text: "Backend services built for scale and clarity.",
-  },
-  {
-    qty: "4+",
-    label: "Embedded C",
-    text: "Firmware close to the metal, where it counts.",
-  },
-  {
-    qty: "3",
-    label: "Space Projects",
-    text: "ITA, INPE, and orbital robotics work.",
-  },
-  {
-    qty: "2",
-    label: "React + NestJS",
-    text: "Front-ends paired with APIs that don't fall over.",
-  },
-  {
-    qty: "∞",
-    label: "Curiosity",
-    text: "Still learning, still transmitting.",
-  },
-];
-
-export default function StatueScene() {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const headerHeightRef = useRef(0);
+export default function StatueScene({ modelUrl = '/models/marble_torso_from_a_statue_of_dionysos.glb' }: TorsoScrollProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [plaqueTitle, setPlaqueTitle] = useState(PLAQUE_TITLES[0]);
+  const [progress, setProgress] = useState(0);
+  
+  // Ref to hold fresnel uniforms for animation
+  const fresnelUniformsRef = useRef<{
+    uFresnelColor: { value: THREE.Color };
+    uFresnelPower: { value: number };
+    uFresnelIntensity: { value: number };
+  } | null>(null);
 
   useEffect(() => {
-    const header = wrapperRef.current?.querySelector(
-      "header",
-    ) as HTMLElement | null;
-    headerHeightRef.current = header ? header.offsetHeight - 1 : 0;
+    const stage = stageRef.current;
+    const content = contentRef.current;
+    if (!stage || !content) return;
 
-    const hamburger = wrapperRef.current?.querySelector(".hamburger");
-    const mobileMenu = wrapperRef.current?.querySelector(".mobile-nav");
-    const onHamburgerClick = () => mobileMenu?.classList.toggle("show");
-    hamburger?.addEventListener("click", onHamburgerClick);
+    let renderer: THREE.WebGLRenderer;
+    let model: THREE.Object3D | null = null;
+    let frameId: number;
+    let scrollTriggerInstance: ScrollTrigger | undefined;
+    const panelTriggers: ScrollTrigger[] = [];
+    let disposed = false;
 
-    const ctx = gsap.context(() => {
-      gsap.set(".about-portrait-wrapper", { xPercent: -50 });
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x141210);
+    scene.fog = new THREE.Fog(0x141210, 8, 20);
 
-      const onLoadTl = gsap.timeline({
-        defaults: { ease: "power2.out" },
-      });
+    const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0.3, 5.2);
 
-      onLoadTl
-        .to("header", { "--border-width": "100%", duration: 3 }, 0)
-        .from(
-          ".desktop-nav a, .social-sidebar a",
-          {
-            y: -100,
-            opacity: 0,
-            duration: 0.8,
-            stagger: 0.2,
-            ease: "power3.out",
-          },
-          0,
-        )
-        .to(".social-sidebar", { "--border-height": "100%", duration: 10 }, 0)
-        .to(".about-hero-content h1", { opacity: 1, duration: 1 }, 0)
-        .to(
-          ".about-hero-content h1",
-          {
-            delay: 0.5,
-            duration: 1.2,
-            color: "var(--accent)",
-            "-webkit-text-stroke": "0px var(--accent)",
-          },
-          0,
-        )
-        .from(
-          ".about-hero-content .line",
-          {
-            x: 100,
-            delay: 1,
-            opacity: 0,
-            duration: 0.8,
-            stagger: 0.2,
-            ease: "power3.out",
-          },
-          0,
-        )
-        .fromTo(
-          ".about-portrait-wrapper",
-          { x: "0vw" },
-          {
-            x: "22vw",
-            opacity: 1,
-            scale: 1,
-            delay: 1.5,
-            duration: 1.3,
-            ease: "power3.out",
-          },
-          0,
-        )
-        .to(portraitState, { rotationY: 0, scale: 1 }, 0)
-        .to(
-          ".about-stamp",
-          {
-            opacity: 1,
-            scale: 1,
-            delay: 2,
-            duration: 0.2,
-            ease: "back.out(3)",
-          },
-          0,
-        )
-        .to(
-          ".about-stamp",
-          {
-            y: "+=5",
-            x: "-=3",
-            repeat: 2,
-            yoyo: true,
-            duration: 0.05,
-            ease: "power1.inOut",
-          },
-          0,
-        );
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    stage.appendChild(renderer.domElement);
 
-      // ── PIN 1: Hero → Intro ──────────────────────────────────────────
-      const heroToIntroTl = gsap.timeline({
+    // Lighting
+    const key = new THREE.SpotLight(0xffe9cc, 220, 20, Math.PI / 6, 0.4, 1.5);
+    key.position.set(3, 5, 4);
+    scene.add(key);
+
+    const rim = new THREE.SpotLight(0x8ab4ff, 90, 20, Math.PI / 5, 0.5, 1.5);
+    rim.position.set(-4, 2, -3);
+    scene.add(rim);
+
+    const fill = new THREE.AmbientLight(0x403830, 0.9);
+    scene.add(fill);
+
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(6, 64),
+      new THREE.MeshStandardMaterial({ color: 0x1c1a17, roughness: 1 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1.4;
+    scene.add(ground);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        if (disposed) return;
+        model = gltf.scene;
+
+        // Fresnel uniforms
+        const fresnelUniforms = {
+          uFresnelColor: { value: new THREE.Color(0xff6b35) }, // Warm amber glow
+          uFresnelPower: { value: 2.0 },
+          uFresnelIntensity: { value: 0.6 },
+        };
+        fresnelUniformsRef.current = fresnelUniforms;
+
+        model.traverse((c) => {
+          if ((c as THREE.Mesh).isMesh) {
+            const mesh = c as THREE.Mesh;
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            if (mat) {
+              mat.roughness = 0.55;
+              mat.metalness = 0.02;
+
+              // Inject fresnel shader
+              mat.onBeforeCompile = (shader) => {
+                shader.uniforms.uFresnelColor = fresnelUniforms.uFresnelColor;
+                shader.uniforms.uFresnelPower = fresnelUniforms.uFresnelPower;
+                shader.uniforms.uFresnelIntensity = fresnelUniforms.uFresnelIntensity;
+
+                shader.vertexShader = shader.vertexShader
+                  .replace(
+                    '#include <common>',
+                    `#include <common>
+                     varying vec3 vFresnelNormal;
+                     varying vec3 vFresnelViewDir;`
+                  )
+                  .replace(
+                    '#include <begin_vertex>',
+                    `#include <begin_vertex>
+                     vFresnelNormal = normalize(normalMatrix * normal);
+                     vFresnelViewDir = normalize(-(modelViewMatrix * vec4(position, 1.0)).xyz);`
+                  );
+
+                shader.fragmentShader = shader.fragmentShader
+                  .replace(
+                    '#include <common>',
+                    `#include <common>
+                     uniform vec3 uFresnelColor;
+                     uniform float uFresnelPower;
+                     uniform float uFresnelIntensity;
+                     varying vec3 vFresnelNormal;
+                     varying vec3 vFresnelViewDir;`
+                  )
+                  .replace(
+                    '#include <dithering_fragment>',
+                    `#include <dithering_fragment>
+                     float fresnelTerm = pow(1.0 - saturate(dot(vFresnelNormal, vFresnelViewDir)), uFresnelPower);
+                     gl_FragColor.rgb += uFresnelColor * fresnelTerm * uFresnelIntensity;`
+                  );
+              };
+
+              mat.needsUpdate = true;
+            }
+          }
+        });
+
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        const scale = 2.6 / Math.max(size.x, size.y, size.z);
+        model.scale.setScalar(scale);
+        model.position.sub(center.multiplyScalar(scale));
+        model.position.y -= 0.1;
+        scene.add(model);
+
+        initScroll(model);
+      },
+      undefined,
+      (err) => console.error('Model failed to load', err)
+    );
+
+    function initScroll(loadedModel: THREE.Object3D) {
+      const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: ".about-hero",
-          start: `top top+=${headerHeightRef.current}`,
-          endTrigger: ".about-intro",
-          end: `top top+=${headerHeightRef.current}`,
-          scrub: true,
-          pin: ".about-portrait-wrapper",
-          pinSpacing: false,
-          invalidateOnRefresh: true,
-          markers: false,
-        },
-      });
-
-      heroToIntroTl.to(portraitState, { rotationY: 0, scale: 0.8 }, 0);
-      heroToIntroTl.to(".about-portrait-wrapper", { x: "0vw" }, 0);
-
-      // ── PIN 2: Intro → Timeline End ──────────────────────────────────
-      // Extends pinning across the entire timeline journey
-      const introToTimelineTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: ".about-intro",
-          start: `top top+=${headerHeightRef.current}`,
-          endTrigger: ".timeline-section",
-          end: "bottom bottom",
-          scrub: true,
-          pin: ".about-portrait-wrapper",
-          pinSpacing: false,
-          invalidateOnRefresh: true,
-          markers: false,
-        },
-      });
-
-      // ── CONTINUOUS ROTATION DRIVER ────────────────────────────────
-      ScrollTrigger.create({
-        trigger: wrapperRef.current,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: 1.5,
-        onUpdate: (self) => {
-          portraitState.rotationY = self.progress * Math.PI * 2.2;
-        },
-      });
-
-      const entries = gsap.utils.toArray<HTMLElement>(".timeline-entry");
-
-      entries.forEach((entry, i) => {
-        const side = i % 2 === 0 ? "side-left" : "side-right";
-        entry.classList.add(side);
-
-        const xTarget = i % 2 === 0 ? "22vw" : "-22vw";
-
-        ScrollTrigger.create({
-          trigger: entry,
-          start: "top top",
-          end: "bottom top",
-          onToggle: (self) => {
-            entry.classList.toggle("active", self.isActive);
-
-            if (self.isActive) {
-              gsap.to(".about-portrait-wrapper", {
-                x: xTarget,
-                duration: 0.6,
-                ease: "power2.out",
-              });
-              gsap.to(portraitState, {
-                scale: 0.8,
-                duration: 0.6,
-                ease: "power2.out",
-              });
-
-              const beat = self.progress * 4;
-              const localBeat = beat % 1;
-              const dissolveDip = localBeat < 0.15 ? 1 - localBeat / 0.15 : 0;
-
-              gsap.to(uniforms.uProgress, {
-                value: 1 - dissolveDip * 0.85,
-                duration: 0.3,
-                overwrite: "auto",
-              });
+          trigger: content,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1,
+          onUpdate: (self) => {
+            setProgress(self.progress * 100);
+            const idx = Math.min(4, Math.floor(self.progress * 5));
+            setPlaqueTitle(PLAQUE_TITLES[idx]);
+            
+            // Tie fresnel intensity to scroll progress
+            if (fresnelUniformsRef.current) {
+              fresnelUniformsRef.current.uFresnelIntensity.value = 0.3 + self.progress * 0.7;
             }
           },
-          onEnter: () => {
-            gsap.to(".about-portrait-wrapper", {
-              x: xTarget,
-              duration: 0.6,
-              ease: "power2.out",
-            });
-            gsap.to(portraitState, {
-              scale: 0.8,
-              duration: 0.6,
-              ease: "power2.out",
-            });
-          },
-          onEnterBack: () => {
-            gsap.to(".about-portrait-wrapper", {
-              x: xTarget,
-              duration: 0.6,
-              ease: "power2.out",
-            });
-            gsap.to(portraitState, {
-              scale: 0.8,
-              duration: 0.6,
-              ease: "power2.out",
-            });
-          },
-        });
+        },
       });
+      scrollTriggerInstance = tl.scrollTrigger;
 
-      entries.forEach((entry) => {
-        const textElements = entry.querySelectorAll(".timeline-right > *");
-        gsap.from(textElements, {
-          y: 40,
-          opacity: 0,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: entry,
-            start: "top center",
-            toggleActions: "play none none reverse",
-          },
-        });
+      tl.to(loadedModel.rotation, { y: Math.PI * 0.55, ease: 'none' }, 0)
+        .to(camera.position, { x: 1.4, y: 0.6, z: 3.6, ease: 'none' }, 0)
+        .to(loadedModel.rotation, { y: Math.PI * 1.15, ease: 'none' }, 0.25)
+        .to(camera.position, { x: -1.6, y: 0.1, z: 3.0, ease: 'none' }, 0.25)
+        .to(loadedModel.rotation, { y: Math.PI * 1.6, ease: 'none' }, 0.5)
+        .to(camera.position, { x: -0.6, y: 1.1, z: 2.4, ease: 'none' }, 0.5)
+        .to(loadedModel.rotation, { y: Math.PI * 2.05, ease: 'none' }, 0.75)
+        .to(camera.position, { x: 0, y: 0.2, z: 4.4, ease: 'none' }, 0.75);
+
+      panelRefs.current.forEach((panel) => {
+        if (!panel) return;
+        const spacer = panel.closest('.ts-spacer');
+        if (!spacer) return;
+        gsap.fromTo(
+          panel,
+          { autoAlpha: 0, y: 30 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.6,
+            scrollTrigger: {
+              trigger: spacer,
+              start: 'top 70%',
+              end: 'top 30%',
+              toggleActions: 'play reverse play reverse',
+            },
+          }
+        );
       });
+    }
 
-      ScrollTrigger.refresh();
-    }, wrapperRef);
+    function animate() {
+      frameId = requestAnimationFrame(animate);
+      if (model) camera.lookAt(0, 0, 0);
+      
+      // Gentle pulse on fresnel power
+      if (fresnelUniformsRef.current) {
+        const t = performance.now() * 0.001;
+        fresnelUniformsRef.current.uFresnelPower.value = 2.0 + Math.sin(t * 0.8) * 0.3;
+      }
+      
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    function handleResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      hamburger?.removeEventListener("click", onHamburgerClick);
-      ctx.revert();
+      disposed = true;
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(frameId);
+      scrollTriggerInstance?.kill();
+      panelTriggers.forEach((t) => t.kill());
+      ScrollTrigger.getAll().forEach((t) => {
+        if (t.trigger === content || panelRefs.current.includes(t.trigger as HTMLDivElement)) {
+          t.kill();
+        }
+      });
+      renderer.dispose();
+      if (stage.contains(renderer.domElement)) {
+        stage.removeChild(renderer.domElement);
+      }
     };
-  }, []);
+  }, [modelUrl]);
 
   return (
-    <div ref={wrapperRef} className="statue-scene" id="smooth-wrapper">
-      <main id="smooth-content">
-        <div className="about-portrait-wrapper">
-          <div className="about-portrait">
-            <Canvas
-              camera={{ position: [0, 0, 5], fov: 45 }}
-              dpr={[1, 2]}
-              style={{ background: "transparent" }}
-            >
-              <ambientLight intensity={0.7} />
-              <directionalLight position={[3, 5, 2]} intensity={1.4} />
-              <directionalLight position={[-3, -1, -2]} intensity={0.3} />
-              <Suspense fallback={null}>
-                <DionysosModel />
-                <Environment preset="studio" />
-              </Suspense>
-            </Canvas>
-          </div>
+    <div className="ts-root">
+      <div className="ts-sticky-frame">
+        <div className="ts-progress" style={{ width: `${progress}%` }} />
+        <div className="ts-credit">Port Artemis — Cat. No. 04</div>
+        <div className="ts-canvas-stage" ref={stageRef} />
+
+        <div className="ts-plaque">
+          <span>{plaqueTitle}</span>
+          scroll to circle the piece
         </div>
+      </div>
 
-        <section className="about-hero vintage-hero">
-          <div className="about-hero-content">
-            <div className="about-stamp">EST. 2018</div>
-            <h1>
-              <span className="line">Head Into</span>
-              <span className="line highlight">The Story</span>
-            </h1>
-          </div>
-        </section>
-
-        <section className="about-intro" id="work">
-          <div className="intro-grid">
-            <div className="intro-left">
-              <p className="small-title">About Me</p>
-              <h2 className="main-heading">Who I Am</h2>
-              <p className="description">
-                A short bio goes here — background, focus areas, and what drives
-                the work. Keep it a couple of sentences; the timeline below does
-                the storytelling.
-              </p>
-              <a href="#timeline" className="cta-box">
-                See the Timeline
-              </a>
-            </div>
-
-            <div className="intro-center">{/* Empty spacer column */}</div>
-
-            <div className="intro-right">
-              <div className="stack-log">
-                <h3 className="stack-title">Built With</h3>
-
-                {stackLog.map((item, i) => (
-                  <div className="stack-item" key={i}>
-                    <div className="stack-qty">{item.qty}</div>
-                    <div className="stack-text">
-                      <strong>{item.label}</strong>
-                      <p>{item.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      <div className="ts-content" ref={contentRef}>
+        {SECTIONS.map((section, i) => (
+          <div className="ts-spacer" key={section.id}>
+            <div
+              className={`ts-panel ts-panel-${i + 1}`}
+              ref={(el) => {
+                panelRefs.current[i] = el;
+              }}
+            >
+              <div className="ts-eyebrow">{section.eyebrow}</div>
+              <h2 className="ts-heading">
+                {section.title[0]}
+                <br />
+                {section.title[1]}
+              </h2>
+              <p className="ts-body">{section.body}</p>
             </div>
           </div>
-        </section>
-
-        <section className="timeline-section" id="timeline">
-          {timelineEntries.map((entry, i) => (
-            <div className="timeline-entry-outer" key={i}>
-              <div className="timeline-entry">
-                <div className="timeline-right">
-                  <div className="timeline-date">{entry.date}</div>
-                  <h3 className="timeline-title">{entry.title}</h3>
-                  <p className="timeline-description">{entry.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </section>
-      </main>
+        ))}
+        <div className="ts-spacer" />
+      </div>
     </div>
   );
 }

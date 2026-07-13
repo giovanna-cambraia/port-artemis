@@ -31,7 +31,6 @@ export function ImmersiveSection() {
 
   const zoomPhase = phase(0, 0.5);
   const wFadeOut = phase(0.4, 0.55);
-
   const aboutReveal = phase(0.45, 0.65);
   const leftParallax = phase(0.45, 1);
   const rightParallax = phase(0.45, 1);

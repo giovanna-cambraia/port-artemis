@@ -6,7 +6,7 @@ import Footer from "./footer/Footer";
 import ScrollSection from "../about-section/horizontal-scroll/ScrollSection";
 import StatueSection from "../about-section/statue-section/StatueSection";
 import WorkSection from "../about-section/work-section/WorkSection";
-import CTA from "../cta/CTA";
+
 
 export default function Home() {
   return (
@@ -18,7 +18,6 @@ export default function Home() {
       <StatueSection />
       <TransmissionWrapper />
       <WorkSection/>
-      <CTA />
       <Footer />
     </>
   );

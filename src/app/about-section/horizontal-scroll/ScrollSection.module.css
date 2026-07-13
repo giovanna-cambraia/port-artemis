@@ -3,6 +3,17 @@
   height: 500vh;
   position: relative;
   background: #000;
+  z-index: 2;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* NEW: The card that slides up */
+.slideCard {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform: translateY(100vh); /* Start below viewport */
 }
 
 .sticky {
@@ -72,7 +83,7 @@
 }
 
 .sub {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   font-size: clamp(0.72rem, 1.1vw, 0.88rem);
   line-height: 2;
   color: rgba(255, 255, 255, 0.5);
@@ -120,7 +131,7 @@
 }
 
 .signalKanji {
-  font-family: 'Arial Black', sans-serif;
+  font-family: "Arial Black", sans-serif;
   font-size: 2rem;
   font-weight: 900;
   color: #e03030;
@@ -135,7 +146,7 @@
 }
 
 .signalCode {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.62rem;
   color: rgba(255, 255, 255, 0.3);
   letter-spacing: 0.18em;
@@ -143,7 +154,7 @@
 }
 
 .signalTag {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.22em;
@@ -160,7 +171,7 @@
 
 .headlineLine {
   display: block;
-  font-family: 'Arial Black', 'Impact', sans-serif;
+  font-family: "Arial Black", "Impact", sans-serif;
   font-size: clamp(2.8rem, 5.5vw, 5.2rem);
   font-weight: 900;
   color: #fff;
@@ -178,7 +189,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.6rem;
   letter-spacing: 0.28em;
   color: rgba(255, 255, 255, 0.2);
@@ -194,13 +205,20 @@
 }
 
 @keyframes hintBlink {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
 /* ── REDUCED MOTION ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .scrollHint { animation: none; }
+  .scrollHint {
+    animation: none;
+  }
 }
 
 /* ── MOBILE ──────────────────────────────────────────────────── */
@@ -213,7 +231,9 @@
     align-content: center;
   }
 
-  .center { display: none; }
+  .center {
+    display: none;
+  }
 
   .left {
     height: auto;
@@ -239,4 +259,3 @@
     transform: none;
   }
 }
-
