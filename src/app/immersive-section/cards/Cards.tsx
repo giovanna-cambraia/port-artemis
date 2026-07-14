@@ -1,4 +1,4 @@
-// ProjectCard.tsx
+
 import "./Card.css";
 
 interface ProjectCardProps {

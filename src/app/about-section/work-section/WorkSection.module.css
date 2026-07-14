@@ -5,7 +5,6 @@
 }
 
 body {
-
   overflow-x: hidden;
 }
 
@@ -78,7 +77,6 @@ body {
 .card {
   width: 650px;
   min-width: 650px;
-  height: 45%;
   padding: 16px;
   background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
   border-radius: 24px;
@@ -91,7 +89,10 @@ body {
     0 0 60px rgba(244, 12, 63, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(244, 12, 63, 0.12);
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -129,12 +130,14 @@ body {
 }
 
 .card-img {
-  flex: 1;
+  flex-shrink: 0;
   overflow: hidden;
   border-radius: 16px;
   position: relative;
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.03);
+  width: 100%;
+  aspect-ratio: 16 / 10;
 }
 
 .card-img::before {
@@ -267,11 +270,99 @@ body {
   z-index: -1;
 }
 
+/* New card-reveal styles - positioned below image */
+.card-reveal {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  position: relative;
+  transition:
+    max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.4s ease 0.05s;
+  padding: 0 8px;
+}
+
+.card:hover .card-reveal {
+  max-height: 120px;
+  opacity: 1;
+}
+
+.card-reveal p {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  line-height: 1.7;
+  letter-spacing: 0.4px;
+  color: #fdcdf9;
+  padding: 14px 4px 4px;
+  margin: 0;
+  text-transform: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.18s;
+}
+
+.card:hover .card-reveal p {
+  animation: textFlicker 0.5s steps(1, end) 0.18s both;
+  transform: translateY(0);
+}
+
+/* Scanline animation */
+.reveal-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #f40c3f 15%,
+    #fdcdf9 50%,
+    #f40c3f 85%,
+    transparent
+  );
+  opacity: 0;
+  transform: scaleX(0.3);
+  transform-origin: center;
+  transition:
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+}
+
+.card:hover .reveal-scanline {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* Glitch flicker animation */
+@keyframes textFlicker {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.7;
+  }
+  12% {
+    opacity: 0.1;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  28% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 1600px) {
   .card {
     width: 550px;
     min-width: 550px;
-    height: 42%;
   }
   .cards {
     gap: 100px;
@@ -282,7 +373,6 @@ body {
   .card {
     width: 480px;
     min-width: 480px;
-    height: 40%;
     padding: 14px;
   }
   .cards {
@@ -295,7 +385,6 @@ body {
   .card {
     width: 400px;
     min-width: 400px;
-    height: 38%;
     padding: 12px;
     border-radius: 20px;
   }
@@ -313,13 +402,15 @@ body {
   .card-copy p:last-child {
     font-size: 11px;
   }
+  .card-reveal p {
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 768px) {
   .card {
     width: 320px;
     min-width: 320px;
-    height: 35%;
     padding: 10px;
     border-radius: 16px;
   }
@@ -342,5 +433,12 @@ body {
   }
   .card-img {
     border-radius: 10px;
+  }
+  .card-reveal p {
+    font-size: 10px;
+    padding: 10px 4px 4px;
+  }
+  .card:hover .card-reveal {
+    max-height: 100px;
   }
 }
