@@ -319,6 +319,22 @@
   padding: 6rem 3rem 3rem;
 }
 
+/* Menu Logo */
+.hero-menu-overlay-logo {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+}
+
+.hero-menu-overlay-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 /* Menu Header (Top section with optional content) */
 .hero-menu-header {
   text-align: left;
@@ -363,8 +379,12 @@
   width: 100%;
 }
 
+/* ─── MENU ITEM - FULL WIDTH ─── */
 .hero-menu-item {
   position: relative;
+  overflow: hidden;
+  width: 100%;
+  display: block;
   opacity: 0;
   transform: translateX(-30px);
   transition:
@@ -390,16 +410,18 @@
   transition-delay: 0.7s;
 }
 
+/* ─── MENU LINK ─── */
 .hero-menu-link {
+  position: relative;
+  z-index: 2;
   display: flex;
+  width: 100%;
   align-items: baseline;
   justify-content: flex-start;
   gap: 2rem;
   padding: 1rem 0;
   text-decoration: none;
-  width: 100%;
   cursor: pointer;
-  position: relative;
 }
 
 .hero-menu-link-num {
@@ -450,7 +472,7 @@
   color: #e8180c;
 }
 
-/* Optional underline effect */
+/* Underline effect */
 .hero-menu-link-heading::after {
   content: "";
   position: absolute;
@@ -464,6 +486,83 @@
 
 .hero-menu-link:hover .hero-menu-link-heading::after {
   width: 100%;
+}
+
+/* ─── MARQUEE - FULL BLEED ─── */
+.hero-menu-marquee {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  height: 100%;
+  overflow: hidden;
+  background: #6f92b8;
+  display: flex;
+  align-items: center;
+  z-index: 1;
+  cursor: none;
+  /* No static transform - GSAP controls xPercent/yPercent */
+}
+
+.hero-menu-marquee-inner {
+  display: flex;
+  white-space: nowrap;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.hero-menu-marquee-part {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.hero-menu-marquee-text {
+  font-family: "Space Mono", monospace;
+  font-size: 4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  padding: 0 2rem;
+}
+
+.hero-menu-marquee-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .hero-menu-marquee-text {
+    font-size: 2.5rem;
+  }
+  .hero-menu-marquee-arrow {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ─── CURSOR ─── */
+.hero-menu-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  mix-blend-mode: difference;
 }
 
 /* ─── MENU FOOTER (Social links & copyright) ─── */
@@ -570,4 +669,33 @@
 
 .hero-learn-button:hover .hero-learn-button-icon {
   transform: translate(0.125rem, -0.125rem);
+}
+
+/* ─── TOP & BOTTOM DIVIDERS ─── */
+.hero-top-divider,
+.hero-bottom-divider {
+  padding: 0 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .hero-top-divider,
+  .hero-bottom-divider {
+    padding: 0 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-top-divider,
+  .hero-bottom-divider {
+    padding: 0 4rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-top-divider {
+    padding-top: 3rem;
+  }
+  .hero-bottom-divider {
+    padding-bottom: 3rem;
+  }
 }
