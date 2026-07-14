@@ -9,6 +9,11 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import {
+  dionysosVert,
+  dionysosFrag,
+  uniforms as dionysosUniforms,
+} from "./shaders/dionysosShaders";
 import "./StatueScene.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -129,12 +134,8 @@ export default function StatueScene({
   const [plaqueTitle, setPlaqueTitle] = useState(PLAQUE_TITLES[0]);
   const [progress, setProgress] = useState(0);
 
-  // Ref to hold fresnel uniforms for animation
-  const fresnelUniformsRef = useRef<{
-    uFresnelColor: { value: THREE.Color };
-    uFresnelPower: { value: number };
-    uFresnelIntensity: { value: number };
-  } | null>(null);
+  // Ref to hold shader material
+  const shaderMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -168,7 +169,7 @@ export default function StatueScene({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.75; // was 1.1
+    renderer.toneMappingExposure = 0.55;
     stage.appendChild(renderer.domElement);
 
     // ============================================================
@@ -177,11 +178,9 @@ export default function StatueScene({
     const composer = new EffectComposer(renderer);
     composer.setSize(window.innerWidth, window.innerHeight);
 
-    // RenderPass - clean render first
     const renderPass = new RenderPass(scene, camera);
     composer.addPass(renderPass);
 
-    // UnrealBloomPass - bloom on clean render
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       0.5,
@@ -190,28 +189,26 @@ export default function StatueScene({
     );
     composer.addPass(bloomPass);
 
-    // ChromaticAberrationShader - after bloom
     const chromaPass = new ShaderPass(ChromaticAberrationShader);
     chromaPass.uniforms.intensity.value = 0.0035;
     composer.addPass(chromaPass);
 
-    // GrainShader - last
     const grainPass = new ShaderPass(GrainShader);
     grainPass.uniforms.intensity.value = 0.06;
     composer.addPass(grainPass);
 
     // ============================================================
-    // LIGHTING - Fixed: lower intensities, wider falloff
+    // LIGHTING - Dimmed significantly since shader handles its own
     // ============================================================
-    const key = new THREE.SpotLight(0xffe9cc, 45, 20, Math.PI / 6, 0.6, 2);
+    const key = new THREE.SpotLight(0xffe9cc, 5, 20, Math.PI / 6, 0.6, 2);
     key.position.set(3, 5, 4);
     scene.add(key);
 
-    const rim = new THREE.SpotLight(0xffffff, 60, 20, Math.PI / 5, 0.6, 1.8);
+    const rim = new THREE.SpotLight(0xffffff, 8, 20, Math.PI / 5, 0.6, 1.8);
     rim.position.set(-4, 2, -3);
     scene.add(rim);
 
-    const fill = new THREE.AmbientLight(0x2a2a2a, 0.6);
+    const fill = new THREE.AmbientLight(0x2a2a2a, 0.3);
     scene.add(fill);
 
     const ground = new THREE.Mesh(
@@ -223,19 +220,20 @@ export default function StatueScene({
     scene.add(ground);
 
     // ============================================================
-    // FOCAL GLOW - accent point
+    // FOCAL GLOW - subtle accent point
     // ============================================================
-    const focalGlow = new THREE.PointLight(0xffffff, 2, 3);
+    const focalGlow = new THREE.PointLight(0xffffff, 0.5, 3);
     scene.add(focalGlow);
 
-    const focalSphere = new THREE.Mesh(
-      new THREE.SphereGeometry(0.03, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0xffffff }),
-    );
-    scene.add(focalSphere);
+    // Remove the visible sphere or make it very subtle
+    // const focalSphere = new THREE.Mesh(
+    //   new THREE.SphereGeometry(0.01, 16, 16),
+    //   new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }),
+    // );
+    // scene.add(focalSphere);
 
     // ============================================================
-    // MODEL LOADING
+    // MODEL LOADING - Using custom ShaderMaterial
     // ============================================================
     const loader = new GLTFLoader();
     loader.load(
@@ -244,67 +242,24 @@ export default function StatueScene({
         if (disposed) return;
         model = gltf.scene;
 
-        // Fresnel uniforms - pale white-gray
-        const fresnelUniforms = {
-          uFresnelColor: { value: new THREE.Color(0xe8e8e8) },
-          uFresnelPower: { value: 2.4 },
-          uFresnelIntensity: { value: 0.5 },
-        };
-        fresnelUniformsRef.current = fresnelUniforms;
+        // Clone uniforms so camera pos etc. aren't shared across instances
+        const shaderUniforms = THREE.UniformsUtils.clone(dionysosUniforms);
+        shaderUniforms.uCameraPos.value = camera.position;
+
+        const dionysosMaterial = new THREE.ShaderMaterial({
+          vertexShader: dionysosVert,
+          fragmentShader: dionysosFrag,
+          uniforms: shaderUniforms,
+          side: THREE.DoubleSide,
+        });
 
         model.traverse((c) => {
           if ((c as THREE.Mesh).isMesh) {
-            const mesh = c as THREE.Mesh;
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            if (mat) {
-              // Fixed: darker, higher roughness, lower metalness
-              mat.color = new THREE.Color(0x0d0d0d);
-              mat.roughness = 0.65;
-              mat.metalness = 0.1;
-
-              // Inject fresnel shader
-              mat.onBeforeCompile = (shader) => {
-                shader.uniforms.uFresnelColor = fresnelUniforms.uFresnelColor;
-                shader.uniforms.uFresnelPower = fresnelUniforms.uFresnelPower;
-                shader.uniforms.uFresnelIntensity =
-                  fresnelUniforms.uFresnelIntensity;
-
-                shader.vertexShader = shader.vertexShader
-                  .replace(
-                    "#include <common>",
-                    `#include <common>
-                     varying vec3 vFresnelNormal;
-                     varying vec3 vFresnelViewDir;`,
-                  )
-                  .replace(
-                    "#include <begin_vertex>",
-                    `#include <begin_vertex>
-                     vFresnelNormal = normalize(normalMatrix * normal);
-                     vFresnelViewDir = normalize(-(modelViewMatrix * vec4(position, 1.0)).xyz);`,
-                  );
-
-                shader.fragmentShader = shader.fragmentShader
-                  .replace(
-                    "#include <common>",
-                    `#include <common>
-                     uniform vec3 uFresnelColor;
-                     uniform float uFresnelPower;
-                     uniform float uFresnelIntensity;
-                     varying vec3 vFresnelNormal;
-                     varying vec3 vFresnelViewDir;`,
-                  )
-                  .replace(
-                    "#include <dithering_fragment>",
-                    `#include <dithering_fragment>
-                     float fresnelTerm = pow(1.0 - saturate(dot(vFresnelNormal, vFresnelViewDir)), uFresnelPower);
-                     gl_FragColor.rgb += uFresnelColor * fresnelTerm * uFresnelIntensity;`,
-                  );
-              };
-
-              mat.needsUpdate = true;
-            }
+            (c as THREE.Mesh).material = dionysosMaterial;
           }
         });
+
+        shaderMaterialRef.current = dionysosMaterial;
 
         const box = new THREE.Box3().setFromObject(model);
         const size = new THREE.Vector3();
@@ -312,16 +267,13 @@ export default function StatueScene({
         const center = new THREE.Vector3();
         box.getCenter(center);
 
-        // Slightly smaller scale for more abstraction
         const scale = 2.2 / Math.max(size.x, size.y, size.z);
         model.scale.setScalar(scale);
         model.position.sub(center.multiplyScalar(scale));
         model.position.y -= 0.1;
         scene.add(model);
 
-        // Position focal glow
         focalGlow.position.set(0, 0.2, 0.8);
-        focalSphere.position.set(0, 0.2, 0.8);
 
         initScroll(model);
       },
@@ -344,9 +296,10 @@ export default function StatueScene({
             const idx = Math.min(4, Math.floor(self.progress * 5));
             setPlaqueTitle(PLAQUE_TITLES[idx]);
 
-            if (fresnelUniformsRef.current) {
-              fresnelUniformsRef.current.uFresnelIntensity.value =
-                0.3 + self.progress * 0.7;
+            // Drive the shader's uProgress directly
+            if (shaderMaterialRef.current) {
+              shaderMaterialRef.current.uniforms.uProgress.value =
+                self.progress;
             }
           },
         },
@@ -375,8 +328,8 @@ export default function StatueScene({
             duration: 0.6,
             scrollTrigger: {
               trigger: spacer,
-              start: "top 70%",
-              end: "top 30%",
+              start: "top 90%",
+              end: "bottom 60%",
               toggleActions: "play reverse play reverse",
             },
           },
@@ -391,14 +344,14 @@ export default function StatueScene({
       frameId = requestAnimationFrame(animate);
       if (model) camera.lookAt(0, 0, 0);
 
-      if (fresnelUniformsRef.current) {
-        const t = performance.now() * 0.001;
-        fresnelUniformsRef.current.uFresnelPower.value =
-          2.4 + Math.sin(t * 0.8) * 0.3;
+      // Update shader time
+      if (shaderMaterialRef.current) {
+        shaderMaterialRef.current.uniforms.uTime.value =
+          performance.now() * 0.001;
       }
 
       const t = performance.now() * 0.001;
-      focalGlow.intensity = 1.5 + Math.sin(t * 1.2) * 0.5;
+      focalGlow.intensity = 0.5 + Math.sin(t * 1.2) * 0.2;
 
       composer.render();
     }
@@ -447,7 +400,6 @@ export default function StatueScene({
     <div className="ts-root">
       <div className="ts-sticky-frame">
         <div className="ts-progress" style={{ width: `${progress}%` }} />
-        <div className="ts-credit">Port Artemis — Cat. No. 04</div>
         <div className="ts-canvas-stage" ref={stageRef} />
 
         <div className="ts-plaque">

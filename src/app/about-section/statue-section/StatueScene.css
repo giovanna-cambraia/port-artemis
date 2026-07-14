@@ -1,7 +1,6 @@
 .ts-root {
   position: relative;
-  /* 1 sticky viewport + 5 sections + 1 trailing spacer */
-  height: 700vh;
+  height: 900vh;
 }
 
 .ts-sticky-frame {
@@ -40,7 +39,7 @@
 }
 
 .ts-spacer {
-  height: 100vh;
+  height: 140vh;
   pointer-events: none;
   position: relative;
 }

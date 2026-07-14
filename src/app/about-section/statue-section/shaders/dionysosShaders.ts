@@ -5,10 +5,13 @@ uniform float uProgress;
 uniform float uTime;
 uniform float uNoiseScale;
 uniform float uDisplaceStrength;
+uniform float uBreakStart;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
 varying float vNoise;
+varying float vBreak;
+varying float vGlitchLine;
 
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x,289.0);}
 vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
@@ -70,15 +73,33 @@ float snoise(vec3 v){
   return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
 }
 
+float hash(vec3 p) {
+  return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453123);
+}
+
 void main() {
   vNormal = normalize(normalMatrix * normal);
 
   float noise = snoise(position * uNoiseScale + uTime * 0.15);
   vNoise = noise;
 
-  float dissolveAmount = (1.0 - uProgress);
-  vec3 displaced = position + normal * noise * uDisplaceStrength * dissolveAmount;
-  displaced += normal * dissolveAmount * dissolveAmount * (noise * 0.5) * 1.5;
+  float breakAmount = smoothstep(uBreakStart, 1.0, uProgress);
+  vBreak = breakAmount;
+
+  // ── DIGITAL CORRUPTION: quantize into horizontal "scan bands" that jitter ──
+  float band = floor(position.y * 14.0); // slice the model into horizontal bands
+  float bandGlitch = hash(vec3(band, floor(uTime * 6.0), 0.0)); // re-rolls ~6x/sec
+  float glitchActive = step(0.7, bandGlitch) * breakAmount; // only some bands glitch, only near break
+  vGlitchLine = glitchActive;
+
+  // ONLY the rigid band jitter remains — no normal-based organic displacement
+  vec3 displaced = position;
+  displaced.x += glitchActive * (hash(vec3(band, floor(uTime * 20.0), 1.0)) - 0.5) * 0.4;
+  displaced.z += glitchActive * (hash(vec3(band, floor(uTime * 20.0), 2.0)) - 0.5) * 0.3;
+
+  // Removed: normal * noise * uDisplaceStrength * breakAmount * 1.5
+  // Removed: normal * breakAmount * breakAmount * (noise * 0.5) * 1.2
+  // Those lines were the "melting/eroding" silhouette warp
 
   vPosition = displaced;
 
@@ -92,37 +113,61 @@ uniform float uProgress;
 uniform float uTime;
 uniform vec3 uColorA;
 uniform vec3 uColorB;
+uniform vec3 uAccentColor;
 uniform vec3 uCameraPos;
 uniform vec3 uLightDir;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
 varying float vNoise;
+varying float vBreak;
+varying float vGlitchLine;
+
+float hash2(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
 
 void main() {
   vec3 viewDir = normalize(uCameraPos - vPosition);
-  float fresnel = pow(1.0 - max(dot(viewDir, vNormal), 0.0), 2.5);
 
-  // ── MUCH TIGHTER CUTOFF — mostly solid at rest ──────────────
-  float cutoff = mix(-1.4, -0.75, uProgress);
-  if (vNoise < cutoff) discard;
+  // white contour — thin, edge-only
+  float fresnel = pow(1.0 - max(dot(viewDir, vNormal), 0.0), 5.0);
 
-  float edgeGlow = smoothstep(cutoff, cutoff + 0.08, vNoise);
-  edgeGlow = 1.0 - edgeGlow;
-
-  // ── DIFFUSE LIGHTING ──────────────────────────────────────────
+  // red light — sharpened into a rim/highlight, not full-surface diffuse
   float diffuse = max(dot(vNormal, normalize(uLightDir)), 0.0);
-  diffuse = diffuse * 0.75 + 0.25;
+  float redHighlight = pow(diffuse, 6.0);
+  vec3 lit = uAccentColor * redHighlight * 0.9;
 
-  // ── MARBLE PALETTE: near-black void → warm marble-white ─────
-  vec3 baseColor = mix(uColorA, uColorB, fresnel) * diffuse;
+  // base is black first, everything else is additive on top of it
+  vec3 baseColor = uColorA + lit + uColorB * fresnel * 0.8;
 
-  // ── RED ACCENT ONLY AT EROSION EDGE ──────────────────────────
-  vec3 accentGlow = vec3(0.88, 0.19, 0.19) * edgeGlow * 1.2;
+  // ── ORGANIC EROSION (kept subtle, background layer to the digital break) ──
+  float breakCutoff = mix(-2.0, -0.3, vBreak);
+  bool erosionDiscard = vBreak > 0.0 && vNoise < breakCutoff;
 
- vec3 finalColor = baseColor;
+  // ── DIGITAL CORRUPTION: block dropout on glitching bands ──
+  float blockNoise = hash2(vec2(floor(vPosition.y * 14.0), floor(uTime * 8.0)));
+  bool blockDiscard = vGlitchLine > 0.5 && blockNoise > 0.6;
 
-  float alpha = mix(0.9, 1.0, uProgress);
+  if (erosionDiscard || blockDiscard) discard;
+
+  // ── RGB SPLIT on corrupted bands — channel desync like a torn signal ──
+  vec3 finalColor = baseColor;
+  if (vGlitchLine > 0.5) {
+    float splitAmount = vBreak * 0.15;
+    finalColor.r = baseColor.r * 1.4; // punch red channel up on glitch bands
+    finalColor.g *= 0.6;
+    finalColor.b *= 0.7;
+    // white flicker flash on some bands, like signal snapping to static
+    float flicker = step(0.85, hash2(vec2(floor(vPosition.y * 14.0), floor(uTime * 12.0))));
+    finalColor = mix(finalColor, uColorB, flicker * 0.6);
+  }
+
+  // fracture edge glow
+  float fractureEdge = 1.0 - smoothstep(breakCutoff, breakCutoff + 0.1, vNoise);
+  finalColor += uAccentColor * fractureEdge * vBreak * 1.2;
+
+  float alpha = mix(1.0, 0.8, vBreak);
   gl_FragColor = vec4(finalColor, alpha);
 }
 `;
@@ -131,9 +176,11 @@ export const uniforms = {
   uProgress: { value: 0 },
   uTime: { value: 0 },
   uNoiseScale: { value: 1.6 },
-  uDisplaceStrength: { value: 0.04 },
-  uColorA: { value: new THREE.Color(0x050505) },
-  uColorB: { value: new THREE.Color(0xf4f2ee) },
+  uDisplaceStrength: { value: 0.05 },
+  uBreakStart: { value: 0.78 },
+  uColorA: { value: new THREE.Color(0x030303) },
+  uColorB: { value: new THREE.Color(0xf5f0e8) },
+  uAccentColor: { value: new THREE.Color(0xb33030) },
   uCameraPos: { value: new THREE.Vector3() },
   uLightDir: { value: new THREE.Vector3(3, 5, 2).normalize() },
 };
