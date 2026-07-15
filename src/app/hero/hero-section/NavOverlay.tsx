@@ -68,7 +68,9 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
   return (
     <div className="nav-overlay" ref={containerRef}>
       <header className="nav-overlay__header">
-        <div className="nav-overlay__logo"><img src="/icon-img.png" alt="" /></div>
+        <div className="nav-overlay__logo">
+          <img src="/icon-img.png" alt="" />
+        </div>
         <button
           className="nav-overlay__close"
           onClick={onClose}
@@ -96,15 +98,25 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
           </span>
         </div>
 
-        <div className="nav-overlay__col nav-overlay__spacer">
-          <PlusMark />
+        <div className="nav-overlay__col nav-overlay__spacer nav-overlay__spacer--model">
+          <img
+            src="/brianpurgert-column-3369505.svg"
+            alt="Marble column"
+            className="nav-overlay__column-image"
+          />
         </div>
 
         <div className="nav-overlay__col nav-overlay__spacer">
           <PlusMark />
         </div>
 
-        <div className="nav-overlay__col nav-overlay__spacer" />
+        <div className="nav-overlay__col nav-overlay__spacer nav-overlay__spacer--model">
+          <img
+            src="/brianpurgert-column-3369505.svg"
+            alt="Marble column"
+            className="nav-overlay__column-image"
+          />
+        </div>
 
         <div className="nav-overlay__col nav-overlay__contact">
           <a href="mailto:cambraia.dev@gmail.com">cambraia.dev@gmail.com</a>
