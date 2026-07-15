@@ -16,7 +16,12 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { index: "01", label: "ABOUT", marquee: "MY JOURNEY", href: "/about" },
-  { index: "02", label: "PROJECTS", marquee: "SELECTED WORK", href: "/projects" },
+  {
+    index: "02",
+    label: "PROJECTS",
+    marquee: "SELECTED WORK",
+    href: "/projects",
+  },
   { index: "03", label: "CONTACT", marquee: "SAY HELLO", href: "/contact" },
 ];
 
@@ -30,7 +35,12 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
 
   useEffect(() => {
     const update = () =>
-      setTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+      setTime(
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      );
     update();
     const id = setInterval(update, 30_000);
     return () => clearInterval(id);
@@ -41,17 +51,29 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
       const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
       tl.from(".nav-overlay__header", { y: -30, opacity: 0, duration: 0.6 })
-        .from(".nav-row", { yPercent: 100, duration: 0.7, stagger: 0.08 }, "-=0.3")
-        .from(".nav-overlay__footer", { y: 40, opacity: 0, duration: 0.6 }, "-=0.4");
+        .from(
+          ".nav-row",
+          { yPercent: 100, duration: 0.7, stagger: 0.08 },
+          "-=0.3",
+        )
+        .from(
+          ".nav-overlay__footer",
+          { y: 40, opacity: 0, duration: 0.6 },
+          "-=0.4",
+        );
     },
-    { scope: containerRef }
+    { scope: containerRef },
   );
 
   return (
     <div className="nav-overlay" ref={containerRef}>
       <header className="nav-overlay__header">
-        <div className="nav-overlay__logo"></div>
-        <button className="nav-overlay__close" onClick={onClose} aria-label="Close menu">
+        <div className="nav-overlay__logo"><img src="/icon-img.png" alt="" /></div>
+        <button
+          className="nav-overlay__close"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
           <CloseIcon />
         </button>
       </header>
@@ -65,18 +87,18 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
       <footer className="nav-overlay__footer">
         <div className="nav-overlay__col nav-overlay__blurb">
           <p>
-            My work is driven by clarity, performance, and attention to
-            detail. I focus on creating reliable digital experiences that
-            feel simple, fast, and intentional.
+            My work is driven by clarity, performance, and attention to detail.
+            I focus on creating reliable digital experiences that feel simple,
+            fast, and intentional.
           </p>
-          <span className="nav-overlay__copyright">©2026 All Rights Reserved</span>
+          <span className="nav-overlay__copyright">
+            ©2026 All Rights Reserved
+          </span>
         </div>
 
         <div className="nav-overlay__col nav-overlay__spacer">
           <PlusMark />
         </div>
-
-      
 
         <div className="nav-overlay__col nav-overlay__spacer">
           <PlusMark />
@@ -85,17 +107,24 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
         <div className="nav-overlay__col nav-overlay__spacer" />
 
         <div className="nav-overlay__col nav-overlay__contact">
-          <a href="mailto:chkstepan11@gmail.com">cambraia.dev@gmail.com</a>
+          <a href="mailto:cambraia.dev@gmail.com">cambraia.dev@gmail.com</a>
           <span>São Paulo, Brasil</span>
         </div>
 
         <div className="nav-overlay__col nav-overlay__social">
-          <a href="#" target="_blank" rel="noreferrer">instagram</a>
-          <a href="#" target="_blank" rel="noreferrer">linkedin</a>
-          <a href="#" target="_blank" rel="noreferrer">dribbble</a>
+          <a href="#" target="_blank" rel="noreferrer" className="social-link">
+            <span className="social-link__label">instagram</span>
+            <span className="social-link__icon">↗</span>
+          </a>
+          <a href="#" target="_blank" rel="noreferrer" className="social-link">
+            <span className="social-link__label">linkedin</span>
+            <span className="social-link__icon">↗</span>
+          </a>
+          <a href="#" target="_blank" rel="noreferrer" className="social-link">
+            <span className="social-link__label">github</span>
+            <span className="social-link__icon">↗</span>
+          </a>
         </div>
-
-
       </footer>
     </div>
   );
@@ -126,20 +155,46 @@ function NavRow({ item }: NavRowProps) {
         })
         .pause();
     },
-    { scope: rowRef }
+    { scope: rowRef },
   );
 
   const handleEnter = () => {
-    gsap.to(labelRef.current, { yPercent: 120, duration: 0.5, ease: "power4.inOut" });
-    gsap.to(marqueeRef.current, { yPercent: 0, duration: 0.5, ease: "power4.inOut" });
-    gsap.to(dotRef.current, { y: 6, scale: 0.9, duration: 0.4, ease: "power3.out" });
+    gsap.to(labelRef.current, {
+      yPercent: 120,
+      duration: 0.5,
+      ease: "power4.inOut",
+    });
+    gsap.to(marqueeRef.current, {
+      yPercent: 0,
+      duration: 0.5,
+      ease: "power4.inOut",
+    });
+    gsap.to(dotRef.current, {
+      y: 6,
+      scale: 0.9,
+      duration: 0.4,
+      ease: "power3.out",
+    });
     loopTween.current?.play();
   };
 
   const handleLeave = () => {
-    gsap.to(labelRef.current, { yPercent: 0, duration: 0.5, ease: "power4.inOut" });
-    gsap.to(marqueeRef.current, { yPercent: -100, duration: 0.5, ease: "power4.inOut" });
-    gsap.to(dotRef.current, { y: 0, scale: 1, duration: 0.4, ease: "power3.out" });
+    gsap.to(labelRef.current, {
+      yPercent: 0,
+      duration: 0.5,
+      ease: "power4.inOut",
+    });
+    gsap.to(marqueeRef.current, {
+      yPercent: -100,
+      duration: 0.5,
+      ease: "power4.inOut",
+    });
+    gsap.to(dotRef.current, {
+      y: 0,
+      scale: 1,
+      duration: 0.4,
+      ease: "power3.out",
+    });
     loopTween.current?.pause();
   };
 

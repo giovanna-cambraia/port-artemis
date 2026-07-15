@@ -1,5 +1,3 @@
-
-
 .nav-overlay {
   position: fixed;
   inset: 0;
@@ -42,6 +40,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.nav-overlay__close:hover {
+  transform: rotate(90deg);
+  background: #c0263a;
 }
 
 .nav-overlay__list {
@@ -62,6 +66,7 @@
   color: #ffffff;
   overflow: hidden;
   isolation: isolate;
+  cursor: pointer;
 }
 
 .nav-row__index {
@@ -105,6 +110,11 @@
   height: 6px;
   border-radius: 50%;
   background: #ffffff;
+  transition: background 0.3s ease;
+}
+
+.nav-row:hover .nav-row__dot-inner {
+  background: #000000;
 }
 
 .nav-row__marquee {
@@ -142,11 +152,16 @@
   align-items: center;
   justify-content: center;
   font-size: 24px;
+  transition: background 0.3s ease;
+}
+
+.nav-row__marquee-item:hover .nav-row__marquee-arrow {
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .nav-overlay__footer {
   display: grid;
-  grid-template-columns: 1.6fr 0.5fr 1fr 0.5fr 1fr 1fr 0.7fr 1fr;
+  grid-template-columns: 1.6fr 0.5fr 1fr 0.5fr 0.7fr 1fr;
   border-top: 1px solid #ffffff;
   min-height: 220px;
 }
@@ -194,55 +209,276 @@
   left: 12px;
 }
 
-.nav-overlay__moon {
-  align-items: center;
+/* --- Enhanced Social Links --- */
+
+.nav-overlay__social {
+  align-items: flex-start;
   justify-content: center;
+  gap: 12px;
+  padding: 20px 24px;
 }
 
-.nav-overlay__moon img {
-  width: 140px;
-  height: 140px;
-  object-fit: cover;
-  border-radius: 50%;
-  filter: grayscale(1) contrast(1.1);
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  padding: 4px 0;
 }
+
+.social-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #a47e7e;
+  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.social-link:hover {
+  color: #a47e7e;
+  transform: translateX(4px);
+}
+
+.social-link:hover::after {
+  width: 100%;
+}
+
+.social-link__label {
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
+.social-link__icon {
+  display: inline-block;
+  font-size: 11px;
+  opacity: 0.5;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.social-link:hover .social-link__icon {
+  opacity: 1;
+  transform: rotate(-45deg) translateX(2px);
+}
+
+/* --- Contact Column Enhancement --- */
 
 .nav-overlay__contact {
-  justify-content: flex-start;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
 }
 
 .nav-overlay__contact a {
   color: #ffffff;
-  text-decoration: underline;
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  transition: color 0.3s ease;
+  position: relative;
+  display: inline-block;
 }
 
-.nav-overlay__social {
-  align-items: flex-end;
-  gap: 6px;
+.nav-overlay__contact a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #a47e7e;
+  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.nav-overlay__social a {
-  color: #111;
-  text-decoration: underline;
+.nav-overlay__contact a:hover {
+  color: #a47e7e;
 }
+
+.nav-overlay__contact a:hover::after {
+  width: 100%;
+}
+
+.nav-overlay__contact span {
+  font-size: 12px;
+  opacity: 0.6;
+  letter-spacing: 0.3px;
+}
+
+/* --- Time display (uncomment if needed) --- */
 
 .nav-overlay__time {
   align-items: flex-end;
   justify-content: flex-end;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
 }
-
-
 
 @media (max-width: 900px) {
   .nav-overlay__footer {
     grid-template-columns: 1fr 1fr;
   }
-  .nav-overlay__moon {
-    order: -1;
+
+  .nav-overlay__social {
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
   }
+
+  .social-link {
+    font-size: 12px;
+  }
+
   .nav-row__label {
     font-size: clamp(40px, 14vw, 90px);
   }
+
+  .nav-overlay__contact a {
+    font-size: 12px;
+  }
 }
 
+@media (max-width: 600px) {
+  .nav-overlay__header {
+    padding: 16px 20px;
+  }
+
+  .nav-overlay__logo {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+  }
+
+  .nav-overlay__close {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-row {
+    padding: 0 20px;
+  }
+
+  .nav-row__index {
+    left: 20px;
+    top: 12px;
+    font-size: 10px;
+  }
+
+  .nav-row__dot {
+    right: 20px;
+    top: 16px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .nav-row__dot-inner {
+    width: 4px;
+    height: 4px;
+  }
+
+  .nav-overlay__footer {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .nav-overlay__col {
+    border-right: none;
+    border-bottom: 1px solid #ffffff;
+    padding: 16px 20px;
+    min-height: 80px;
+  }
+
+  .nav-overlay__col:last-child {
+    border-bottom: none;
+  }
+
+  .nav-overlay__social {
+    flex-direction: row;
+    gap: 16px;
+    justify-content: flex-start;
+    padding: 16px 20px;
+    min-height: 60px;
+  }
+
+  .social-link {
+    font-size: 11px;
+  }
+
+  .nav-overlay__contact {
+    gap: 4px;
+  }
+
+  .nav-overlay__blurb p {
+    max-width: 100%;
+    font-size: 12px;
+  }
+}
+
+.nav-overlay__spacer--model {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 0.3s ease;
+  overflow: hidden;
+  position: relative;
+  min-height: 180px;
+}
+
+.nav-overlay__spacer--model:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-overlay__spacer--model canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 180px;
+  display: block;
+}
+
+/* Adjust existing spacer styles */
+.nav-overlay__spacer:not(.nav-overlay__spacer--model) {
+  position: relative;
+}
+
+.nav-overlay__spacer:not(.nav-overlay__spacer--model) svg {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  opacity: 0.4;
+}
+
+.nav-overlay__spacer:not(.nav-overlay__spacer--model):first-of-type svg {
+  bottom: auto;
+  top: 12px;
+  right: auto;
+  left: 12px;
+}
+
+/* Mobile responsive */
+@media (max-width: 900px) {
+  .nav-overlay__spacer--model {
+    min-height: 140px;
+  }
+  
+  .nav-overlay__spacer--model canvas {
+    max-height: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .nav-overlay__spacer--model {
+    min-height: 100px;
+  }
+  
+  .nav-overlay__spacer--model canvas {
+    max-height: 100px;
+  }
+}

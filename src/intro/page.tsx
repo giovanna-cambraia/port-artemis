@@ -102,41 +102,6 @@ export default function Home({ searchParams }: HomeProps) {
       <div style={{ display: preloaderDone ? "none" : "block" }}>
         <Preloader onComplete={handlePreloaderComplete} />
       </div>
-
-      {/* Main content - only visible when preloader is done */}
-      {preloaderDone && (
-        <div className="mockup-container">
-          <div ref={cameraRef} className="camera-container">
-            {/* Phone Mockup */}
-            <div ref={phoneWrapperRef} className="phone-wrapper">
-              <div className="phone-image">
-                <Image
-                  src="/Mockup.png"
-                  alt="Phone Mockup"
-                  width={1200}
-                  height={800}
-                  priority
-                  quality={90}
-                />
-
-                {/* Clickable screen overlay */}
-                <div
-                  className="screen-overlay"
-                  onClick={handleScreenClick}
-                  aria-label="Click to enter portfolio"
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      handleScreenClick();
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

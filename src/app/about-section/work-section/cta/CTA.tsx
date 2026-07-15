@@ -59,11 +59,6 @@ const contactLinks: ContactLink[] = [
       "Open source and personal projects. Maybe find this site's code.",
     href: "https://github.com/yourusername",
   },
-  {
-    label: "INSTAGRAM",
-    description: "Life outside the editor. Mostly coffee and katanas.",
-    href: "https://instagram.com/yourusername",
-  },
 ];
 
 export default function CTA({
