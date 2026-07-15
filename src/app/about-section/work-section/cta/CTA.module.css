@@ -1,3 +1,7 @@
+/* ============================================
+   CTA MODULE STYLES
+   ============================================ */
+
 .cta {
   position: relative;
   width: 100%;
@@ -8,160 +12,270 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 6rem 2rem;
 }
 
-.ctaContainer {
-  position: relative;
-  width: 100%;
-  min-height: 80vh;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.ctaHandImg {
-  position: relative;
-  width: 45%;
-  min-width: 200px;
-  will-change: transform;
-  flex-shrink: 0;
-}
-
-.asciiHand {
-  display: block;
-  width: 100%;
-  opacity: 0;
-}
-
-.handCanvas {
+.bgCanvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
   pointer-events: none;
+  z-index: 0;
 }
 
 .ctaContent {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: 100%;
   padding: 2rem;
   display: flex;
-  justify-content: space-between;
-  gap: 2rem;
-  color: #fff;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.ctaLinks {
-  display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  pointer-events: auto;
-}
-
-.ctaLinks a {
+  align-items: center;
+  justify-content: center;
+  gap: 4rem;
   color: #fff;
-  text-decoration: none;
-  font-size: 1.1rem;
-  transition: color 0.3s ease;
-}
-
-.ctaLinks a:hover {
-  color: #ff6a00;
-}
-
-.ctaText {
-  pointer-events: auto;
-  max-width: 400px;
-}
-
-.ctaText p {
-  font-size: 1.1rem;
-  line-height: 1.6;
+  z-index: 2;
 }
 
 .ctaHeader {
-  position: absolute;
-  bottom: 0; 
-  left: 0;
-  width: 100%;
-  padding: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  color: #fff;
+  text-align: center;
   pointer-events: none;
-  z-index: 2;
 }
 
 .ctaHeader h1 {
-  font-size: clamp(3rem, 12vw, 12rem);
+  font-size: clamp(2.5rem, 6vw, 5rem);
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.05;
   letter-spacing: -0.02em;
   overflow: hidden;
-  pointer-events: auto;
+  margin: 0;
 }
 
+.ctaWidget {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+/* ============================================
+   CONTACT CTA MODULE STYLES
+   ============================================ */
+
+.wrapper {
+  --accent: #c0263a;
+  --bg: #0a0a0a;
+  --card-bg: #111111;
+  --border: rgba(255, 255, 255, 0.08);
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --text-dim: rgba(255, 255, 255, 0.6);
+
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ---------- Cal.com card ---------- */
+
+.calCard {
+  position: relative;
+  background: #000;
+  border: 1px solid rgba(192, 38, 58, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 520px;
+  box-shadow: 0 0 60px rgba(192, 38, 58, 0.08);
+}
+
+.calEmbed {
+  width: 100%;
+  height: 520px;
+}
+
+.calLoading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+/* ---------- Contact section ---------- */
+
+.contactSection {
+  margin-top: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px dashed var(--border);
+}
+
+.kanji {
+  font-size: 1.1rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.headerText {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.linksList {
+  display: flex;
+  flex-direction: column;
+}
+
+.linkRow {
+  display: grid;
+  grid-template-columns: 160px 1fr 24px;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem 0.5rem;
+  border-bottom: 1px dashed var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    background 0.2s ease,
+    padding-left 0.2s ease;
+}
+
+.linkRow:hover {
+  background: rgba(255, 255, 255, 0.02);
+  padding-left: 1rem;
+}
+
+.linkRow:hover .arrow {
+  color: var(--accent);
+  transform: translate(2px, -2px);
+}
+
+.linkLabel {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.linkDescription {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.emailText {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.arrow {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+  text-align: right;
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+
+/* CTA responsive */
 @media (max-width: 1000px) {
-  .ctaContainer {
-    min-height: 70vh;
+  .cta {
+    padding: 4rem 1.5rem;
   }
 
   .ctaContent {
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 1rem;
+    gap: 3rem;
     padding: 1.5rem;
   }
 
-  .ctaText {
-    max-width: 100%;
-  }
-
-  .ctaText p {
-    font-size: 1rem;
-  }
-
   .ctaHeader h1 {
-    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-size: clamp(2rem, 8vw, 3.5rem);
   }
 
-  .ctaHandImg {
-    width: 30%;
-    min-width: 100px;
+  .ctaWidget {
+    max-width: 100%;
+    gap: 3rem;
   }
 }
 
 @media (max-width: 600px) {
   .cta {
+    padding: 3rem 1rem;
+  }
+
+  .ctaContent {
+    gap: 2rem;
     padding: 1rem;
   }
 
-  .ctaContainer {
-    min-height: 60vh;
-  }
-
-  .ctaHandImg {
-    width: 25%;
-    min-width: 80px;
-  }
-
-  .ctaLinks a {
-    font-size: 0.9rem;
-  }
-
-  .ctaText p {
-    font-size: 0.9rem;
-  }
-
   .ctaHeader h1 {
-    font-size: clamp(2rem, 6vw, 3rem);
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+  }
+
+  .ctaWidget {
+    gap: 2rem;
+  }
+}
+
+/* Contact CTA responsive */
+@media (max-width: 640px) {
+  .linkRow {
+    grid-template-columns: 1fr 24px;
+    grid-template-areas:
+      "label arrow"
+      "desc desc";
+    row-gap: 0.5rem;
+    padding: 1.5rem 0.5rem;
+  }
+
+  .linkLabel,
+  .emailText {
+    grid-area: label;
+    font-size: 1.3rem;
+  }
+
+  .linkDescription {
+    grid-area: desc;
+  }
+
+  .arrow {
+    grid-area: arrow;
+  }
+
+  .calEmbed,
+  .calCard {
+    height: 600px;
+    min-height: 600px;
+  }
+
+  .sectionHeader {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -9,74 +9,152 @@ import styles from "./CTA.module.css";
 interface Cell {
   col: number;
   row: number;
-  char: string;
   highlightEndTime: number;
 }
 
-interface Hand {
-  canvas: HTMLCanvasElement;
-  cells: Map<string, Cell>;
-  cellList: Cell[];
-  rows: number;
-  cellSize: number;
+interface ContactLink {
+  label: string;
+  description: string;
+  href: string;
+  isEmail?: boolean;
 }
 
 interface CTAProps {
-  leftHandSrc?: string;
-  rightHandSrc?: string;
-  title1?: string;
-  title2?: string;
   links?: { text: string; href: string }[];
   description?: string;
   className?: string;
+  calLink?: string;
 }
 
-const ASCII_CHARS = "... ... .. :::=+xX#0396";
-const CHAR_COLOR = "#803500";
-const HOVER_COLOR = "#ff6a00";
+const ASCII_CHARS = " .:-=+*#%@";
+const CHAR_COLOR = "#FF0000";
+const HOVER_COLOR = "#7D0000";
 const HOVER_CHAR_COLOR = "#0f0f0f";
-const HOVER_RADIUS = 8;
+const HOVER_RADIUS = 3;
 const CLUSTER_SIZE = 10;
 const HIGHLIGHT_LIFETIME = 300;
-const ASCII_COLUMNS = 80;
-const DPR = 2;
-const PARALLAX_STRENGTH = 20;
-const PARALLAX_EASE = 0.05;
+const CELL_SIZE = 14; // px per ascii cell
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+// wave field tuning
+const WAVE_SPEED = 0.0006;
+const WAVE_SCALE_X = 0.05;
+const WAVE_SCALE_Y = 0.08;
+
+const contactLinks: ContactLink[] = [
+  {
+    label: "EMAIL",
+    description: "",
+    href: "mailto:youremail@example.com",
+    isEmail: true,
+  },
+  {
+    label: "LINKEDIN",
+    description: "Professional DMs welcome. Keep it career-related... or not.",
+    href: "https://linkedin.com/in/yourprofile",
+  },
+  {
+    label: "GITHUB",
+    description:
+      "Open source and personal projects. Maybe find this site's code.",
+    href: "https://github.com/yourusername",
+  },
+  {
+    label: "INSTAGRAM",
+    description: "Life outside the editor. Mostly coffee and katanas.",
+    href: "https://instagram.com/yourusername",
+  },
+];
 
 export default function CTA({
-  leftHandSrc = "/models/left-hand.png",
-  rightHandSrc = "/models/right-hand.png",
-  title1 = "Ready to",
-  title2 = "Start?",
-
   className = "",
+  calLink = "giovanna-cambraia-cw0cjt",
 }: CTAProps) {
   const ctaRef = useRef<HTMLElement>(null);
-  const leftHandRef = useRef<HTMLDivElement>(null);
-  const rightHandRef = useRef<HTMLDivElement>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const calRef = useRef<HTMLDivElement>(null);
 
-  const handsRef = useRef<Hand[]>([]);
   const animationFrameRef = useRef<number | null>(null);
+  const cellsRef = useRef<Cell[]>([]);
+  const gridRef = useRef<{ cols: number; rows: number }>({ cols: 0, rows: 0 });
+  const [calLoaded, setCalLoaded] = useState(false);
+  const [calError, setCalError] = useState(false);
 
   useEffect(() => {
-    // Register plugins
+    if (!calLink) return;
+    setCalLoaded(false);
+    setCalError(false);
+
+    try {
+      (function (C: any, A: string, L: string) {
+        let p = function (a: any, ar: any) {
+          a.q.push(ar);
+        };
+        let d = C.document;
+        C.Cal =
+          C.Cal ||
+          function () {
+            let cal = C.Cal;
+            let ar = arguments;
+            if (!cal.loaded) {
+              cal.ns = {};
+              cal.q = cal.q || [];
+              d.head.appendChild(d.createElement("script")).src = A;
+              cal.loaded = true;
+            }
+            if (ar[0] === L) {
+              const api = function () {
+                p(api, arguments);
+              } as any;
+              api.q = [] as any[];
+              const namespace = ar[1];
+              if (typeof namespace === "string") {
+                cal.ns[namespace] = cal.ns[namespace] || api;
+                p(cal.ns[namespace], ar);
+                p(cal, ["initNamespace", namespace]);
+              } else p(cal, ar);
+              return;
+            }
+            p(cal, ar);
+          };
+      })(window, "https://app.cal.com/embed/embed.js", "init");
+
+      (window as any).Cal("init", { origin: "https://cal.com" });
+      (window as any).Cal("inline", {
+        elementOrSelector: calRef.current,
+        calLink: calLink,
+        layout: "month_view",
+        config: { theme: "dark" },
+      });
+      (window as any).Cal("ui", {
+        theme: "dark",
+        styles: { branding: { brandColor: "#c0263a" } },
+        hideEventTypeDetails: false,
+        layout: "month_view",
+      });
+
+      setCalLoaded(true);
+    } catch (err) {
+      console.error("Cal.com embed failed:", err);
+      setCalError(true);
+    }
+  }, [calLink]);
+
+  useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Initialize Lenis
     const lenis = new Lenis();
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add((time: number) => lenis.raf(time * 1000));
     gsap.ticker.lagSmoothing(0);
 
-    // Split characters helper
     const splitCharsManual = (element: HTMLElement): HTMLElement[] => {
       const text = element.textContent || "";
       element.textContent = "";
       const chars: HTMLElement[] = [];
-
       [...text].forEach((char) => {
         const span = document.createElement("span");
         span.textContent = char === " " ? "\u00A0" : char;
@@ -86,37 +164,29 @@ export default function CTA({
         element.appendChild(span);
         chars.push(span);
       });
-
       return chars;
     };
 
-    // Split heading characters
     const splitHeadingChars = (): HTMLElement[] => {
       const header = headerRef.current;
       if (!header) return [];
-
       const headings = header.querySelectorAll("h1");
       const chars: HTMLElement[] = [];
-
       headings.forEach((heading) => {
         chars.push(...splitCharsManual(heading as HTMLElement));
       });
-
       gsap.set(chars, { position: "relative", yPercent: 125 });
       return chars;
     };
 
-    // Split content lines
     const splitContentLines = (): HTMLElement[] => {
       const links = linksRef.current;
       const text = textRef.current;
       if (!links || !text) return [];
-
       const elements = [
         ...links.querySelectorAll("a"),
         ...text.querySelectorAll("p"),
       ];
-
       const lines: HTMLElement[] = [];
       elements.forEach((el) => {
         const lineElements =
@@ -128,7 +198,6 @@ export default function CTA({
           }) || [];
         lines.push(...(lineElements as HTMLElement[]));
       });
-
       gsap.set(lines, { yPercent: 100 });
       return lines;
     };
@@ -136,209 +205,89 @@ export default function CTA({
     const headingChars = splitHeadingChars();
     const contentLines = splitContentLines();
 
-    // Image pixel sampling
-    const sampleImagePixels = (
-      image: HTMLImageElement,
-      gridRows: number,
-    ): Uint8ClampedArray | null => {
-      const validRows = Math.max(1, Math.round(gridRows));
+    // ---- ASCII wave background ----
+    const canvas = bgCanvasRef.current;
+    const section = ctaRef.current;
+    if (!canvas || !section) return;
 
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = ASCII_COLUMNS;
-        canvas.height = validRows;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return null;
+    const resize = () => {
+      const rect = section.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
 
-        ctx.drawImage(image, 0, 0, ASCII_COLUMNS, validRows);
-        const imageData = ctx.getImageData(0, 0, ASCII_COLUMNS, validRows);
-        return imageData.data;
-      } catch (error) {
-        console.error("Error sampling image pixels:", error);
-        return null;
-      }
-    };
+      const cols = Math.ceil(width / CELL_SIZE);
+      const rows = Math.ceil(height / CELL_SIZE);
+      gridRef.current = { cols, rows };
 
-    const pixelToCharIndex = (
-      pixels: Uint8ClampedArray,
-      pixelsOffset: number,
-    ): number => {
-      const alpha = pixels[pixelsOffset + 3];
-      if (alpha < 128) return -1;
-
-      const r = pixels[pixelsOffset];
-      const g = pixels[pixelsOffset + 1];
-      const b = pixels[pixelsOffset + 2];
-
-      const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-      const backgroundCharIndex = ASCII_CHARS.lastIndexOf(".");
-
-      return Math.min(
-        ASCII_CHARS.length - 1,
-        Math.floor((1 - brightness) * ASCII_CHARS.length),
-      );
-    };
-
-    const buildCells = (
-      image: HTMLImageElement,
-    ): { rows: number; cells: Map<string, Cell> } | null => {
-      if (!image.naturalWidth || !image.naturalHeight) {
-        console.error("Invalid image dimensions");
-        return null;
-      }
-
-      const aspectRatio = image.naturalWidth / image.naturalHeight;
-      const rows = Math.max(1, Math.round(ASCII_COLUMNS / aspectRatio));
-
-      const pixels = sampleImagePixels(image, rows);
-      if (!pixels) return null;
-
-      const cells = new Map<string, Cell>();
-      const backgroundCharIndex = ASCII_CHARS.lastIndexOf(".");
-
+      cellsRef.current = [];
       for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < ASCII_COLUMNS; col++) {
-          const pixelsOffset = (row * ASCII_COLUMNS + col) * 4;
-          if (pixelsOffset + 3 >= pixels.length) continue;
-
-          const charIndex = pixelToCharIndex(pixels, pixelsOffset);
-          if (charIndex < 0 || charIndex <= backgroundCharIndex) continue;
-
-          cells.set(`${col},${row}`, {
-            col,
-            row,
-            char: ASCII_CHARS[charIndex],
-            highlightEndTime: 0,
-          });
+        for (let col = 0; col < cols; col++) {
+          cellsRef.current.push({ col, row, highlightEndTime: 0 });
         }
       }
 
-      return { rows, cells };
-    };
-
-    const setupHand = (
-      image: HTMLImageElement,
-      wrapper: HTMLDivElement,
-    ): Hand | null => {
-      const result = buildCells(image);
-      if (!result) return null;
-
-      const { rows, cells } = result;
-      const cellList = [...cells.values()];
-
-      const canvas = wrapper.querySelector("canvas");
-      if (!canvas) return null;
-
-      const displayWidth = wrapper.clientWidth || 200;
-      const cellSize = displayWidth / ASCII_COLUMNS;
-      const displayHeight = rows * cellSize;
-
-      canvas.width = displayWidth * DPR;
-      canvas.height = displayHeight * DPR;
-      canvas.style.width = `${displayWidth}px`;
-      canvas.style.height = `${displayHeight}px`;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return null;
-
+      canvas.width = width * DPR;
+      canvas.height = height * DPR;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      ctx.font = `${Math.max(cellSize * 0.9, 8)}px monospace`;
+      ctx.font = `${Math.max(CELL_SIZE * 0.85, 8)}px monospace`;
       ctx.textAlign = "center";
-      ctx.textBaseline = "alphabetic";
-
-      const metrics = ctx.measureText("X");
-      const glyphHeight =
-        (metrics.actualBoundingBoxAscent || 0) +
-        (metrics.actualBoundingBoxDescent || 0);
-      const baselineOffSet =
-        cellSize / 2 + glyphHeight - (metrics.actualBoundingBoxDescent || 0);
-
-      const render = () => {
-        const now = Date.now();
-        ctx.clearRect(0, 0, displayWidth, displayHeight);
-
-        for (const cell of cellList) {
-          const x = cell.col * cellSize;
-          const y = cell.row * cellSize;
-          const isHighlighted = cell.highlightEndTime > now;
-
-          if (isHighlighted) {
-            ctx.fillStyle = HOVER_COLOR;
-            ctx.fillRect(x, y, cellSize, cellSize);
-          }
-
-          ctx.fillStyle = isHighlighted ? HOVER_CHAR_COLOR : CHAR_COLOR;
-          ctx.fillText(cell.char, x + cellSize / 2, y + baselineOffSet);
-        }
-        animationFrameRef.current = requestAnimationFrame(render);
-      };
-
-      render();
-
-      return { canvas, cells, cellList, rows, cellSize };
+      ctx.textBaseline = "middle";
     };
 
-    // Setup hands
-    const setupHands = () => {
-      const leftWrapper = leftHandRef.current;
-      const rightWrapper = rightHandRef.current;
-      if (!leftWrapper || !rightWrapper) return;
+    resize();
+    window.addEventListener("resize", resize);
 
-      const leftImg = leftWrapper.querySelector(
-        ".ascii-hand",
-      ) as HTMLImageElement;
-      const rightImg = rightWrapper.querySelector(
-        ".ascii-hand",
-      ) as HTMLImageElement;
+    const render = () => {
+      const now = Date.now();
+      const { cols, rows } = gridRef.current;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (leftImg && rightImg) {
-        const leftHand = setupHand(leftImg, leftWrapper);
-        const rightHand = setupHand(rightImg, rightWrapper);
-        if (leftHand && rightHand) {
-          handsRef.current = [leftHand, rightHand];
+      for (const cell of cellsRef.current) {
+        const x = cell.col * CELL_SIZE;
+        const y = cell.row * CELL_SIZE;
+
+        // wave field: combine two sine waves for a rolling diagonal wave
+        const wave =
+          Math.sin(cell.col * WAVE_SCALE_X + now * WAVE_SPEED) *
+            Math.cos(cell.row * WAVE_SCALE_Y - now * WAVE_SPEED * 0.7) *
+            0.5 +
+          0.5; // normalize 0..1
+
+        const charIndex = Math.min(
+          ASCII_CHARS.length - 1,
+          Math.floor(wave * ASCII_CHARS.length),
+        );
+        const char = ASCII_CHARS[charIndex];
+        if (char === " ") continue;
+
+        const isHighlighted = cell.highlightEndTime > now;
+
+        if (isHighlighted) {
+          ctx.fillStyle = HOVER_COLOR;
+          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
         }
+
+        ctx.fillStyle = isHighlighted ? HOVER_CHAR_COLOR : CHAR_COLOR;
+        ctx.fillText(char, x + CELL_SIZE / 2, y + CELL_SIZE / 2);
       }
+
+      animationFrameRef.current = requestAnimationFrame(render);
     };
 
-    // Wait for images to load
-    const setupImages = () => {
-      const images = document.querySelectorAll(".ascii-hand");
-      if (images.length === 0) return;
+    render();
 
-      let loadedCount = 0;
-
-      images.forEach((img) => {
-        const imageElement = img as HTMLImageElement;
-
-        const handleLoad = () => {
-          loadedCount++;
-          if (loadedCount === images.length) {
-            setupHands();
-          }
-        };
-
-        if (imageElement.complete && imageElement.naturalWidth > 0) {
-          handleLoad();
-        } else {
-          imageElement.addEventListener("load", handleLoad);
-          imageElement.addEventListener("error", () => {
-            console.error("Failed to load image:", imageElement.src);
-            loadedCount++;
-            if (loadedCount === images.length) {
-              setupHands();
-            }
-          });
-        }
-      });
-    };
-
-    setupImages();
-
-    // Highlight cluster
-    const highlightCluster = (cells: Map<string, Cell>, startCell: Cell) => {
+    const highlightCluster = (startCell: Cell) => {
       const now = Date.now();
       startCell.highlightEndTime = now + HIGHLIGHT_LIFETIME;
+
+      const { cols, rows } = gridRef.current;
+      const cellMap = new Map<string, Cell>();
+      for (const c of cellsRef.current) cellMap.set(`${c.col},${c.row}`, c);
 
       const steps = Math.floor(Math.random() * CLUSTER_SIZE) + 1;
       const litCells = [startCell];
@@ -346,20 +295,17 @@ export default function CTA({
 
       for (let step = 0; step < steps; step++) {
         const neighbours: Cell[] = [];
-
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
             if (dx === 0 && dy === 0) continue;
-            const neighbour = cells.get(
+            const neighbour = cellMap.get(
               `${current.col + dx},${current.row + dy}`,
             );
             if (neighbour && !litCells.includes(neighbour))
               neighbours.push(neighbour);
           }
         }
-
         if (neighbours.length === 0) break;
-
         const next = neighbours[Math.floor(Math.random() * neighbours.length)];
         next.highlightEndTime = now + HIGHLIGHT_LIFETIME + step * 10;
         litCells.push(next);
@@ -367,19 +313,19 @@ export default function CTA({
       }
     };
 
-    const hoverHand = (hand: Hand, clientX: number, clientY: number) => {
-      const rect = hand.canvas.getBoundingClientRect();
+    const handleMouseMove = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
 
-      const mouseCol = ((clientX - rect.left) / rect.width) * ASCII_COLUMNS;
-      const mouseRow = ((clientY - rect.top) / rect.height) * hand.rows;
+      const col = Math.floor((event.clientX - rect.left) / CELL_SIZE);
+      const row = Math.floor((event.clientY - rect.top) / CELL_SIZE);
 
       let closest: Cell | null = null;
       let closestDist = Infinity;
 
-      for (const cell of hand.cellList) {
-        const dx = mouseCol - cell.col;
-        const dy = mouseRow - cell.row;
+      for (const cell of cellsRef.current) {
+        const dx = col - cell.col;
+        const dy = row - cell.row;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < closestDist) {
           closestDist = dist;
@@ -388,71 +334,15 @@ export default function CTA({
       }
 
       if (closest && closestDist <= HOVER_RADIUS) {
-        highlightCluster(hand.cells, closest);
+        highlightCluster(closest);
       }
-    };
-
-    // Mouse move handler
-    const handleMouseMove = (event: MouseEvent) => {
-      handsRef.current.forEach((hand) =>
-        hoverHand(hand, event.clientX, event.clientY),
-      );
     };
 
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Parallax
-    const pointer = { x: 0, y: 0 };
-    const drift = { x: 0, y: 0 };
-    const reveal = { left: -125, right: 125 };
-
-    const setPointerTarget = (clientX: number, clientY: number) => {
-      const cta = ctaRef.current;
-      if (!cta) return;
-      const rect = cta.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-
-      pointer.x =
-        ((clientX - rect.left) / rect.width - 0.5) * PARALLAX_STRENGTH * 2;
-      pointer.y =
-        ((clientY - rect.top) / rect.height - 0.5) * PARALLAX_STRENGTH * 2;
-    };
-
-    const renderParallax = () => {
-      drift.x += (pointer.x - drift.x) * PARALLAX_EASE;
-      drift.y += (pointer.y - drift.y) * PARALLAX_EASE;
-
-      const wrappers = [leftHandRef.current, rightHandRef.current];
-      wrappers.forEach((wrapper, i) => {
-        if (!wrapper) return;
-        const direction = i === 0 ? 1 : -1;
-        const revealX = i === 0 ? reveal.left : reveal.right;
-        const x = drift.x * direction;
-        const y = -drift.y;
-        const parallaxScale = 1 + (PARALLAX_STRENGTH * 2) / 200;
-        wrapper.style.transform = `translate(calc(${x}px + ${revealX}%), ${y}px) scale(${parallaxScale})`;
-      });
-      requestAnimationFrame(renderParallax);
-    };
-
-    renderParallax();
-
-    const handleMouseMoveParallax = (event: MouseEvent) => {
-      setPointerTarget(event.clientX, event.clientY);
-    };
-
-    window.addEventListener("mousemove", handleMouseMoveParallax);
-
     const charStagger = { each: 0.04, from: "center" as const };
 
     const animateIn = () => {
-      gsap.to(reveal, {
-        left: 0,
-        right: 0,
-        duration: 1,
-        ease: "power3.out",
-        overwrite: true,
-      });
       gsap.to(headingChars, {
         yPercent: 0,
         duration: 1,
@@ -463,20 +353,13 @@ export default function CTA({
       gsap.to(contentLines, {
         yPercent: 0,
         duration: 1,
-        ease: "0.08",
+        ease: "power3.out",
         stagger: 0.08,
         overwrite: true,
       });
     };
 
     const animateOut = () => {
-      gsap.to(reveal, {
-        left: -125,
-        right: 125,
-        duration: 1,
-        ease: "power3.in",
-        overwrite: true,
-      });
       gsap.to(headingChars, {
         yPercent: 125,
         duration: 1,
@@ -487,13 +370,12 @@ export default function CTA({
       gsap.to(contentLines, {
         yPercent: 100,
         duration: 1,
-        ease: "0.08",
+        ease: "power3.in",
         stagger: 0.08,
         overwrite: true,
       });
     };
 
-    // Trigger animations when CTA comes into view
     ScrollTrigger.create({
       trigger: ctaRef.current,
       start: "top 80%",
@@ -506,13 +388,11 @@ export default function CTA({
       onLeaveBack: animateOut,
     });
 
-    // Cleanup
     return () => {
-      if (animationFrameRef.current) {
+      if (animationFrameRef.current)
         cancelAnimationFrame(animationFrameRef.current);
-      }
+      window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mousemove", handleMouseMoveParallax);
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
       lenis.destroy();
       gsap.ticker.remove(() => {});
@@ -521,44 +401,59 @@ export default function CTA({
 
   return (
     <section ref={ctaRef} className={`${styles.cta} ${className}`}>
-      <div className={styles.ctaContainer}>
-        <div ref={leftHandRef} className={styles.ctaHandImg}>
-          <img
-            src={leftHandSrc}
-            alt="left hand"
-            className={`ascii-hand ${styles.asciiHand}`}
-            crossOrigin="anonymous"
-          />
-          <canvas
-            width="400"
-            height="600"
-            className={styles.handCanvas}
-          ></canvas>
-        </div>
+      <canvas ref={bgCanvasRef} className={styles.bgCanvas} />
 
-        <div ref={rightHandRef} className={styles.ctaHandImg}>
-          <img
-            src={rightHandSrc}
-            alt="right hand"
-            className={`ascii-hand ${styles.asciiHand}`}
-            crossOrigin="anonymous"
-          />
-          <canvas
-            width="400"
-            height="600"
-            className={styles.handCanvas}
-          ></canvas>
-        </div>
-
-        <div className={styles.ctaContent}>
-          
-
-         
-        </div>
-
+      <div className={styles.ctaContent}>
         <div ref={headerRef} className={styles.ctaHeader}>
-          <h1>{title1}</h1>
-          <h1>{title2}</h1>
+          <h1>Let's create</h1>
+          <h1>something together</h1>
+        </div>
+
+        <div className={styles.ctaWidget}>
+          <div className={styles.calCard}>
+            <div ref={calRef} className={styles.calEmbed} />
+            {!calLoaded && !calError && (
+              <div className={styles.calLoading}>Loading calendar…</div>
+            )}
+            {calError && (
+              <div className={styles.calLoading}>
+                Calendar unavailable right now — try the contact links below.
+              </div>
+            )}
+          </div>
+
+          <div className={styles.contactSection}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.kanji}>連絡</span>
+              <span className={styles.headerText}>
+                or reach out the old-fashioned way
+              </span>
+            </div>
+
+            <div className={styles.linksList}>
+              {contactLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target={link.isEmail ? undefined : "_blank"}
+                  rel={link.isEmail ? undefined : "noopener noreferrer"}
+                  className={styles.linkRow}
+                >
+                  <span className={styles.linkLabel}>{link.label}</span>
+                  {link.isEmail ? (
+                    <span className={styles.emailText}>
+                      {link.href.replace("mailto:", "")}
+                    </span>
+                  ) : (
+                    <span className={styles.linkDescription}>
+                      {link.description}
+                    </span>
+                  )}
+                  <span className={styles.arrow}>↗</span>
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

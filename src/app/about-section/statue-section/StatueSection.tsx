@@ -131,6 +131,7 @@ export default function StatueScene({
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const veilRef = useRef<HTMLDivElement>(null);
   const [plaqueTitle, setPlaqueTitle] = useState(PLAQUE_TITLES[0]);
   const [progress, setProgress] = useState(0);
 
@@ -162,7 +163,7 @@ export default function StatueScene({
       0.1,
       100,
     );
-    camera.position.set(0, 0.3, 5.2);
+    camera.position.set(0, 0.5, 6.5);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -219,18 +220,42 @@ export default function StatueScene({
     ground.position.y = -1.4;
     scene.add(ground);
 
+    // ── ARRIVAL SEQUENCE: lights bloom in, camera settles, veil clears ──
+    key.intensity = 0;
+    rim.intensity = 0;
+    gsap.to(key, {
+      intensity: 5,
+      duration: 1.8,
+      ease: "power2.out",
+      delay: 0.2,
+    });
+    gsap.to(rim, {
+      intensity: 8,
+      duration: 1.8,
+      ease: "power2.out",
+      delay: 0.3,
+    });
+    gsap.to(camera.position, {
+      y: 0.3,
+      z: 5.2,
+      duration: 1.6,
+      ease: "power3.out",
+      delay: 0.1,
+    });
+    if (veilRef.current) {
+      gsap.to(veilRef.current, {
+        opacity: 0,
+        duration: 1.4,
+        ease: "power2.out",
+        delay: 0.15,
+      });
+    }
+
     // ============================================================
     // FOCAL GLOW - subtle accent point
     // ============================================================
     const focalGlow = new THREE.PointLight(0xffffff, 0.5, 3);
     scene.add(focalGlow);
-
-    // Remove the visible sphere or make it very subtle
-    // const focalSphere = new THREE.Mesh(
-    //   new THREE.SphereGeometry(0.01, 16, 16),
-    //   new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }),
-    // );
-    // scene.add(focalSphere);
 
     // ============================================================
     // MODEL LOADING - Using custom ShaderMaterial
@@ -380,6 +405,7 @@ export default function StatueScene({
       cancelAnimationFrame(frameId);
       scrollTriggerInstance?.kill();
       panelTriggers.forEach((t) => t.kill());
+      gsap.killTweensOf([key, rim, camera.position, veilRef.current]);
       ScrollTrigger.getAll().forEach((t) => {
         if (
           t.trigger === content ||
@@ -401,6 +427,7 @@ export default function StatueScene({
       <div className="ts-sticky-frame">
         <div className="ts-progress" style={{ width: `${progress}%` }} />
         <div className="ts-canvas-stage" ref={stageRef} />
+        <div className="ts-arrival-veil" ref={veilRef} />
 
         <div className="ts-plaque">
           <span>{plaqueTitle}</span>
