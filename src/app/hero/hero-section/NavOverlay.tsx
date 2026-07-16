@@ -99,11 +99,7 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
         </div>
 
         <div className="nav-overlay__col nav-overlay__spacer nav-overlay__spacer--model">
-          <img
-            src="/brianpurgert-column-3369505.svg"
-            alt="Marble column"
-            className="nav-overlay__column-image"
-          />
+         
         </div>
 
         <div className="nav-overlay__col nav-overlay__spacer">
@@ -111,11 +107,7 @@ export default function NavOverlay({ onClose }: NavOverlayProps) {
         </div>
 
         <div className="nav-overlay__col nav-overlay__spacer nav-overlay__spacer--model">
-          <img
-            src="/brianpurgert-column-3369505.svg"
-            alt="Marble column"
-            className="nav-overlay__column-image"
-          />
+          
         </div>
 
         <div className="nav-overlay__col nav-overlay__contact">

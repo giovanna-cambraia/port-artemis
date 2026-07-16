@@ -6,6 +6,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import styles from "./CTA.module.css";
 
+// ============================================
+// TYPES
+// ============================================
+
 interface Cell {
   col: number;
   row: number;
@@ -25,6 +29,10 @@ interface CTAProps {
   className?: string;
   calLink?: string;
 }
+
+// ============================================
+// CONSTANTS
+// ============================================
 
 const ASCII_CHARS = " .:-=+*#%@";
 const CHAR_COLOR = "#FF0000";
@@ -61,10 +69,15 @@ const contactLinks: ContactLink[] = [
   },
 ];
 
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
 export default function CTA({
   className = "",
   calLink = "giovanna-cambraia-cw0cjt",
 }: CTAProps) {
+  // Refs
   const ctaRef = useRef<HTMLElement>(null);
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -72,11 +85,12 @@ export default function CTA({
   const textRef = useRef<HTMLDivElement>(null);
   const calRef = useRef<HTMLDivElement>(null);
 
+  const [calLoaded, setCalLoaded] = useState(false);
+  const [calError, setCalError] = useState(false);
+
   const animationFrameRef = useRef<number | null>(null);
   const cellsRef = useRef<Cell[]>([]);
   const gridRef = useRef<{ cols: number; rows: number }>({ cols: 0, rows: 0 });
-  const [calLoaded, setCalLoaded] = useState(false);
-  const [calError, setCalError] = useState(false);
 
   useEffect(() => {
     if (!calLink) return;
@@ -197,10 +211,6 @@ export default function CTA({
       return lines;
     };
 
-    const headingChars = splitHeadingChars();
-    const contentLines = splitContentLines();
-
-    // ---- ASCII wave background ----
     const canvas = bgCanvasRef.current;
     const section = ctaRef.current;
     if (!canvas || !section) return;
@@ -246,12 +256,11 @@ export default function CTA({
         const x = cell.col * CELL_SIZE;
         const y = cell.row * CELL_SIZE;
 
-        // wave field: combine two sine waves for a rolling diagonal wave
         const wave =
           Math.sin(cell.col * WAVE_SCALE_X + now * WAVE_SPEED) *
             Math.cos(cell.row * WAVE_SCALE_Y - now * WAVE_SPEED * 0.7) *
             0.5 +
-          0.5; // normalize 0..1
+          0.5; 
 
         const charIndex = Math.min(
           ASCII_CHARS.length - 1,
@@ -335,6 +344,9 @@ export default function CTA({
 
     window.addEventListener("mousemove", handleMouseMove);
 
+    const headingChars = splitHeadingChars();
+    const contentLines = splitContentLines();
+
     const charStagger = { each: 0.04, from: "center" as const };
 
     const animateIn = () => {
@@ -403,7 +415,6 @@ export default function CTA({
           <h1>Let's create</h1>
           <h1>something together</h1>
         </div>
-
         <div className={styles.ctaWidget}>
           <div className={styles.calCard}>
             <div ref={calRef} className={styles.calEmbed} />
@@ -434,7 +445,10 @@ export default function CTA({
                   rel={link.isEmail ? undefined : "noopener noreferrer"}
                   className={styles.linkRow}
                 >
-                  <span className={styles.linkLabel}>{link.label}</span>
+                  <span className={styles.linkLabel} data-text={link.label}>
+                    {link.label}
+                  </span>
+                  
                   {link.isEmail ? (
                     <span className={styles.emailText}>
                       {link.href.replace("mailto:", "")}
@@ -444,6 +458,7 @@ export default function CTA({
                       {link.description}
                     </span>
                   )}
+                  
                   <span className={styles.arrow}>↗</span>
                 </a>
               ))}

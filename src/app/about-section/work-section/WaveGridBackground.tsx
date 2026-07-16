@@ -1,29 +1,5 @@
 'use client';
 
-/**
- * WaveGridBackground
- * ---------------------------------------------------------------------------
- * React Three Fiber port of franky-adl/3d-wave-grid.
- *
- * A grid of instanced cubes deforms into a rippling wave wherever the
- * pointer moves (or, after a few seconds of inactivity, wherever a few
- * random "idle" points are dropped). Deformation happens entirely on the
- * GPU: pointer positions are written into a small float DataTexture every
- * frame, and the vertex shader (injected via onBeforeCompile) reads that
- * texture to compute an expanding Gaussian wavefront per instance.
- *
- * Usage (as a fixed background behind WorkSection):
- *
- *   <div style={{ position: 'relative' }}>
- *     <WaveGridBackground revealTargetRef={workRef} />
- *     <WorkSection ref={workRef} ... />
- *   </div>
- *
- * `revealTargetRef` is optional — point it at the section you want the
- * grid to fade in behind. If omitted, the grid fades in based on its own
- * position in the viewport.
- */
-
 import React, {
   useEffect,
   useMemo,
@@ -58,14 +34,14 @@ const WAVE_PARAMS = {
   waveWidth: 3.0,
   waveJitter: 0.2,
   waveMaxHeight: 0.4,
-  colorBase: '#000',
+  colorBase: '#292929',
   colorHigh: '#fff',
 };
 
 const LIGHTING_PARAMS = {
   ambientColor: '#000',
   ambientIntensity: 0.4,
-  directionalColor: '#fff',
+  directionalColor: '#FF0000',
   directionalIntensity: 3.0,
   directional2Color: '#fff',
   directional2Intensity: 1.5,
