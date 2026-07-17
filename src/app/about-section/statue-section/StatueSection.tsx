@@ -150,12 +150,8 @@ export default function StatueScene({
     const panelTriggers: ScrollTrigger[] = [];
     let disposed = false;
 
-    // ============================================================
-    // SCENE SETUP
-    // ============================================================
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0a);
-    scene.fog = new THREE.Fog(0x0a0a0a, 8, 20);
+    scene.background = new THREE.Color(0x000);
 
     const camera = new THREE.PerspectiveCamera(
       35,
@@ -184,7 +180,7 @@ export default function StatueScene({
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.5,
+      0.3,
       0.4,
       0.15,
     );
@@ -195,7 +191,7 @@ export default function StatueScene({
     composer.addPass(chromaPass);
 
     const grainPass = new ShaderPass(GrainShader);
-    grainPass.uniforms.intensity.value = 0.06;
+    grainPass.uniforms.intensity.value = 0;
     composer.addPass(grainPass);
 
     // ============================================================

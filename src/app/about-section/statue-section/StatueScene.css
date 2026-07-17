@@ -10,7 +10,7 @@
   width: 100%;
   z-index: 1;
   overflow: hidden;
-  background: #141210;
+  background: #000000;
   pointer-events: none;
 }
 
@@ -157,5 +157,5 @@
 
 ::selection {
   background: #8a4a4a;
-  color: #141210;
+  color: #000000;
 }
