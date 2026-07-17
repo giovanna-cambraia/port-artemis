@@ -116,6 +116,13 @@ uniform vec3 uColorB;
 uniform vec3 uAccentColor;
 uniform vec3 uCameraPos;
 uniform vec3 uLightDir;
+uniform sampler2D uCharTex;
+uniform float uCharCount;
+uniform vec2 uResolution;
+uniform float uBaseCellSize;
+uniform float uCameraDist;
+uniform float uAsciiStart;
+uniform float uAsciiFull;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -130,40 +137,53 @@ float hash2(vec2 p) {
 void main() {
   vec3 viewDir = normalize(uCameraPos - vPosition);
 
-  // white contour — thin, edge-only
   float fresnel = pow(1.0 - max(dot(viewDir, vNormal), 0.0), 5.0);
-
-  // red light — sharpened into a rim/highlight, not full-surface diffuse
   float diffuse = max(dot(vNormal, normalize(uLightDir)), 0.0);
   float redHighlight = pow(diffuse, 6.0);
   vec3 lit = uAccentColor * redHighlight * 0.9;
 
-  // base is black first, everything else is additive on top of it
   vec3 baseColor = uColorA + lit + uColorB * fresnel * 0.8;
 
-  // ── ORGANIC EROSION (kept subtle, background layer to the digital break) ──
+  // ── ASCII CONTOUR RENDER ──
+  float coverageFloor = 0.15;
+  float contourLuminance = clamp(fresnel * 1.8 + redHighlight * 1.3 + coverageFloor, 0.0, 1.0);
+  contourLuminance = pow(contourLuminance, 0.6);
+
+  float distScale = uCameraDist / 6.5;
+  float cellSize = uBaseCellSize * clamp(distScale, 0.6, 2.2);
+
+  vec2 pixelCoord = gl_FragCoord.xy;
+  float charIndex = floor(contourLuminance * (uCharCount - 1.0));
+
+  vec2 withinCell = mod(pixelCoord, cellSize) / cellSize;
+  withinCell.y = 1.0 - withinCell.y;
+  vec2 charUv = vec2((charIndex + withinCell.x) / uCharCount, withinCell.y);
+  float glyph = texture2D(uCharTex, charUv).r;
+
+  float asciiAmount = smoothstep(uAsciiStart, uAsciiFull, uProgress);
+
+  vec3 asciiColor = mix(baseColor * 0.15, uColorB * 0.9 + baseColor, glyph);
+  vec3 colorWithAscii = mix(baseColor, asciiColor, asciiAmount);
+
+  // ── ORGANIC EROSION ──
   float breakCutoff = mix(-2.0, -0.3, vBreak);
   bool erosionDiscard = vBreak > 0.0 && vNoise < breakCutoff;
 
-  // ── DIGITAL CORRUPTION: block dropout on glitching bands ──
+  // ── DIGITAL CORRUPTION (unchanged, still layers on at the end) ──
   float blockNoise = hash2(vec2(floor(vPosition.y * 14.0), floor(uTime * 8.0)));
   bool blockDiscard = vGlitchLine > 0.5 && blockNoise > 0.6;
 
   if (erosionDiscard || blockDiscard) discard;
 
-  // ── RGB SPLIT on corrupted bands — channel desync like a torn signal ──
-  vec3 finalColor = baseColor;
+  vec3 finalColor = colorWithAscii;
   if (vGlitchLine > 0.5) {
-    float splitAmount = vBreak * 0.15;
-    finalColor.r = baseColor.r * 1.4; // punch red channel up on glitch bands
+    finalColor.r = colorWithAscii.r * 1.4;
     finalColor.g *= 0.6;
     finalColor.b *= 0.7;
-    // white flicker flash on some bands, like signal snapping to static
     float flicker = step(0.85, hash2(vec2(floor(vPosition.y * 14.0), floor(uTime * 12.0))));
     finalColor = mix(finalColor, uColorB, flicker * 0.6);
   }
 
-  // fracture edge glow
   float fractureEdge = 1.0 - smoothstep(breakCutoff, breakCutoff + 0.1, vNoise);
   finalColor += uAccentColor * fractureEdge * vBreak * 1.2;
 
@@ -171,6 +191,31 @@ void main() {
   gl_FragColor = vec4(finalColor, alpha);
 }
 `;
+
+export function createAsciiAtlas(
+  chars: string[] = [" ", ".", ":", "-", "=", "+", "*", "#", "%", "@"],
+  fontSize = 64,
+): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = fontSize * chars.length;
+  canvas.height = fontSize;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+  ctx.font = `bold ${fontSize * 0.85}px monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  chars.forEach((c, i) =>
+    ctx.fillText(c, fontSize * (i + 0.5), fontSize * 0.54),
+  );
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
 
 export const uniforms = {
   uProgress: { value: 0 },
@@ -183,4 +228,11 @@ export const uniforms = {
   uAccentColor: { value: new THREE.Color(0xb33030) },
   uCameraPos: { value: new THREE.Vector3() },
   uLightDir: { value: new THREE.Vector3(3, 5, 2).normalize() },
+  uCharTex: { value: null as THREE.Texture | null },
+  uCharCount: { value: 10 },
+  uResolution: { value: new THREE.Vector2(1, 1) },
+  uBaseCellSize: { value: 7.0 },
+  uCameraDist: { value: 6.5 },
+  uAsciiStart: { value: 0.15 },
+  uAsciiFull: { value: 0.55 },
 };

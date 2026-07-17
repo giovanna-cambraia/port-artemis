@@ -462,11 +462,11 @@ export default function ScrollSection() {
 
     // ── ANIMATION LOOP ────────────────────────────────────────
     let rafId: number;
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
 
     const animate = () => {
       rafId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+      const t = clock.getElapsed();
       const p = state.progress;
 
       // Camera movement

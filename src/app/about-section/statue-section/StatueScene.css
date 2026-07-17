@@ -1,3 +1,154 @@
+.ts-panel {
+  position: absolute;
+  max-width: 380px;
+  padding: 0 6vw;
+  opacity: 0;
+  pointer-events: auto;
+  transition: filter 0.15s ease;
+}
+
+.ts-eyebrow,
+.ts-heading,
+.ts-body {
+  overflow: hidden;
+}
+
+.ts-eyebrow-inner,
+.ts-heading-line,
+.ts-body-inner {
+  display: block;
+  transform: translateY(110%);
+  will-change: transform;
+}
+
+.ts-heading {
+  position: relative;
+  --corrupt: 0;
+}
+
+.ts-heading-line {
+  position: relative;
+}
+
+/* glitch clones sit on top, only visible once --corrupt rises */
+.ts-heading[data-text]::before,
+.ts-heading[data-text]::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  white-space: pre-wrap;
+  opacity: calc(var(--corrupt) * 0.85);
+  clip-path: inset(0 0 0 0);
+  pointer-events: none;
+}
+
+.ts-heading[data-text]::before {
+  color: #ff2b2b;
+  transform: translate(calc(var(--corrupt) * -4px), 0);
+  animation: ts-glitch-slice-a 2.6s steps(1) infinite;
+  animation-play-state: paused;
+}
+
+.ts-heading[data-text]::after {
+  color: #3ad4ff;
+  transform: translate(calc(var(--corrupt) * 4px), 0);
+  animation: ts-glitch-slice-b 3.1s steps(1) infinite;
+  animation-play-state: paused;
+}
+
+.ts-heading[data-corrupting="1"]::before,
+.ts-heading[data-corrupting="1"]::after {
+  animation-play-state: running;
+}
+
+@keyframes ts-glitch-slice-a {
+  0%,
+  92% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+  93% {
+    clip-path: inset(10% 0 60% 0);
+    opacity: 1;
+  }
+  94% {
+    clip-path: inset(70% 0 5% 0);
+    opacity: 1;
+  }
+  95% {
+    clip-path: inset(30% 0 40% 0);
+    opacity: 1;
+  }
+  96%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+}
+
+@keyframes ts-glitch-slice-b {
+  0%,
+  90% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+  91% {
+    clip-path: inset(50% 0 20% 0);
+    opacity: 1;
+  }
+  92% {
+    clip-path: inset(5% 0 80% 0);
+    opacity: 1;
+  }
+  93% {
+    clip-path: inset(65% 0 10% 0);
+    opacity: 1;
+  }
+  94%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+}
+
+/* subtle jitter on the real text too, not just the clones */
+.ts-heading-line {
+  animation: ts-jitter 0.15s steps(2) infinite;
+  animation-play-state: paused;
+}
+.ts-heading[data-corrupting="1"] .ts-heading-line {
+  animation-play-state: running;
+}
+
+@keyframes ts-jitter {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(
+      calc(var(--corrupt) * 1.5px),
+      calc(var(--corrupt) * -1px)
+    );
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* body text: flicker/desync letter-spacing instead of RGB split — cheaper, still reads as breakdown */
+.ts-body {
+  transition:
+    letter-spacing 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* eyebrow: monospace glitch flicker, ties to corruption too */
+.ts-eyebrow {
+  transition: color 0.3s ease;
+}
+
 .ts-root {
   position: relative;
   height: 900vh;
@@ -158,4 +309,49 @@
 ::selection {
   background: #8a4a4a;
   color: #000000;
+}
+
+/* ── ARRIVAL VEIL ── */
+.ts-arrival-veil {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.ts-screen-glitch {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: var(--screen-corrupt, 0);
+  mix-blend-mode: hard-light;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 43, 43, 0.08) 0px,
+    rgba(255, 43, 43, 0.08) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: ts-screen-flicker 0.12s steps(2) infinite;
+}
+
+@keyframes ts-screen-flicker {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(
+      calc(var(--screen-corrupt) * 3px),
+      calc(var(--screen-corrupt) * -2px)
+    );
+  }
+  100% {
+    transform: translate(0, 0);
+  }
 }

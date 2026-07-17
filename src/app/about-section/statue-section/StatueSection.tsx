@@ -13,6 +13,7 @@ import {
   dionysosVert,
   dionysosFrag,
   uniforms as dionysosUniforms,
+  createAsciiAtlas,
 } from "./shaders/dionysosShaders";
 import "./StatueScene.css";
 
@@ -80,6 +81,67 @@ const GrainShader = {
   `,
 };
 
+// ============================================================
+// FULL SCREEN GLITCH SHADER
+// ============================================================
+const FullScreenGlitchShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    time: { value: 0 },
+    amount: { value: 0.0 }, // 0 = clean, 1 = full takeover
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float time;
+    uniform float amount;
+    varying vec2 vUv;
+
+    float rand(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    }
+
+    void main() {
+      vec2 uv = vUv;
+
+      // block displacement — bigger, chunkier than the statue's own glitch bands
+      float blockY = floor(uv.y * mix(8.0, 40.0, amount));
+      float blockSeed = rand(vec2(blockY, floor(time * 10.0)));
+      float shouldTear = step(1.0 - amount * 0.6, blockSeed);
+      float tearOffset = (rand(vec2(blockSeed, time)) - 0.5) * amount * 0.25;
+      uv.x += tearOffset * shouldTear;
+
+      vec4 color = texture2D(tDiffuse, uv);
+
+      // RGB split scales with amount
+      float split = amount * 0.02;
+      color.r = texture2D(tDiffuse, uv + vec2(split, 0.0)).r;
+      color.b = texture2D(tDiffuse, uv - vec2(split, 0.0)).b;
+
+      // white flash frames — signal snapping
+      float flashSeed = rand(vec2(floor(time * 14.0), 1.0));
+      float flash = step(0.985 - amount * 0.05, flashSeed) * amount;
+      color.rgb = mix(color.rgb, vec3(1.0), flash * 0.8);
+
+      // scanline roll — heavier as amount rises
+      float roll = sin(uv.y * 800.0 - time * 40.0 * amount) * 0.5 + 0.5;
+      color.rgb -= pow(roll, 10.0) * amount * 0.3;
+
+      // near the very end, crush toward black/static so it reads as total breakdown
+      float staticNoise = rand(uv * 500.0 + time);
+      color.rgb = mix(color.rgb, vec3(staticNoise), amount * amount * 0.4);
+
+      gl_FragColor = color;
+    }
+  `,
+};
+
 const PLAQUE_TITLES = [
   "Torso, marble",
   "Chest, detail",
@@ -136,9 +198,13 @@ export default function StatueScene({
   const [progress, setProgress] = useState(0);
   const [webglSupported, setWebglSupported] = useState(true);
   const [modelLoadError, setModelLoadError] = useState(false);
+  const [screenCorrupt, setScreenCorrupt] = useState(0);
 
-  // Ref to hold shader material
+  // Refs for shader materials and post-processing passes
   const shaderMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const chromaPassRef = useRef<ShaderPass | null>(null);
+  const grainPassRef = useRef<ShaderPass | null>(null);
+  const fullscreenGlitchPassRef = useRef<ShaderPass | null>(null);
   const isBrowser = typeof window !== "undefined";
 
   useEffect(() => {
@@ -230,10 +296,17 @@ export default function StatueScene({
         const chromaPass = new ShaderPass(ChromaticAberrationShader);
         chromaPass.uniforms.intensity.value = 0.0035;
         composer.addPass(chromaPass);
+        chromaPassRef.current = chromaPass;
 
         const grainPass = new ShaderPass(GrainShader);
         grainPass.uniforms.intensity.value = 0;
         composer.addPass(grainPass);
+        grainPassRef.current = grainPass;
+
+        const fsGlitchPass = new ShaderPass(FullScreenGlitchShader);
+        fsGlitchPass.uniforms.amount.value = 0;
+        composer.addPass(fsGlitchPass);
+        fullscreenGlitchPassRef.current = fsGlitchPass;
       } catch (err) {
         console.warn(
           "Post-processing unavailable, using fallback render:",
@@ -300,9 +373,6 @@ export default function StatueScene({
       const focalGlow = new THREE.PointLight(0xffffff, 0.5, 3);
       scene.add(focalGlow);
 
-      // ============================================================
-      // MODEL LOADING - Using custom ShaderMaterial
-      // ============================================================
       const loader = new GLTFLoader();
       loader.load(
         modelUrl,
@@ -311,9 +381,13 @@ export default function StatueScene({
           try {
             model = gltf.scene;
 
-            // Clone uniforms so camera pos etc. aren't shared across instances
             const shaderUniforms = THREE.UniformsUtils.clone(dionysosUniforms);
             shaderUniforms.uCameraPos.value = camera.position;
+            shaderUniforms.uCharTex.value = createAsciiAtlas();
+            shaderUniforms.uResolution.value.set(
+              window.innerWidth,
+              window.innerHeight,
+            );
 
             const dionysosMaterial = new THREE.ShaderMaterial({
               vertexShader: dionysosVert,
@@ -358,9 +432,6 @@ export default function StatueScene({
         },
       );
 
-      // ============================================================
-      // SCROLL HANDLING
-      // ============================================================
       function initScroll(loadedModel: THREE.Object3D) {
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -373,11 +444,36 @@ export default function StatueScene({
               const idx = Math.min(4, Math.floor(self.progress * 5));
               setPlaqueTitle(PLAQUE_TITLES[idx]);
 
-              // Drive the shader's uProgress directly
               if (shaderMaterialRef.current) {
                 shaderMaterialRef.current.uniforms.uProgress.value =
                   self.progress;
               }
+
+              // ── ESCALATION: statue corrupts first, THEN screen-wide takeover ──
+              const SCREEN_TAKEOVER_START = 0.9;
+              const SCREEN_TAKEOVER_FULL = 1.0;
+              const takeover = THREE.MathUtils.clamp(
+                (self.progress - SCREEN_TAKEOVER_START) /
+                  (SCREEN_TAKEOVER_FULL - SCREEN_TAKEOVER_START),
+                0,
+                1,
+              );
+              const takeoverEased = takeover * takeover * (3 - 2 * takeover); // smoothstep
+
+              if (chromaPassRef.current) {
+                chromaPassRef.current.uniforms.intensity.value =
+                  0.0035 + takeoverEased * 0.03;
+              }
+              if (grainPassRef.current) {
+                grainPassRef.current.uniforms.intensity.value =
+                  takeoverEased * 0.18;
+              }
+              if (fullscreenGlitchPassRef.current) {
+                fullscreenGlitchPassRef.current.uniforms.amount.value =
+                  takeoverEased;
+              }
+
+              setScreenCorrupt(takeoverEased);
             },
           },
         });
@@ -421,9 +517,17 @@ export default function StatueScene({
         frameId = requestAnimationFrame(animate);
         if (model) camera.lookAt(0, 0, 0);
 
-        // Update shader time
+        // Update shader time and camera distance
         if (shaderMaterialRef.current) {
           shaderMaterialRef.current.uniforms.uTime.value =
+            performance.now() * 0.001;
+          shaderMaterialRef.current.uniforms.uCameraDist.value =
+            camera.position.length();
+        }
+
+        // Update fullscreen glitch time
+        if (fullscreenGlitchPassRef.current) {
+          fullscreenGlitchPassRef.current.uniforms.time.value =
             performance.now() * 0.001;
         }
 
@@ -575,6 +679,10 @@ export default function StatueScene({
       <div className="ts-sticky-frame">
         <div className="ts-progress" style={{ width: `${progress}%` }} />
         <div className="ts-canvas-stage" ref={stageRef} />
+        <div
+          className="ts-screen-glitch"
+          style={{ ["--screen-corrupt" as any]: screenCorrupt }}
+        />
         <div className="ts-arrival-veil" ref={veilRef} />
 
         <div className="ts-plaque">
@@ -590,6 +698,9 @@ export default function StatueScene({
               className={`ts-panel ts-panel-${i + 1}`}
               ref={(el) => {
                 panelRefs.current[i] = el;
+              }}
+              style={{
+                filter: `blur(${screenCorrupt * 2}px) contrast(${1 + screenCorrupt * 0.5})`,
               }}
             >
               <div className="ts-eyebrow">{section.eyebrow}</div>

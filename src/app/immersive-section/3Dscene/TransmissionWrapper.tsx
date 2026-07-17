@@ -1,6 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
 import Scene from "./Scene";
 import { useEffect, useRef, useState } from "react";
 import { TRANSMISSIONS } from "../../../data/transmissionData"; 
@@ -51,7 +52,7 @@ export default function TransmissionWrapper() {
         style={{ position: "sticky", top: 0, height: "100vh" }}
       >
         <Canvas
-          shadows
+          shadows={{ type: THREE.PCFShadowMap }}
           camera={{ fov: 55, position: [0, 10, 10], near: 0.1, far: 100 }}
           style={{
             position: "absolute",
