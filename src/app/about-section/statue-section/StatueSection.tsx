@@ -134,289 +134,441 @@ export default function StatueScene({
   const veilRef = useRef<HTMLDivElement>(null);
   const [plaqueTitle, setPlaqueTitle] = useState(PLAQUE_TITLES[0]);
   const [progress, setProgress] = useState(0);
+  const [webglSupported, setWebglSupported] = useState(true);
+  const [modelLoadError, setModelLoadError] = useState(false);
 
   // Ref to hold shader material
   const shaderMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const isBrowser = typeof window !== "undefined";
 
   useEffect(() => {
+    if (!isBrowser) return;
+
+    // Check WebGL support first
+    try {
+      const testCanvas = document.createElement("canvas");
+      const gl =
+        testCanvas.getContext("webgl") ||
+        testCanvas.getContext("experimental-webgl");
+      if (!gl) {
+        console.warn("WebGL not supported, StatueScene will be disabled");
+        setWebglSupported(false);
+        return;
+      }
+    } catch (e) {
+      console.warn("WebGL check failed:", e);
+      setWebglSupported(false);
+      return;
+    }
+
     const stage = stageRef.current;
     const content = contentRef.current;
     if (!stage || !content) return;
 
-    let renderer: THREE.WebGLRenderer;
+    let renderer: THREE.WebGLRenderer | null = null;
     let model: THREE.Object3D | null = null;
     let frameId: number;
     let scrollTriggerInstance: ScrollTrigger | undefined;
     const panelTriggers: ScrollTrigger[] = [];
     let disposed = false;
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000);
+    try {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000);
 
-    const camera = new THREE.PerspectiveCamera(
-      35,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      100,
-    );
-    camera.position.set(0, 0.5, 6.5);
+      const camera = new THREE.PerspectiveCamera(
+        35,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100,
+      );
+      camera.position.set(0, 0.5, 6.5);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.55;
-    stage.appendChild(renderer.domElement);
+      // ── RENDERER ──────────────────────────────────────────────
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      } catch (err) {
+        console.warn("WebGL unavailable, skipping StatueScene render:", err);
+        setWebglSupported(false);
+        return;
+      }
 
-    // ============================================================
-    // POST-PROCESSING
-    // ============================================================
-    const composer = new EffectComposer(renderer);
-    composer.setSize(window.innerWidth, window.innerHeight);
+      // Safe pixel ratio
+      const pixelRatio =
+        typeof window !== "undefined"
+          ? Math.min(window.devicePixelRatio || 1, 2)
+          : 1;
 
-    const renderPass = new RenderPass(scene, camera);
-    composer.addPass(renderPass);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(pixelRatio);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 0.55;
+      stage.appendChild(renderer.domElement);
 
-    const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.3,
-      0.4,
-      0.15,
-    );
-    composer.addPass(bloomPass);
+      // ============================================================
+      // POST-PROCESSING
+      // ============================================================
+      let composer: EffectComposer | null = null;
+      let bloomPass: UnrealBloomPass | null = null;
 
-    const chromaPass = new ShaderPass(ChromaticAberrationShader);
-    chromaPass.uniforms.intensity.value = 0.0035;
-    composer.addPass(chromaPass);
+      try {
+        composer = new EffectComposer(renderer);
+        composer.setSize(window.innerWidth, window.innerHeight);
 
-    const grainPass = new ShaderPass(GrainShader);
-    grainPass.uniforms.intensity.value = 0;
-    composer.addPass(grainPass);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
 
-    // ============================================================
-    // LIGHTING - Dimmed significantly since shader handles its own
-    // ============================================================
-    const key = new THREE.SpotLight(0xffe9cc, 5, 20, Math.PI / 6, 0.6, 2);
-    key.position.set(3, 5, 4);
-    scene.add(key);
+        bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          0.3,
+          0.4,
+          0.15,
+        );
+        composer.addPass(bloomPass);
 
-    const rim = new THREE.SpotLight(0xffffff, 8, 20, Math.PI / 5, 0.6, 1.8);
-    rim.position.set(-4, 2, -3);
-    scene.add(rim);
+        const chromaPass = new ShaderPass(ChromaticAberrationShader);
+        chromaPass.uniforms.intensity.value = 0.0035;
+        composer.addPass(chromaPass);
 
-    const fill = new THREE.AmbientLight(0x2a2a2a, 0.3);
-    scene.add(fill);
+        const grainPass = new ShaderPass(GrainShader);
+        grainPass.uniforms.intensity.value = 0;
+        composer.addPass(grainPass);
+      } catch (err) {
+        console.warn(
+          "Post-processing unavailable, using fallback render:",
+          err,
+        );
+        composer = null;
+        bloomPass = null;
+      }
 
-    const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(6, 64),
-      new THREE.MeshStandardMaterial({ color: 0x1a1a17, roughness: 1 }),
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1.4;
-    scene.add(ground);
+      // ── LIGHTS ──────────────────────────────────────────────────
+      const key = new THREE.SpotLight(0xffe9cc, 5, 20, Math.PI / 6, 0.6, 2);
+      key.position.set(3, 5, 4);
+      scene.add(key);
 
-    // ── ARRIVAL SEQUENCE: lights bloom in, camera settles, veil clears ──
-    key.intensity = 0;
-    rim.intensity = 0;
-    gsap.to(key, {
-      intensity: 5,
-      duration: 1.8,
-      ease: "power2.out",
-      delay: 0.2,
-    });
-    gsap.to(rim, {
-      intensity: 8,
-      duration: 1.8,
-      ease: "power2.out",
-      delay: 0.3,
-    });
-    gsap.to(camera.position, {
-      y: 0.3,
-      z: 5.2,
-      duration: 1.6,
-      ease: "power3.out",
-      delay: 0.1,
-    });
-    if (veilRef.current) {
-      gsap.to(veilRef.current, {
-        opacity: 0,
-        duration: 1.4,
+      const rim = new THREE.SpotLight(0xffffff, 8, 20, Math.PI / 5, 0.6, 1.8);
+      rim.position.set(-4, 2, -3);
+      scene.add(rim);
+
+      const fill = new THREE.AmbientLight(0x2a2a2a, 0.3);
+      scene.add(fill);
+
+      const ground = new THREE.Mesh(
+        new THREE.CircleGeometry(6, 64),
+        new THREE.MeshStandardMaterial({ color: 0x1a1a17, roughness: 1 }),
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -1.4;
+      scene.add(ground);
+
+      // ── ARRIVAL SEQUENCE ──────────────────────────────────────
+      key.intensity = 0;
+      rim.intensity = 0;
+      gsap.to(key, {
+        intensity: 5,
+        duration: 1.8,
         ease: "power2.out",
-        delay: 0.15,
+        delay: 0.2,
       });
-    }
-
-    // ============================================================
-    // FOCAL GLOW - subtle accent point
-    // ============================================================
-    const focalGlow = new THREE.PointLight(0xffffff, 0.5, 3);
-    scene.add(focalGlow);
-
-    // ============================================================
-    // MODEL LOADING - Using custom ShaderMaterial
-    // ============================================================
-    const loader = new GLTFLoader();
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        if (disposed) return;
-        model = gltf.scene;
-
-        // Clone uniforms so camera pos etc. aren't shared across instances
-        const shaderUniforms = THREE.UniformsUtils.clone(dionysosUniforms);
-        shaderUniforms.uCameraPos.value = camera.position;
-
-        const dionysosMaterial = new THREE.ShaderMaterial({
-          vertexShader: dionysosVert,
-          fragmentShader: dionysosFrag,
-          uniforms: shaderUniforms,
-          side: THREE.DoubleSide,
+      gsap.to(rim, {
+        intensity: 8,
+        duration: 1.8,
+        ease: "power2.out",
+        delay: 0.3,
+      });
+      gsap.to(camera.position, {
+        y: 0.3,
+        z: 5.2,
+        duration: 1.6,
+        ease: "power3.out",
+        delay: 0.1,
+      });
+      if (veilRef.current) {
+        gsap.to(veilRef.current, {
+          opacity: 0,
+          duration: 1.4,
+          ease: "power2.out",
+          delay: 0.15,
         });
+      }
 
-        model.traverse((c) => {
-          if ((c as THREE.Mesh).isMesh) {
-            (c as THREE.Mesh).material = dionysosMaterial;
+      // ============================================================
+      // FOCAL GLOW - subtle accent point
+      // ============================================================
+      const focalGlow = new THREE.PointLight(0xffffff, 0.5, 3);
+      scene.add(focalGlow);
+
+      // ============================================================
+      // MODEL LOADING - Using custom ShaderMaterial
+      // ============================================================
+      const loader = new GLTFLoader();
+      loader.load(
+        modelUrl,
+        (gltf) => {
+          if (disposed) return;
+          try {
+            model = gltf.scene;
+
+            // Clone uniforms so camera pos etc. aren't shared across instances
+            const shaderUniforms = THREE.UniformsUtils.clone(dionysosUniforms);
+            shaderUniforms.uCameraPos.value = camera.position;
+
+            const dionysosMaterial = new THREE.ShaderMaterial({
+              vertexShader: dionysosVert,
+              fragmentShader: dionysosFrag,
+              uniforms: shaderUniforms,
+              side: THREE.DoubleSide,
+            });
+
+            model.traverse((c) => {
+              if ((c as THREE.Mesh).isMesh) {
+                (c as THREE.Mesh).material = dionysosMaterial;
+              }
+            });
+
+            shaderMaterialRef.current = dionysosMaterial;
+
+            const box = new THREE.Box3().setFromObject(model);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+
+            const scale = 2.2 / Math.max(size.x, size.y, size.z);
+            model.scale.setScalar(scale);
+            model.position.sub(center.multiplyScalar(scale));
+            model.position.y -= 0.1;
+            scene.add(model);
+
+            focalGlow.position.set(0, 0.2, 0.8);
+
+            setModelLoadError(false);
+            initScroll(model);
+          } catch (err) {
+            console.error("Error processing model:", err);
+            setModelLoadError(true);
           }
-        });
-
-        shaderMaterialRef.current = dionysosMaterial;
-
-        const box = new THREE.Box3().setFromObject(model);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-
-        const scale = 2.2 / Math.max(size.x, size.y, size.z);
-        model.scale.setScalar(scale);
-        model.position.sub(center.multiplyScalar(scale));
-        model.position.y -= 0.1;
-        scene.add(model);
-
-        focalGlow.position.set(0, 0.2, 0.8);
-
-        initScroll(model);
-      },
-      undefined,
-      (err) => console.error("Model failed to load", err),
-    );
-
-    // ============================================================
-    // SCROLL HANDLING
-    // ============================================================
-    function initScroll(loadedModel: THREE.Object3D) {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: content,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1,
-          onUpdate: (self) => {
-            setProgress(self.progress * 100);
-            const idx = Math.min(4, Math.floor(self.progress * 5));
-            setPlaqueTitle(PLAQUE_TITLES[idx]);
-
-            // Drive the shader's uProgress directly
-            if (shaderMaterialRef.current) {
-              shaderMaterialRef.current.uniforms.uProgress.value =
-                self.progress;
-            }
-          },
         },
-      });
-      scrollTriggerInstance = tl.scrollTrigger;
+        undefined,
+        (err) => {
+          console.error("Model failed to load:", err);
+          setModelLoadError(true);
+        },
+      );
 
-      tl.to(loadedModel.rotation, { y: Math.PI * 0.55, ease: "none" }, 0)
-        .to(camera.position, { x: 1.4, y: 0.6, z: 3.6, ease: "none" }, 0)
-        .to(loadedModel.rotation, { y: Math.PI * 1.15, ease: "none" }, 0.25)
-        .to(camera.position, { x: -1.6, y: 0.1, z: 3.0, ease: "none" }, 0.25)
-        .to(loadedModel.rotation, { y: Math.PI * 1.6, ease: "none" }, 0.5)
-        .to(camera.position, { x: -0.6, y: 1.1, z: 2.4, ease: "none" }, 0.5)
-        .to(loadedModel.rotation, { y: Math.PI * 2.05, ease: "none" }, 0.75)
-        .to(camera.position, { x: 0, y: 0.2, z: 4.4, ease: "none" }, 0.75);
+      // ============================================================
+      // SCROLL HANDLING
+      // ============================================================
+      function initScroll(loadedModel: THREE.Object3D) {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: content,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 1,
+            onUpdate: (self) => {
+              setProgress(self.progress * 100);
+              const idx = Math.min(4, Math.floor(self.progress * 5));
+              setPlaqueTitle(PLAQUE_TITLES[idx]);
 
-      panelRefs.current.forEach((panel) => {
-        if (!panel) return;
-        const spacer = panel.closest(".ts-spacer");
-        if (!spacer) return;
-        gsap.fromTo(
-          panel,
-          { autoAlpha: 0, y: 30 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.6,
-            scrollTrigger: {
-              trigger: spacer,
-              start: "top 90%",
-              end: "bottom 60%",
-              toggleActions: "play reverse play reverse",
+              // Drive the shader's uProgress directly
+              if (shaderMaterialRef.current) {
+                shaderMaterialRef.current.uniforms.uProgress.value =
+                  self.progress;
+              }
             },
           },
-        );
-      });
-    }
+        });
+        scrollTriggerInstance = tl.scrollTrigger;
 
-    // ============================================================
-    // ANIMATION LOOP
-    // ============================================================
-    function animate() {
-      frameId = requestAnimationFrame(animate);
-      if (model) camera.lookAt(0, 0, 0);
+        tl.to(loadedModel.rotation, { y: Math.PI * 0.55, ease: "none" }, 0)
+          .to(camera.position, { x: 1.4, y: 0.6, z: 3.6, ease: "none" }, 0)
+          .to(loadedModel.rotation, { y: Math.PI * 1.15, ease: "none" }, 0.25)
+          .to(camera.position, { x: -1.6, y: 0.1, z: 3.0, ease: "none" }, 0.25)
+          .to(loadedModel.rotation, { y: Math.PI * 1.6, ease: "none" }, 0.5)
+          .to(camera.position, { x: -0.6, y: 1.1, z: 2.4, ease: "none" }, 0.5)
+          .to(loadedModel.rotation, { y: Math.PI * 2.05, ease: "none" }, 0.75)
+          .to(camera.position, { x: 0, y: 0.2, z: 4.4, ease: "none" }, 0.75);
 
-      // Update shader time
-      if (shaderMaterialRef.current) {
-        shaderMaterialRef.current.uniforms.uTime.value =
-          performance.now() * 0.001;
+        panelRefs.current.forEach((panel) => {
+          if (!panel) return;
+          const spacer = panel.closest(".ts-spacer");
+          if (!spacer) return;
+          gsap.fromTo(
+            panel,
+            { autoAlpha: 0, y: 30 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.6,
+              scrollTrigger: {
+                trigger: spacer,
+                start: "top 90%",
+                end: "bottom 60%",
+                toggleActions: "play reverse play reverse",
+              },
+            },
+          );
+        });
       }
 
-      const t = performance.now() * 0.001;
-      focalGlow.intensity = 0.5 + Math.sin(t * 1.2) * 0.2;
+      // ============================================================
+      // ANIMATION LOOP
+      // ============================================================
+      function animate() {
+        frameId = requestAnimationFrame(animate);
+        if (model) camera.lookAt(0, 0, 0);
 
-      composer.render();
-    }
-    animate();
-
-    // ============================================================
-    // RESIZE HANDLER
-    // ============================================================
-    function handleResize() {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-      composer.setSize(width, height);
-    }
-    window.addEventListener("resize", handleResize);
-
-    // ============================================================
-    // CLEANUP
-    // ============================================================
-    return () => {
-      disposed = true;
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(frameId);
-      scrollTriggerInstance?.kill();
-      panelTriggers.forEach((t) => t.kill());
-      gsap.killTweensOf([key, rim, camera.position, veilRef.current]);
-      ScrollTrigger.getAll().forEach((t) => {
-        if (
-          t.trigger === content ||
-          panelRefs.current.includes(t.trigger as HTMLDivElement)
-        ) {
-          t.kill();
+        // Update shader time
+        if (shaderMaterialRef.current) {
+          shaderMaterialRef.current.uniforms.uTime.value =
+            performance.now() * 0.001;
         }
-      });
-      renderer.dispose();
-      composer.dispose();
-      if (stage.contains(renderer.domElement)) {
-        stage.removeChild(renderer.domElement);
+
+        const t = performance.now() * 0.001;
+        focalGlow.intensity = 0.5 + Math.sin(t * 1.2) * 0.2;
+
+        if (composer) {
+          composer.render();
+        } else if (renderer) {
+          renderer.render(scene, camera);
+        }
       }
-    };
-  }, [modelUrl]);
+      animate();
+
+      // ============================================================
+      // RESIZE HANDLER
+      // ============================================================
+      function handleResize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        if (renderer) {
+          renderer.setSize(width, height);
+        }
+        if (composer) {
+          composer.setSize(width, height);
+        }
+      }
+      window.addEventListener("resize", handleResize);
+
+      // ============================================================
+      // CLEANUP
+      // ============================================================
+      return () => {
+        disposed = true;
+        window.removeEventListener("resize", handleResize);
+        cancelAnimationFrame(frameId);
+        scrollTriggerInstance?.kill();
+        panelTriggers.forEach((t) => t.kill());
+        gsap.killTweensOf([key, rim, camera.position, veilRef.current]);
+        ScrollTrigger.getAll().forEach((t) => {
+          if (
+            t.trigger === content ||
+            panelRefs.current.includes(t.trigger as HTMLDivElement)
+          ) {
+            t.kill();
+          }
+        });
+        if (renderer) {
+          renderer.dispose();
+          renderer.forceContextLoss();
+          if (stage.contains(renderer.domElement)) {
+            stage.removeChild(renderer.domElement);
+          }
+        }
+        if (composer) {
+          composer.dispose();
+        }
+      };
+    } catch (err) {
+      console.error("Error initializing StatueScene:", err);
+      setWebglSupported(false);
+      return;
+    }
+  }, [modelUrl, isBrowser]);
+
+  // Fallback UI when WebGL is not supported
+  if (!webglSupported) {
+    return (
+      <div className="ts-root">
+        <div className="ts-sticky-frame">
+          <div className="ts-canvas-stage" ref={stageRef} />
+          <div className="ts-arrival-veil" ref={veilRef} />
+          <div
+            className="ts-fallback"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#0a0a0a",
+              color: "#666",
+              fontSize: "16px",
+              padding: "40px",
+              textAlign: "center",
+              zIndex: 10,
+            }}
+          >
+            <div>
+              <p style={{ marginBottom: "8px" }}>🏛️</p>
+              <p>WebGL not supported</p>
+              <p style={{ fontSize: "14px", marginTop: "8px", color: "#444" }}>
+                This section requires WebGL for 3D rendering
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback UI when model fails to load
+  if (modelLoadError) {
+    return (
+      <div className="ts-root">
+        <div className="ts-sticky-frame">
+          <div className="ts-canvas-stage" ref={stageRef} />
+          <div className="ts-arrival-veil" ref={veilRef} />
+          <div
+            className="ts-fallback"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#0a0a0a",
+              color: "#666",
+              fontSize: "16px",
+              padding: "40px",
+              textAlign: "center",
+              zIndex: 10,
+            }}
+          >
+            <div>
+              <p style={{ marginBottom: "8px" }}>📷</p>
+              <p>Model unavailable</p>
+              <p style={{ fontSize: "14px", marginTop: "8px", color: "#444" }}>
+                The 3D model could not be loaded
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ts-root">

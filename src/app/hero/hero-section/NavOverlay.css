@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Sekuya&display=swap");
+
+
 .nav-overlay {
   position: fixed;
   inset: 0;
@@ -6,7 +9,7 @@
   flex-direction: column;
   background: #000000;
   color: #ffffff;
-  font-family: "Neue Haas Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Sekuya", "Helvetica Neue", Arial, sans-serif;
 }
 
 .nav-overlay__header {

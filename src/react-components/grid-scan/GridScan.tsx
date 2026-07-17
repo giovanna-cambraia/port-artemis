@@ -354,6 +354,7 @@ export const GridScan: React.FC<GridScanProps> = ({
 
   const [modelsReady, setModelsReady] = useState(false);
   const [uiFaceActive, setUiFaceActive] = useState(false);
+  const [webglSupported, setWebglSupported] = useState(true);
 
   const lookTarget = useRef(new THREE.Vector2(0, 0));
   const tiltTarget = useRef(0);
@@ -398,7 +399,28 @@ export const GridScan: React.FC<GridScanProps> = ({
 
   const yBoost = THREE.MathUtils.lerp(1.2, 1.6, s);
 
+  // Check WebGL support
   useEffect(() => {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+      if (!gl) {
+        console.warn("WebGL not supported, GridScan will be disabled");
+        setWebglSupported(false);
+        return;
+      }
+    } catch (e) {
+      console.warn("WebGL check failed:", e);
+      setWebglSupported(false);
+    }
+  }, []);
+
+  // Check if we're in a browser environment
+  const isBrowser = typeof window !== "undefined";
+
+  useEffect(() => {
+    if (!isBrowser || !webglSupported) return;
     const el = containerRef.current;
     if (!el) return;
     let leaveTimer: number | null = null;
@@ -456,15 +478,38 @@ export const GridScan: React.FC<GridScanProps> = ({
       if (scanOnClick) el.removeEventListener("click", onClick);
       if (leaveTimer) clearTimeout(leaveTimer);
     };
-  }, [uiFaceActive, snapBackDelay, scanOnClick, enableGyro]);
+  }, [
+    uiFaceActive,
+    snapBackDelay,
+    scanOnClick,
+    enableGyro,
+    isBrowser,
+    webglSupported,
+  ]);
 
   useEffect(() => {
+    if (!isBrowser || !webglSupported) return;
     const container = containerRef.current;
     if (!container) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    let renderer: THREE.WebGLRenderer | null = null;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (err) {
+      console.warn("WebGL unavailable, skipping GridScan render:", err);
+      setWebglSupported(false);
+      return; // bail out gracefully
+    }
+
     rendererRef.current = renderer;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    // Safe pixel ratio with SSR fallback
+    const pixelRatio =
+      typeof window !== "undefined"
+        ? Math.min(window.devicePixelRatio || 1, 2)
+        : 1;
+
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NoToneMapping;
@@ -528,30 +573,36 @@ export const GridScan: React.FC<GridScanProps> = ({
     scene.add(quad);
 
     let composer: EffectComposer | null = null;
-    if (enablePost) {
-      composer = new EffectComposer(renderer);
-      composerRef.current = composer;
-      const renderPass = new RenderPass(scene, camera);
-      composer.addPass(renderPass);
+    try {
+      if (enablePost) {
+        composer = new EffectComposer(renderer);
+        composerRef.current = composer;
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
 
-      const bloom = new BloomEffect({
-        intensity: 1.0,
-        luminanceThreshold: bloomThreshold,
-        luminanceSmoothing: bloomSmoothing,
-      });
-      bloom.blendMode.opacity.value = Math.max(0, bloomIntensity);
-      bloomRef.current = bloom;
+        const bloom = new BloomEffect({
+          intensity: 1.0,
+          luminanceThreshold: bloomThreshold,
+          luminanceSmoothing: bloomSmoothing,
+        });
+        bloom.blendMode.opacity.value = Math.max(0, bloomIntensity);
+        bloomRef.current = bloom;
 
-      const chroma = new ChromaticAberrationEffect({
-        offset: new THREE.Vector2(chromaticAberration, chromaticAberration),
-        radialModulation: true,
-        modulationOffset: 0.0,
-      });
-      chromaRef.current = chroma;
+        const chroma = new ChromaticAberrationEffect({
+          offset: new THREE.Vector2(chromaticAberration, chromaticAberration),
+          radialModulation: true,
+          modulationOffset: 0.0,
+        });
+        chromaRef.current = chroma;
 
-      const effectPass = new EffectPass(camera, bloom, chroma);
-      effectPass.renderToScreen = true;
-      composer.addPass(effectPass);
+        const effectPass = new EffectPass(camera, bloom, chroma);
+        effectPass.renderToScreen = true;
+        composer.addPass(effectPass);
+      }
+    } catch (err) {
+      console.warn("Post-processing unavailable, using fallback render:", err);
+      composer = null;
+      composerRef.current = null;
     }
 
     const onResize = () => {
@@ -574,6 +625,11 @@ export const GridScan: React.FC<GridScanProps> = ({
 
     let last = performance.now();
     const tick = () => {
+      if (!renderer || !material) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
       const now = performance.now();
       const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
       last = now;
@@ -645,7 +701,9 @@ export const GridScan: React.FC<GridScanProps> = ({
       }
       renderer.dispose();
       renderer.forceContextLoss();
-      container.removeChild(renderer.domElement);
+      if (renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [
     sensitivity,
@@ -658,9 +716,12 @@ export const GridScan: React.FC<GridScanProps> = ({
     lineJitter,
     scanDirection,
     enablePost,
+    isBrowser,
+    webglSupported,
   ]);
 
   useEffect(() => {
+    if (!webglSupported || !materialRef.current) return;
     const m = materialRef.current;
     if (m) {
       const u = m.uniforms;
@@ -709,10 +770,11 @@ export const GridScan: React.FC<GridScanProps> = ({
     scanPhaseTaper,
     scanDuration,
     scanDelay,
+    webglSupported,
   ]);
 
   useEffect(() => {
-    if (!enableGyro) return;
+    if (!enableGyro || !isBrowser) return;
     const handler = (e: DeviceOrientationEvent) => {
       if (uiFaceActive) return;
       const gamma = e.gamma ?? 0;
@@ -726,9 +788,10 @@ export const GridScan: React.FC<GridScanProps> = ({
     return () => {
       window.removeEventListener("deviceorientation", handler);
     };
-  }, [enableGyro, uiFaceActive]);
+  }, [enableGyro, uiFaceActive, isBrowser]);
 
   useEffect(() => {
+    if (!isBrowser) return;
     let canceled = false;
     const load = async () => {
       try {
@@ -745,14 +808,14 @@ export const GridScan: React.FC<GridScanProps> = ({
     return () => {
       canceled = true;
     };
-  }, [modelsPath]);
+  }, [modelsPath, isBrowser]);
 
   useEffect(() => {
+    if (!enableWebcam || !modelsReady || !isBrowser || !webglSupported) return;
     let stop = false;
     let lastDetect = 0;
 
     const start = async () => {
-      if (!enableWebcam || !modelsReady) return;
       const video = videoRef.current;
       if (!video) return;
 
@@ -868,7 +931,35 @@ export const GridScan: React.FC<GridScanProps> = ({
         video.srcObject = null;
       }
     };
-  }, [enableWebcam, modelsReady, depthResponse]);
+  }, [enableWebcam, modelsReady, depthResponse, isBrowser, webglSupported]);
+
+  // If WebGL is not supported, render a fallback message or nothing
+  if (!webglSupported) {
+    return (
+      <div
+        ref={containerRef}
+        className={`gridscan${className ? ` ${className}` : ""}`}
+        style={{
+          ...style,
+          background: "#1a1a1a",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            color: "#666",
+            fontSize: "14px",
+            padding: "20px",
+            textAlign: "center",
+          }}
+        >
+          WebGL not supported
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

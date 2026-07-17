@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -139,17 +139,52 @@ export default function ScrollSection() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const leftRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rightRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [webglSupported, setWebglSupported] = useState(true);
+  const isBrowser = typeof window !== "undefined";
 
   useEffect(() => {
+    if (!isBrowser) return;
+
+    // Check WebGL support first
+    try {
+      const testCanvas = document.createElement("canvas");
+      const gl =
+        testCanvas.getContext("webgl") ||
+        testCanvas.getContext("experimental-webgl");
+      if (!gl) {
+        console.warn("WebGL not supported, ScrollSection will be disabled");
+        setWebglSupported(false);
+        return;
+      }
+    } catch (e) {
+      console.warn("WebGL check failed:", e);
+      setWebglSupported(false);
+      return;
+    }
+
     if (!canvasRef.current || !containerRef.current) return;
 
     // ── RENDERER ──────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: false,
-      powerPreference: "high-performance",
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    let renderer: THREE.WebGLRenderer | null = null;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance",
+      });
+    } catch (err) {
+      console.warn("WebGL unavailable, skipping ScrollSection render:", err);
+      setWebglSupported(false);
+      return;
+    }
+
+    // Safe pixel ratio with SSR fallback
+    const pixelRatio =
+      typeof window !== "undefined"
+        ? Math.min(window.devicePixelRatio || 1, 2)
+        : 1;
+
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
@@ -169,33 +204,42 @@ export default function ScrollSection() {
     camera.position.z = 20;
 
     // ── POSTPROCESSING ────────────────────────────────────────
-    const composer = new EffectComposer(renderer);
-    const renderPass = new RenderPass(scene, camera);
-    composer.addPass(renderPass);
+    let composer: EffectComposer | null = null;
+    let bloomPass: UnrealBloomPass | null = null;
 
-    // Bloom — subtle, only affects bright objects (core + emissive stuff)
-    const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.25, // strength
-      0.4, // radius
-      0.3, // threshold — only bloom pixels above this brightness
-    );
-    composer.addPass(bloomPass);
+    try {
+      composer = new EffectComposer(renderer);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
 
-    // Vignette
-    const vignettePass = new ShaderPass(VignetteShader);
-    vignettePass.uniforms.intensity.value = 0.6;
-    composer.addPass(vignettePass);
+      // Bloom — subtle, only affects bright objects
+      bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        0.25, // strength
+        0.4, // radius
+        0.3, // threshold
+      );
+      composer.addPass(bloomPass);
 
-    // Chromatic Aberration
-    const chromaPass = new ShaderPass(ChromaticAberrationShader);
-    chromaPass.uniforms.intensity.value = 0.0015;
-    composer.addPass(chromaPass);
+      // Vignette
+      const vignettePass = new ShaderPass(VignetteShader);
+      vignettePass.uniforms.intensity.value = 0.6;
+      composer.addPass(vignettePass);
 
-    // Film Grain
-    const grainPass = new ShaderPass(GrainShader);
-    grainPass.uniforms.intensity.value = 0.03;
-    composer.addPass(grainPass);
+      // Chromatic Aberration
+      const chromaPass = new ShaderPass(ChromaticAberrationShader);
+      chromaPass.uniforms.intensity.value = 0.0015;
+      composer.addPass(chromaPass);
+
+      // Film Grain
+      const grainPass = new ShaderPass(GrainShader);
+      grainPass.uniforms.intensity.value = 0.03;
+      composer.addPass(grainPass);
+    } catch (err) {
+      console.warn("Post-processing unavailable, using fallback render:", err);
+      composer = null;
+      bloomPass = null;
+    }
 
     // ── LIGHTS (for atmospheric depth) ──────────────────────
     const ambientLight = new THREE.AmbientLight(0x222244, 0.5);
@@ -317,7 +361,9 @@ export default function ScrollSection() {
       onUpdate: (self) => {
         state.progress = self.progress;
         // Pulse bloom with scroll
-        bloomPass.strength = 0.2 + state.progress * 0.3;
+        if (bloomPass) {
+          bloomPass.strength = 0.2 + state.progress * 0.3;
+        }
       },
     });
 
@@ -459,10 +505,16 @@ export default function ScrollSection() {
       glowLight.position.copy(core.position);
 
       // Pulse bloom intensity slightly with core
-      bloomPass.strength = 0.2 + p * 0.3 + Math.sin(t * 2) * 0.03;
+      if (bloomPass) {
+        bloomPass.strength = 0.2 + p * 0.3 + Math.sin(t * 2) * 0.03;
+      }
 
-      // Render via composer
-      composer.render();
+      // Render via composer or fallback to renderer
+      if (composer) {
+        composer.render();
+      } else if (renderer) {
+        renderer.render(scene, camera);
+      }
     };
     animate();
 
@@ -472,8 +524,12 @@ export default function ScrollSection() {
       const h = window.innerHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-      composer.setSize(w, h);
+      if (renderer) {
+        renderer.setSize(w, h);
+      }
+      if (composer) {
+        composer.setSize(w, h);
+      }
     };
     window.addEventListener("resize", onResize);
 
@@ -482,12 +538,47 @@ export default function ScrollSection() {
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
       ScrollTrigger.getAll().forEach((t) => t.kill());
-      renderer.dispose();
-      if (canvasRef.current?.contains(renderer.domElement)) {
-        canvasRef.current.removeChild(renderer.domElement);
+      if (renderer) {
+        renderer.dispose();
+        renderer.forceContextLoss();
+        if (canvasRef.current?.contains(renderer.domElement)) {
+          canvasRef.current.removeChild(renderer.domElement);
+        }
       }
     };
-  }, []);
+  }, [isBrowser]);
+
+  // Fallback UI when WebGL is not supported
+  if (!webglSupported) {
+    return (
+      <section ref={containerRef} className={styles.section}>
+        <div className={styles.sticky}>
+          <div
+            className={styles.fallback}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100vh",
+              background: "#0a0a0a",
+              color: "#666",
+              fontSize: "16px",
+              padding: "40px",
+              textAlign: "center",
+            }}
+          >
+            <div>
+              <p style={{ marginBottom: "8px" }}>🌌</p>
+              <p>WebGL not supported</p>
+              <p style={{ fontSize: "14px", marginTop: "8px", color: "#444" }}>
+                This section requires WebGL for 3D rendering
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // ─── RENDER ────────────────────────────────────────────────────
 

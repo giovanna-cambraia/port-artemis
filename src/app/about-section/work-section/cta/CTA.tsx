@@ -42,12 +42,18 @@ const HOVER_RADIUS = 3;
 const CLUSTER_SIZE = 10;
 const HIGHLIGHT_LIFETIME = 300;
 const CELL_SIZE = 14; // px per ascii cell
-const DPR = Math.min(window.devicePixelRatio || 1, 2);
+// REMOVED: const DPR = Math.min(window.devicePixelRatio || 1, 2); ❌
 
 // wave field tuning
 const WAVE_SPEED = 0.0006;
 const WAVE_SCALE_X = 0.05;
 const WAVE_SCALE_Y = 0.08;
+
+// Helper function to safely get DPR
+const getDPR = () => {
+  if (typeof window === "undefined") return 1; // SSR fallback
+  return Math.min(window.devicePixelRatio || 1, 2);
+};
 
 const contactLinks: ContactLink[] = [
   {
@@ -234,11 +240,13 @@ export default function CTA({
         }
       }
 
-      canvas.width = width * DPR;
-      canvas.height = height * DPR;
+      // ✅ Get DPR safely inside the resize function
+      const dpr = getDPR();
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.font = `${Math.max(CELL_SIZE * 0.85, 8)}px monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -260,7 +268,7 @@ export default function CTA({
           Math.sin(cell.col * WAVE_SCALE_X + now * WAVE_SPEED) *
             Math.cos(cell.row * WAVE_SCALE_Y - now * WAVE_SPEED * 0.7) *
             0.5 +
-          0.5; 
+          0.5;
 
         const charIndex = Math.min(
           ASCII_CHARS.length - 1,
@@ -448,7 +456,7 @@ export default function CTA({
                   <span className={styles.linkLabel} data-text={link.label}>
                     {link.label}
                   </span>
-                  
+
                   {link.isEmail ? (
                     <span className={styles.emailText}>
                       {link.href.replace("mailto:", "")}
@@ -458,7 +466,7 @@ export default function CTA({
                       {link.description}
                     </span>
                   )}
-                  
+
                   <span className={styles.arrow}>↗</span>
                 </a>
               ))}

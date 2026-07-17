@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sekuya&display=swap");
 
 .hero-section {
   position: relative;
@@ -71,8 +72,9 @@
   }
 }
 
-/* Main Content Area */
+
 .hero-main-content {
+  font-family: "Sekuya", sans-serif;
   flex: 1;
   display: flex;
   flex-direction: column;

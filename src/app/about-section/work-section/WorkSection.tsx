@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, forwardRef } from "react";
 import styles from "./WorkSection.module.css";
-import WaveGridBackground from "./WaveGridBackground";
+import AsciiTiles from "./ASCIITitles";
 
 interface CardData {
   id: number;
@@ -190,7 +190,7 @@ const WorkSection = forwardRef<HTMLElement>((_props, forwardedRef) => {
 
   return (
     <section className={styles.work} ref={setWorkRef}>
-      <WaveGridBackground />
+      <AsciiTiles />
       <div className={styles.cards} ref={cardsRef}>
         {cardData.map((card) => (
           <div key={card.id} className={styles.card}>
