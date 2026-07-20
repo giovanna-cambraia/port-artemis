@@ -16,6 +16,7 @@ import {
   uniforms as dionysosUniforms,
   createAsciiAtlas,
 } from "./shaders/dionysosShaders";
+import { setHandoffCorruption } from "../../immersive-section/lib/corruptionHandoff"; 
 import "./StatueScene.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -662,6 +663,7 @@ export default function StatueScene({
 
   function handleEnterAbyss() {
     setTransitioning(true);
+    setHandoffCorruption(screenCorrupt); // persist the corruption level right before leaving
     setTimeout(() => {
       router.push("/abyss");
     }, 850);
