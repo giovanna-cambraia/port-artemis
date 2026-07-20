@@ -21,6 +21,39 @@ import "./StatueScene.css";
 gsap.registerPlugin(ScrollTrigger);
 
 // ============================================================
+// SPLIT WORDS COMPONENT
+// ============================================================
+function SplitWords({
+  text,
+  className,
+  groupSize = 1,
+}: {
+  text: string;
+  className?: string;
+  groupSize?: number;
+}) {
+  const words = text.split(" ");
+  const groups = [];
+
+  for (let i = 0; i < words.length; i += groupSize) {
+    groups.push(words.slice(i, i + groupSize).join(" "));
+  }
+
+  return (
+    <>
+      {groups.map((group, i) => (
+        <span className="word-mask" key={i}>
+          <span className={`word-inner ${className || ""}`}>
+            {group}
+            {i < groups.length - 1 ? "\u00A0" : ""}
+          </span>
+        </span>
+      ))}
+    </>
+  );
+}
+
+// ============================================================
 // CHROMATIC ABERRATION SHADER
 // ============================================================
 const ChromaticAberrationShader = {
@@ -210,7 +243,7 @@ export default function StatueScene({
   const grainPassRef = useRef<ShaderPass | null>(null);
   const fullscreenGlitchPassRef = useRef<ShaderPass | null>(null);
   const isBrowser = typeof window !== "undefined";
-  
+
   // Ref to track showAbyssButton state inside the effect closure
   const showAbyssButtonRef = useRef(false);
 
@@ -505,24 +538,38 @@ export default function StatueScene({
           .to(loadedModel.rotation, { y: Math.PI * 2.05, ease: "none" }, 0.75)
           .to(camera.position, { x: 0, y: 0.2, z: 4.4, ease: "none" }, 0.75);
 
+        // ── UPDATED PANEL ANIMATIONS WITH SPLIT WORDS ──
         panelRefs.current.forEach((panel) => {
           if (!panel) return;
           const spacer = panel.closest(".ts-spacer");
           if (!spacer) return;
-          gsap.fromTo(
-            panel,
-            { autoAlpha: 0, y: 30 },
-            {
-              autoAlpha: 1,
-              y: 0,
-              duration: 0.6,
-              scrollTrigger: {
-                trigger: spacer,
-                start: "top 90%",
-                end: "bottom 60%",
-                toggleActions: "play reverse play reverse",
-              },
+
+          const headingWords = panel.querySelectorAll(
+            ".ts-heading .word-inner",
+          );
+          const bodyGroups = panel.querySelectorAll(".ts-body .word-inner");
+
+          // panel itself must become visible — the CSS still has opacity:0 as its base state
+          gsap.set(panel, { opacity: 1 });
+          gsap.set([headingWords, bodyGroups], { yPercent: 100 });
+
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: spacer,
+              start: "top 80%",
+              end: "top 30%",
+              scrub: 0.4,
             },
+          });
+
+          tl.to(
+            headingWords,
+            { yPercent: 0, stagger: 0.035, duration: 0.01, ease: "none" },
+            0,
+          ).to(
+            bodyGroups,
+            { yPercent: 0, stagger: 0.06, duration: 0.01, ease: "none" },
+            0.15,
           );
         });
       }
@@ -756,13 +803,17 @@ export default function StatueScene({
                 filter: `blur(${screenCorrupt * 2}px) contrast(${1 + screenCorrupt * 0.5})`,
               }}
             >
-              <div className="ts-eyebrow">{section.eyebrow}</div>
+              <div className="ts-eyebrow">
+                <SplitWords text={section.eyebrow} />
+              </div>
               <h2 className="ts-heading">
-                {section.title[0]}
+                <SplitWords text={section.title[0]} className="line1" />
                 <br />
-                {section.title[1]}
+                <SplitWords text={section.title[1]} className="line2" />
               </h2>
-              <p className="ts-body">{section.body}</p>
+              <p className="ts-body">
+                <SplitWords text={section.body} groupSize={3} />
+              </p>
             </div>
           </div>
         ))}

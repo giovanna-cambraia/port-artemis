@@ -582,3 +582,19 @@
 .abyss-btn:hover::after {
   width: 80%;
 }
+
+.ts-line-mask {
+  display: block;
+  overflow: hidden;
+}
+
+.word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.word-inner {
+  display: inline-block;
+  will-change: transform;
+}

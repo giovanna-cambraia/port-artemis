@@ -120,11 +120,11 @@ export function ImmersiveSection() {
             }}
           >
             <p className={styles.bio}>
-              Director & Creative Lead. Founder of{" "}
-              <strong>ZHEESHEE studio</strong>. I mix live action with CG —
-              building worlds, inventing characters, making things that
-              shouldn&apos;t exist look real. Or unreal. As long as you
-              can&apos;t stop looking at it.
+              <strong> Security Architect & Systems Engineer.</strong> I live at
+              the intersection of hardware and software — designing embedded
+              systems, hardening attack surfaces, and building interfaces that
+              don't just look good but actually hold up. The frontend usually just
+              happens.
             </p>
           </div>
         </div>
