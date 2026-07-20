@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Sekuya&display=swap");
+
 .content {
   position: absolute;
   inset: 0;
@@ -35,7 +37,7 @@
   color: #ff0000; 
   font-size: 1.5rem;
   transform: rotate(-8deg);
-  margin: 0 0 -0.5rem 1rem;
+  margin: 0 0 -0.10rem 1rem;
 }
 
 .name {
@@ -43,6 +45,7 @@
   font-weight: 900;
   margin: 0;
   color: #ffffff;
+  font-family: "Sekuya", sans-serif;
 }
 
 .center {

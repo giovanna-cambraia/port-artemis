@@ -108,7 +108,7 @@ export function ImmersiveSection() {
               transform: `translateX(${(1 - leftParallax) * -60}px)`,
             }}
           >
-            <p className={styles.hey}>HEY</p>
+            <p className={styles.hey}>SUP</p>
             <h1 className={styles.name}>I&apos;m Artem</h1>
           </div>
 

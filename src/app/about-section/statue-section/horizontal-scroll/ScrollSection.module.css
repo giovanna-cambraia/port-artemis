@@ -11,9 +11,9 @@
 /* NEW: The card that slides up */
 .slideCard {
   width: 100%;
-  height: 100%;
+  height: calc(150vh * 4);
   position: relative;
-  transform: translateY(100vh); /* Start below viewport */
+  transform: translateY(100vh);
 }
 
 .sticky {

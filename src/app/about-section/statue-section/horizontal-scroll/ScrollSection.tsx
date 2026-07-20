@@ -132,6 +132,64 @@ const BEATS = [
   },
 ];
 
+// ─── CAMERA WAYPOINTS ────────────────────────────────────────
+const CAMERA_WAYPOINTS = [
+  { x: 0, y: 0, z: 20, rotY: 0 },
+  { x: -4, y: 1.5, z: 14, rotY: 0.15 },
+  { x: 3, y: -1, z: 10, rotY: -0.2 },
+  { x: 0, y: 2, z: 7, rotY: 0.05 },
+];
+
+// ─── BEAT COLORS ─────────────────────────────────────────────
+const BEAT_COLORS = [0xff3030, 0xff6a30, 0x30aaff, 0xffffff];
+
+// ─── CLUSTER FORMATIONS ──────────────────────────────────────
+// Precompute target formations for each beat
+function generateFormation(beatIdx: number, count: number) {
+  const positions: { x: number; y: number; z: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2 + beatIdx * 0.5;
+    let radius: number;
+    let height: number;
+    let spread: number;
+
+    // Different formations per beat
+    switch (beatIdx) {
+      case 0: // Scattered
+        radius = Math.random() * 4 + 2;
+        height = (Math.random() - 0.5) * 6;
+        spread = (Math.random() - 0.5) * 4;
+        break;
+      case 1: // Converging
+        radius = 2.5 + Math.sin(angle * 2) * 1.5;
+        height = Math.sin(angle * 3) * 1.5;
+        spread = 0;
+        break;
+      case 2: // Ring
+        radius = 3.5;
+        height = Math.sin(angle * 2) * 1.2;
+        spread = 0;
+        break;
+      case 3: // Tight core
+        radius = 1.5 + Math.sin(angle * 4) * 0.5;
+        height = Math.sin(angle * 3) * 0.6;
+        spread = 0;
+        break;
+      default:
+        radius = 3;
+        height = 0;
+        spread = 0;
+    }
+
+    positions.push({
+      x: Math.cos(angle) * radius + spread * 0.3,
+      y: height,
+      z: Math.sin(angle) * radius + spread * 0.3,
+    });
+  }
+  return positions;
+}
+
 // ─── COMPONENT ─────────────────────────────────────────────────
 
 export default function ScrollSection() {
@@ -259,12 +317,12 @@ export default function ScrollSection() {
       rx: number;
       ry: number;
       floatOff: number;
-      initX: number;
-      initY: number;
-      initZ: number;
     }[] = [];
 
     const clusterCount = 22;
+    // Precompute formations for each beat
+    const formations = BEATS.map((_, i) => generateFormation(i, clusterCount));
+
     for (let i = 0; i < clusterCount; i++) {
       const size = Math.random() * 1.8 + 0.5;
       const geo = new THREE.BoxGeometry(size, size, size);
@@ -276,13 +334,9 @@ export default function ScrollSection() {
       });
       const cube = new THREE.LineSegments(edges, mat);
 
-      const angle = (i / clusterCount) * Math.PI * 2;
-      const radius = Math.random() * 5 + 1.5;
-      const ix = Math.cos(angle) * radius;
-      const iy = Math.sin(angle) * radius * 0.6;
-      const iz = (Math.random() - 0.5) * 6;
-
-      cube.position.set(ix, iy, iz);
+      // Start at formation 0
+      const pos = formations[0][i];
+      cube.position.set(pos.x, pos.y, pos.z);
       cube.rotation.set(
         Math.random() * Math.PI,
         Math.random() * Math.PI,
@@ -295,9 +349,6 @@ export default function ScrollSection() {
         rx: (Math.random() - 0.5) * 0.005,
         ry: (Math.random() - 0.5) * 0.005,
         floatOff: Math.random() * Math.PI * 2,
-        initX: ix,
-        initY: iy,
-        initZ: iz,
       });
     }
 
@@ -351,7 +402,7 @@ export default function ScrollSection() {
     scene.add(glowLight);
 
     // ── SCROLL STATE ───────────────────────────────────────────
-    const state = { progress: 0 };
+    const state = { progress: 0, velocity: 0 };
 
     ScrollTrigger.create({
       trigger: containerRef.current,
@@ -360,6 +411,7 @@ export default function ScrollSection() {
       scrub: 1.4,
       onUpdate: (self) => {
         state.progress = self.progress;
+        state.velocity = self.getVelocity() / 1000;
         // Pulse bloom with scroll
         if (bloomPass) {
           bloomPass.strength = 0.2 + state.progress * 0.3;
@@ -367,15 +419,38 @@ export default function ScrollSection() {
       },
     });
 
-    // ── TEXT ANIMATIONS ──────────────────────────────────────
+    // ── TEXT ANIMATIONS (with stagger) ──────────────────────
     const total = BEATS.length;
 
+    // FIX: Pre-split headline lines into spans from data, not textContent
+    rightRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const headline = el.querySelector(`.${styles.headline}`);
+      if (headline) {
+        const lines = BEATS[i].headline.split("\n");
+        headline.innerHTML = lines
+          .map((line) => `<span class="${styles.headlineLine}">${line}</span>`)
+          .join("<br>");
+      }
+    });
+
+    // FIX: Pre-split sub lines into spans from data, not textContent
+    leftRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const sub = el.querySelector(`.${styles.sub}`);
+      if (sub) {
+        const lines = BEATS[i].sub.split("\n");
+        sub.innerHTML = lines
+          .map((line) => `<span class="${styles.subLine}">${line}</span>`)
+          .join("<br>");
+      }
+    });
+
+    // Set initial states - only opacity for containers, no opacity reset on lines
     leftRefs.current.forEach((el, i) => {
       if (!el) return;
       gsap.set(el, {
         opacity: i === 0 ? 1 : 0,
-        x: i === 0 ? 0 : -50,
-        filter: i === 0 ? "blur(0px)" : "blur(6px)",
       });
     });
 
@@ -383,8 +458,6 @@ export default function ScrollSection() {
       if (!el) return;
       gsap.set(el, {
         opacity: i === 0 ? 1 : 0,
-        x: i === 0 ? 0 : 50,
-        filter: i === 0 ? "blur(0px)" : "blur(6px)",
       });
     });
 
@@ -397,6 +470,7 @@ export default function ScrollSection() {
       },
     });
 
+    // ─── FIX: BOUNDED ENTER/EXIT WITH REAL WINDOWS ───────────
     BEATS.forEach((_, i) => {
       const leftEl = leftRefs.current[i];
       const rightEl = rightRefs.current[i];
@@ -404,58 +478,96 @@ export default function ScrollSection() {
 
       const start = i / total;
       const end = (i + 1) / total;
-      const mid = (start + end) / 2;
       const segment = end - start;
 
+      // Reserve real time for stagger, not just base duration
+      const enterDuration = segment * 0.22;
+      const staggerBuffer = 0.08; // extra cushion as a fraction of segment
+      const enterEnd = start + enterDuration + segment * staggerBuffer;
+
+      const exitStart = start + segment * 0.72; // push exit later, well after enterEnd
+      const exitDuration = segment * 0.22;
+
       if (i > 0) {
-        tl.to(
-          leftEl,
+        // Left side (sub text) - stagger lines
+        const leftLines = leftEl.querySelectorAll(`.${styles.subLine}`);
+        tl.fromTo(
+          leftLines,
+          { yPercent: 40, opacity: 0 },
           {
+            yPercent: 0,
             opacity: 1,
-            x: 0,
-            filter: "blur(0px)",
-            duration: segment / 2,
-            ease: "none",
+            stagger: 0.04, // tighter stagger
+            ease: "back.out(1.4)",
+            duration: enterDuration,
           },
           start,
         );
+        tl.to(
+          leftEl,
+          { opacity: 1, duration: enterDuration, ease: "none" },
+          start,
+        );
 
+        // Right side (headline) - stagger lines
+        const rightLines = rightEl.querySelectorAll(`.${styles.headlineLine}`);
+        tl.fromTo(
+          rightLines,
+          { yPercent: 40, opacity: 0 },
+          {
+            yPercent: 0,
+            opacity: 1,
+            stagger: 0.04, // tighter stagger
+            ease: "back.out(1.4)",
+            duration: enterDuration,
+          },
+          start,
+        );
         tl.to(
           rightEl,
-          {
-            opacity: 1,
-            x: 0,
-            filter: "blur(0px)",
-            duration: segment / 2,
-            ease: "none",
-          },
+          { opacity: 1, duration: enterDuration, ease: "none" },
           start,
         );
       }
 
       if (i < total - 1) {
+        // Fade out with blur - starts well after enter completes
         tl.to(
           leftEl,
           {
             opacity: 0,
-            x: -50,
-            filter: "blur(6px)",
-            duration: segment / 2,
-            ease: "none",
+            duration: exitDuration,
+            ease: "power2.in",
           },
-          mid,
+          exitStart,
+        );
+        tl.to(
+          leftEl,
+          {
+            filter: "blur(6px)",
+            duration: exitDuration,
+            ease: "power2.in",
+          },
+          exitStart,
         );
 
         tl.to(
           rightEl,
           {
             opacity: 0,
-            x: 50,
-            filter: "blur(6px)",
-            duration: segment / 2,
-            ease: "none",
+            duration: exitDuration,
+            ease: "power2.in",
           },
-          mid,
+          exitStart,
+        );
+        tl.to(
+          rightEl,
+          {
+            filter: "blur(6px)",
+            duration: exitDuration,
+            ease: "power2.in",
+          },
+          exitStart,
         );
       }
     });
@@ -468,27 +580,69 @@ export default function ScrollSection() {
       rafId = requestAnimationFrame(animate);
       const t = clock.getElapsed();
       const p = state.progress;
+      const velocity = state.velocity || 0;
 
-      // Camera movement
-      camera.position.z = 20 - p * 5;
-      camera.position.y = Math.sin(t * 0.15) * 0.3;
-      camera.rotation.z = Math.sin(t * 0.1) * 0.008;
+      // ── 1. CAMERA WAYPOINTS ──────────────────────────────
+      const beatFloat = p * (BEATS.length - 1);
+      const beatIdx = Math.floor(Math.min(beatFloat, BEATS.length - 1));
+      const beatT = Math.min(beatFloat - beatIdx, 1);
+      const eased = beatT * beatT * (3 - 2 * beatT); // smoothstep
 
-      // Cluster rotation & float
+      const wp0 = CAMERA_WAYPOINTS[Math.min(beatIdx, BEATS.length - 1)];
+      const wp1 = CAMERA_WAYPOINTS[Math.min(beatIdx + 1, BEATS.length - 1)];
+
+      camera.position.x = THREE.MathUtils.lerp(wp0.x, wp1.x, eased);
+      camera.position.y =
+        THREE.MathUtils.lerp(wp0.y, wp1.y, eased) + Math.sin(t * 0.15) * 0.3;
+      camera.position.z = THREE.MathUtils.lerp(wp0.z, wp1.z, eased);
+      camera.rotation.y = THREE.MathUtils.lerp(wp0.rotY, wp1.rotY, eased);
+
+      // ── 5. SCROLL VELOCITY KICK ──────────────────────────
+      const shakeAmount = THREE.MathUtils.clamp(velocity * 0.0002, -0.02, 0.02);
+      camera.rotation.z += (shakeAmount - camera.rotation.z) * 0.02;
+
+      camera.lookAt(0, 0, 0);
+
+      // ── 2. CLUSTER FORMATIONS ────────────────────────────
+      const bIdx = Math.min(beatIdx, BEATS.length - 1);
+      const nextIdx = Math.min(beatIdx + 1, BEATS.length - 1);
+      const form0 = formations[bIdx];
+      const form1 = formations[nextIdx];
+
       clusterCubes.forEach((cube, i) => {
         const d = clusterData[i];
+
+        // Rotation drift
         cube.rotation.x += d.rx;
         cube.rotation.y += d.ry;
 
-        cube.position.y = d.initY + Math.sin(t * 0.5 + d.floatOff) * 0.25;
+        // Target position from formation
+        const target0 = form0[i];
+        const target1 = form1[i];
 
-        const angle = Math.atan2(d.initX, d.initZ) + p * Math.PI * 0.4;
-        const r = Math.sqrt(d.initX * d.initX + d.initZ * d.initZ);
-        cube.position.x = Math.sin(angle) * r;
-        cube.position.z = Math.cos(angle) * r;
+        // Lerp between formations with slight orbit drift
+        const orbitDrift = Math.sin(t * 0.3 + i) * 0.1 * p;
+        const floatDrift = Math.sin(t * 0.5 + d.floatOff) * 0.2 * (1 - p * 0.5);
+
+        cube.position.x =
+          THREE.MathUtils.lerp(target0.x, target1.x, eased) + orbitDrift;
+        cube.position.y =
+          THREE.MathUtils.lerp(target0.y, target1.y, eased) + floatDrift;
+        cube.position.z = THREE.MathUtils.lerp(target0.z, target1.z, eased);
+
+        // Scale opacity with formation tightness
+        const dist = Math.sqrt(
+          cube.position.x ** 2 + cube.position.y ** 2 + cube.position.z ** 2,
+        );
+        const mat = cube.material as THREE.LineBasicMaterial;
+        mat.opacity = THREE.MathUtils.clamp(
+          0.15 + (1 - dist / 8) * 0.3,
+          0.1,
+          0.6,
+        );
       });
 
-      // Background drift
+      // ── BACKGROUND DRIFT ──────────────────────────────────
       bgCubes.forEach((cube, i) => {
         const d = bgData[i];
         cube.rotation.x += d.rx;
@@ -496,15 +650,28 @@ export default function ScrollSection() {
         cube.position.y += Math.sin(t * 0.3 + d.floatOff) * 0.001;
       });
 
-      // Core animation
-      core.rotation.x = t * 0.6;
-      core.rotation.y = t * 0.9;
+      // ── 3. CORE REACTS PER BEAT ──────────────────────────
       const coreMat2 = core.material as THREE.LineBasicMaterial;
-      coreMat2.opacity = 0.6 + Math.sin(t * 4) * 0.35;
-      core.scale.setScalar(1 + Math.sin(t * 3.5) * 0.08);
-      glowLight.position.copy(core.position);
+      const beatColor = new THREE.Color(BEAT_COLORS[bIdx]).lerp(
+        new THREE.Color(BEAT_COLORS[nextIdx]),
+        eased,
+      );
+      coreMat2.color.copy(beatColor);
+      glowLight.color.copy(beatColor);
 
-      // Pulse bloom intensity slightly with core
+      // Core pulse shape and intensity
+      const pulse = 0.6 + Math.sin(t * 4 + p * 2) * 0.35;
+      coreMat2.opacity = THREE.MathUtils.clamp(pulse, 0.3, 0.95);
+      core.rotation.x = t * 0.6 + p * 2;
+      core.rotation.y = t * 0.9 + p * 3;
+
+      const scalePulse = 1 + Math.sin(t * 3.5 + p * 2) * 0.08;
+      const baseScale = 0.8 + p * 0.4;
+      core.scale.setScalar(baseScale * scalePulse);
+
+      glowLight.intensity = 0.3 + p * 0.4 + Math.sin(t * 4) * 0.1;
+
+      // ── BLOOM ─────────────────────────────────────────────
       if (bloomPass) {
         bloomPass.strength = 0.2 + p * 0.3 + Math.sin(t * 2) * 0.03;
       }
@@ -600,8 +767,9 @@ export default function ScrollSection() {
                 className={styles.leftContent}
               >
                 <p className={styles.sub}>
+                  {/* FIX: Render spans from data directly */}
                   {beat.sub.split("\n").map((line, j) => (
-                    <span key={j}>
+                    <span key={j} className={styles.subLine}>
                       {line}
                       <br />
                     </span>
@@ -633,6 +801,7 @@ export default function ScrollSection() {
                   </div>
                 </div>
                 <h2 className={styles.headline}>
+                  {/* FIX: Render spans from data directly */}
                   {beat.headline.split("\n").map((line, j) => (
                     <span key={j} className={styles.headlineLine}>
                       {line}
