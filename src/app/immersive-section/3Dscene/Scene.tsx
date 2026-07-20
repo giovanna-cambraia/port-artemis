@@ -8,6 +8,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import { getHandoffCorruption } from "../lib/corruptionHandoff"; 
 
 const FONT = "/fonts/Sekuya-Regular.ttf";
 
@@ -350,6 +351,13 @@ export default function Scene({
   const oscillationDuration = 2;
   const totalCycleDuration = oscillationDuration + pauseDuration;
 
+  // ─── CAPTURE HANDOFF CORRUPTION ONCE AT MOUNT ──────────────
+  const handoffCorruptionRef = useRef(0);
+
+  useMemo(() => {
+    handoffCorruptionRef.current = getHandoffCorruption();
+  }, []);
+
   // ─── SETUP POSTPROCESSING ──────────────────────────────────
   useMemo(() => {
     const composer = new EffectComposer(gl);
@@ -449,6 +457,12 @@ export default function Scene({
       analogPassRef.current.uniforms.scanIntensity.value = 0.05 + ease * 0.2;
       analogPassRef.current.uniforms.time.value = t;
     }
+
+    // ── ENTRY CORRUPTION: inherited from the statue scene's actual finale state ──
+    const ENTRY_RESOLVE_END = 0.18;
+    const entryRaw = 1 - Math.min(1, p / ENTRY_RESOLVE_END);
+    const entryEase = entryRaw * entryRaw * (3 - 2 * entryRaw);
+    const entryCorrupt = entryEase * handoffCorruptionRef.current; // scaled by real handoff value
 
     // ── CIRCULAR TEXT ──
     if (circularText.current) {

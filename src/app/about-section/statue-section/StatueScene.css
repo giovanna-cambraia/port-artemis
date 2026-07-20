@@ -65,23 +65,22 @@
 
 @keyframes ts-glitch-slice-a {
   0%,
-  92% {
+  88% {
     clip-path: inset(0 0 0 0);
     opacity: 0;
   }
-  93% {
+  90% {
     clip-path: inset(10% 0 60% 0);
-    opacity: 1;
+    opacity: 0.5;
   }
-  94% {
+  93% {
     clip-path: inset(70% 0 5% 0);
-    opacity: 1;
+    opacity: 0.5;
   }
-  95% {
+  96% {
     clip-path: inset(30% 0 40% 0);
-    opacity: 1;
+    opacity: 0.4;
   }
-  96%,
   100% {
     clip-path: inset(0 0 0 0);
     opacity: 0;
@@ -338,7 +337,7 @@
     transparent 1px,
     transparent 3px
   );
-  animation: ts-screen-flicker 0.12s steps(2) infinite;
+  animation: ts-screen-flicker 0.4s ease-in-out infinite;
 }
 
 @keyframes ts-screen-flicker {
@@ -354,4 +353,232 @@
   100% {
     transform: translate(0, 0);
   }
+}
+
+.abyss-btn-wrap--leaving {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+/* ── ABYSS BUTTON WRAP ── */
+.abyss-btn-wrap {
+  position: absolute;
+  top: 78%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10; /* above ts-screen-glitch and ts-arrival-veil (both 5) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  opacity: 0;
+  animation: abyss-btn-appear 0.6s ease forwards;
+}
+
+.abyss-btn-wrap--leaving {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.96);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+}
+
+@keyframes abyss-btn-appear {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ── BUTTON RESET ── */
+.abyss-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 10px;
+}
+
+.abyss-btn:disabled {
+  cursor: default;
+}
+
+/* ── EYEBROW ── */
+.abyss-btn-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #c97a7a;
+  opacity: 0.85;
+  animation: abyss-eyebrow-flicker 3.5s ease-in-out infinite;
+}
+
+@keyframes abyss-eyebrow-flicker {
+  0%,
+  92%,
+  100% {
+    opacity: 0.85;
+  }
+  93% {
+    opacity: 0.3;
+  }
+  94% {
+    opacity: 0.9;
+  }
+  95% {
+    opacity: 0.2;
+  }
+  96% {
+    opacity: 0.85;
+  }
+}
+
+.abyss-btn-title {
+  position: relative;
+  font-family: "Sekuya", "Bebas Neue", "Share Tech Mono", sans-serif;
+  font-size: clamp(30px, 5vw, 56px);
+  letter-spacing: 0.06em;
+  color: #f2e0e0;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.abyss-btn-title::before,
+.abyss-btn-title::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.abyss-btn-title::before {
+  color: #ff2b2b;
+  clip-path: inset(0 0 0 0);
+  animation: abyss-glitch-a 3.2s steps(1) infinite;
+}
+
+.abyss-btn-title::after {
+  color: #3ad4ff;
+  clip-path: inset(0 0 0 0);
+  animation: abyss-glitch-b 4.1s steps(1) infinite;
+}
+
+@keyframes abyss-glitch-a {
+  0%,
+  88%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  89% {
+    clip-path: inset(10% 0 60% 0);
+    opacity: 0.9;
+    transform: translate(-3px, 0);
+  }
+  90% {
+    clip-path: inset(70% 0 5% 0);
+    opacity: 0.9;
+    transform: translate(3px, 0);
+  }
+  91% {
+    clip-path: inset(30% 0 40% 0);
+    opacity: 0.9;
+    transform: translate(-2px, 0);
+  }
+  92% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+}
+
+@keyframes abyss-glitch-b {
+  0%,
+  85%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  86% {
+    clip-path: inset(50% 0 20% 0);
+    opacity: 0.9;
+    transform: translate(3px, 0);
+  }
+  87% {
+    clip-path: inset(5% 0 80% 0);
+    opacity: 0.9;
+    transform: translate(-3px, 0);
+  }
+  88% {
+    clip-path: inset(65% 0 10% 0);
+    opacity: 0.9;
+    transform: translate(2px, 0);
+  }
+  89% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+}
+
+.abyss-btn-title {
+  animation: abyss-title-jitter 4s steps(1) infinite;
+}
+
+@keyframes abyss-title-jitter {
+  0%,
+  94%,
+  100% {
+    transform: translate(0, 0);
+  }
+  95% {
+    transform: translate(1px, -1px);
+  }
+  96% {
+    transform: translate(-1px, 0);
+  }
+  97% {
+    transform: translate(0, 1px);
+  }
+}
+
+.abyss-btn:hover .abyss-btn-title,
+.abyss-btn:focus-visible .abyss-btn-title {
+  color: #ffffff;
+  transform: scale(1.03);
+}
+
+.abyss-btn:hover .abyss-btn-eyebrow {
+  color: #ff8a8a;
+}
+
+.abyss-btn::after {
+  content: "";
+  width: 0%;
+  height: 1px;
+  background: #8a4a4a;
+  transition: width 0.35s ease;
+}
+
+.abyss-btn:hover::after {
+  width: 80%;
 }

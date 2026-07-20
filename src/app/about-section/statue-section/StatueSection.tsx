@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { gsap } from "gsap";
@@ -82,7 +83,7 @@ const GrainShader = {
 };
 
 // ============================================================
-// FULL SCREEN GLITCH SHADER
+// FULL SCREEN GLITCH SHADER — SLOWED & SOFTENED
 // ============================================================
 const FullScreenGlitchShader = {
   uniforms: {
@@ -110,32 +111,32 @@ const FullScreenGlitchShader = {
     void main() {
       vec2 uv = vUv;
 
-      // block displacement — bigger, chunkier than the statue's own glitch bands
-      float blockY = floor(uv.y * mix(8.0, 40.0, amount));
-      float blockSeed = rand(vec2(blockY, floor(time * 10.0)));
-      float shouldTear = step(1.0 - amount * 0.6, blockSeed);
-      float tearOffset = (rand(vec2(blockSeed, time)) - 0.5) * amount * 0.25;
+      // block displacement — coarser = less strobe-y
+      float blockY = floor(uv.y * mix(6.0, 20.0, amount)); // was 8.0–40.0
+      // SLOWED: re-rolls ~4x/sec instead of 10x/sec
+      float blockSeed = rand(vec2(blockY, floor(time * 4.0)));
+      // SOFTER: fewer tears (threshold raised from 0.6)
+      float shouldTear = step(1.0 - amount * 0.4, blockSeed);
+      // SOFTER: reduced displacement from 0.25 to 0.15
+      float tearOffset = (rand(vec2(blockSeed, time)) - 0.5) * amount * 0.15;
       uv.x += tearOffset * shouldTear;
 
       vec4 color = texture2D(tDiffuse, uv);
 
-      // RGB split scales with amount
-      float split = amount * 0.02;
+      // RGB split — reduced from 0.02 to 0.012
+      float split = amount * 0.012;
       color.r = texture2D(tDiffuse, uv + vec2(split, 0.0)).r;
       color.b = texture2D(tDiffuse, uv - vec2(split, 0.0)).b;
 
-      // white flash frames — signal snapping
-      float flashSeed = rand(vec2(floor(time * 14.0), 1.0));
-      float flash = step(0.985 - amount * 0.05, flashSeed) * amount;
-      color.rgb = mix(color.rgb, vec3(1.0), flash * 0.8);
+      // WHITE FLASH FRAMES — REMOVED entirely (was the strobe risk)
 
-      // scanline roll — heavier as amount rises
-      float roll = sin(uv.y * 800.0 - time * 40.0 * amount) * 0.5 + 0.5;
-      color.rgb -= pow(roll, 10.0) * amount * 0.3;
+      // scanline roll — slower, subtler
+      float roll = sin(uv.y * 800.0 - time * 12.0 * amount) * 0.5 + 0.5; // was 40.0
+      color.rgb -= pow(roll, 14.0) * amount * 0.15; // was 10 power / 0.3 strength
 
-      // near the very end, crush toward black/static so it reads as total breakdown
+      // static noise — reduced from 0.4 to 0.25
       float staticNoise = rand(uv * 500.0 + time);
-      color.rgb = mix(color.rgb, vec3(staticNoise), amount * amount * 0.4);
+      color.rgb = mix(color.rgb, vec3(staticNoise), amount * amount * 0.25);
 
       gl_FragColor = color;
     }
@@ -190,6 +191,7 @@ interface TorsoScrollProps {
 export default function StatueScene({
   modelUrl = "/models/marble_torso_from_a_statue_of_dionysos.glb",
 }: TorsoScrollProps) {
+  const router = useRouter();
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -199,6 +201,8 @@ export default function StatueScene({
   const [webglSupported, setWebglSupported] = useState(true);
   const [modelLoadError, setModelLoadError] = useState(false);
   const [screenCorrupt, setScreenCorrupt] = useState(0);
+  const [showAbyssButton, setShowAbyssButton] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
 
   // Refs for shader materials and post-processing passes
   const shaderMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -206,6 +210,9 @@ export default function StatueScene({
   const grainPassRef = useRef<ShaderPass | null>(null);
   const fullscreenGlitchPassRef = useRef<ShaderPass | null>(null);
   const isBrowser = typeof window !== "undefined";
+  
+  // Ref to track showAbyssButton state inside the effect closure
+  const showAbyssButtonRef = useRef(false);
 
   useEffect(() => {
     if (!isBrowser) return;
@@ -449,6 +456,16 @@ export default function StatueScene({
                   self.progress;
               }
 
+              // ── SHOW ABYSS BUTTON (using ref to avoid dependency issues) ──
+              if (self.progress > 0.9 && !showAbyssButtonRef.current) {
+                showAbyssButtonRef.current = true;
+                setShowAbyssButton(true);
+              }
+              if (self.progress <= 0.85 && showAbyssButtonRef.current) {
+                showAbyssButtonRef.current = false;
+                setShowAbyssButton(false);
+              }
+
               // ── ESCALATION: statue corrupts first, THEN screen-wide takeover ──
               const SCREEN_TAKEOVER_START = 0.9;
               const SCREEN_TAKEOVER_FULL = 1.0;
@@ -594,7 +611,14 @@ export default function StatueScene({
       setWebglSupported(false);
       return;
     }
-  }, [modelUrl, isBrowser]);
+  }, [modelUrl, isBrowser]); // Removed showAbyssButton from dependencies
+
+  function handleEnterAbyss() {
+    setTransitioning(true);
+    setTimeout(() => {
+      router.push("/abyss");
+    }, 850);
+  }
 
   // Fallback UI when WebGL is not supported
   if (!webglSupported) {
@@ -689,6 +713,35 @@ export default function StatueScene({
           <span>{plaqueTitle}</span>
           scroll to circle the piece
         </div>
+
+        {/* ─── ABYSS BUTTON ─── */}
+        {showAbyssButton && (
+          <div
+            className={`abyss-btn-wrap ${
+              transitioning ? "abyss-btn-wrap--leaving" : ""
+            }`}
+          >
+            <button
+              className="abyss-btn"
+              onClick={handleEnterAbyss}
+              disabled={transitioning}
+            >
+              <span className="abyss-btn-title" data-text="HEAD INTO THE ABYSS">
+                HEAD INTO THE ABYSS
+              </span>
+              <span className="abyss-btn-eyebrow">WHAT REMAINS, CALLS</span>
+            </button>
+          </div>
+        )}
+
+        {/* ─── TRANSITION OVERLAY ─── */}
+        {transitioning && (
+          <div className="transition-overlay transition-overlay--burst">
+            <div className="transition-noise" />
+            <div className="transition-scanlines" />
+            <div className="transition-flash" />
+          </div>
+        )}
       </div>
 
       <div className="ts-content" ref={contentRef}>

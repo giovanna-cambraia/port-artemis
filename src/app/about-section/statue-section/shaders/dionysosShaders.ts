@@ -86,20 +86,37 @@ void main() {
   float breakAmount = smoothstep(uBreakStart, 1.0, uProgress);
   vBreak = breakAmount;
 
-  // ── DIGITAL CORRUPTION: quantize into horizontal "scan bands" that jitter ──
-  float band = floor(position.y * 14.0); // slice the model into horizontal bands
-  float bandGlitch = hash(vec3(band, floor(uTime * 6.0), 0.0)); // re-rolls ~6x/sec
-  float glitchActive = step(0.7, bandGlitch) * breakAmount; // only some bands glitch, only near break
+  // ── DIGITAL CORRUPTION: horizontal "scan bands" — CALMED ──
+  float band = floor(position.y * 14.0);
+
+  // 1. Stagger band phases so they don't all flip together
+  float bandOffset = band * 0.37;
+
+  // 2. Slow roll speed and use smoothstep instead of hard step
+  float rollSpeed = 0.6; // was 1.2 — ~1 cycle every ~1.6s
+  float rollPhase = uTime * rollSpeed + bandOffset;
+  float rollA = hash(vec3(band, floor(rollPhase), 0.0));
+  float rollB = hash(vec3(band, floor(rollPhase) + 1.0, 0.0));
+  float rollMix = smoothstep(0.0, 1.0, fract(rollPhase));
+  float bandGlitch = mix(rollA, rollB, rollMix);
+
+  // 3. Narrow threshold so fewer bands qualify (was step(0.7, bandGlitch))
+  float glitchActive = smoothstep(0.75, 0.92, bandGlitch) * breakAmount;
   vGlitchLine = glitchActive;
 
-  // ONLY the rigid band jitter remains — no normal-based organic displacement
-  vec3 displaced = position;
-  displaced.x += glitchActive * (hash(vec3(band, floor(uTime * 20.0), 1.0)) - 0.5) * 0.4;
-  displaced.z += glitchActive * (hash(vec3(band, floor(uTime * 20.0), 2.0)) - 0.5) * 0.3;
+  // Displacement also staggered and smoothed
+  float dispSpeed = 0.8; // slowed
+  float dispPhase = uTime * dispSpeed + bandOffset;
+  float dispMixT = smoothstep(0.0, 1.0, fract(dispPhase));
 
-  // Removed: normal * noise * uDisplaceStrength * breakAmount * 1.5
-  // Removed: normal * breakAmount * breakAmount * (noise * 0.5) * 1.2
-  // Those lines were the "melting/eroding" silhouette warp
+  float dxA = hash(vec3(band, floor(dispPhase), 1.0));
+  float dxB = hash(vec3(band, floor(dispPhase) + 1.0, 1.0));
+  float dzA = hash(vec3(band, floor(dispPhase), 2.0));
+  float dzB = hash(vec3(band, floor(dispPhase) + 1.0, 2.0));
+
+  vec3 displaced = position;
+  displaced.x += glitchActive * (mix(dxA, dxB, dispMixT) - 0.5) * 0.4;
+  displaced.z += glitchActive * (mix(dzA, dzB, dispMixT) - 0.5) * 0.3;
 
   vPosition = displaced;
 
@@ -169,19 +186,39 @@ void main() {
   float breakCutoff = mix(-2.0, -0.3, vBreak);
   bool erosionDiscard = vBreak > 0.0 && vNoise < breakCutoff;
 
-  // ── DIGITAL CORRUPTION (unchanged, still layers on at the end) ──
-  float blockNoise = hash2(vec2(floor(vPosition.y * 14.0), floor(uTime * 8.0)));
-  bool blockDiscard = vGlitchLine > 0.5 && blockNoise > 0.6;
+  // ── DIGITAL CORRUPTION — CALMED ──
+  // Stagger bands with the same offset
+  float bandOffset = floor(vPosition.y * 14.0) * 0.37;
+  
+  // Block discard — slower, higher threshold, staggered
+  float blockSpeed = 0.5; // was 1.2
+  float blockPhase = uTime * blockSpeed + bandOffset;
+  float blockA = hash2(vec2(floor(vPosition.y * 14.0), floor(blockPhase)));
+  float blockB = hash2(vec2(floor(vPosition.y * 14.0), floor(blockPhase) + 1.0));
+  float blockMixT = smoothstep(0.0, 1.0, fract(blockPhase));
+  float blockNoise = mix(blockA, blockB, blockMixT);
+  
+  // Raised threshold from 0.8 to 0.85 → fewer bands qualify
+  bool blockDiscard = vGlitchLine > 0.5 && blockNoise > 0.85;
 
   if (erosionDiscard || blockDiscard) discard;
 
   vec3 finalColor = colorWithAscii;
   if (vGlitchLine > 0.5) {
-    finalColor.r = colorWithAscii.r * 1.4;
-    finalColor.g *= 0.6;
-    finalColor.b *= 0.7;
-    float flicker = step(0.85, hash2(vec2(floor(vPosition.y * 14.0), floor(uTime * 12.0))));
-    finalColor = mix(finalColor, uColorB, flicker * 0.6);
+    // Softer color shifts
+    finalColor.r = colorWithAscii.r * 1.15;
+    finalColor.g *= 0.85;
+    finalColor.b *= 0.9;
+
+    // Flicker — slowed, staggered, higher threshold
+    float flickerSpeed = 0.7; // was 1.5
+    float flickerPhase = uTime * flickerSpeed + bandOffset;
+    float flickerA = hash2(vec2(floor(vPosition.y * 14.0), floor(flickerPhase)));
+    float flickerB = hash2(vec2(floor(vPosition.y * 14.0), floor(flickerPhase) + 1.0));
+    float flickerMixT = smoothstep(0.0, 1.0, fract(flickerPhase));
+    float flicker = step(0.93, mix(flickerA, flickerB, flickerMixT));
+
+    finalColor = mix(finalColor, uColorB, flicker * 0.3);
   }
 
   float fractureEdge = 1.0 - smoothstep(breakCutoff, breakCutoff + 0.1, vNoise);
