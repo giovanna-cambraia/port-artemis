@@ -80,32 +80,6 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.calCard {
-  position: relative;
-  background: #000;
-  border: 1px solid rgba(192, 38, 58, 0.25);
-  border-radius: 4px;
-  overflow: hidden;
-  min-height: 520px;
-  box-shadow: 0 0 60px rgba(192, 38, 58, 0.08);
-}
-
-.calEmbed {
-  width: 100%;
-  height: 520px;
-}
-
-.calLoading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-}
-
 .contactSection {
   margin-top: 0;
 }
@@ -345,11 +319,6 @@
     grid-area: arrow;
   }
 
-  .calEmbed,
-  .calCard {
-    height: 600px;
-    min-height: 600px;
-  }
 
   .sectionHeader {
     margin-bottom: 1.5rem;

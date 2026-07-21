@@ -162,7 +162,7 @@ const WorkSection = forwardRef<HTMLElement>((_props, forwardedRef) => {
           chromaticAberration={0}
           dither={0}
           curvature={0.1}
-          tint="#A7EF9E"
+          tint="#FF0000"
           mouseReact
           mouseStrength={0.5}
           pageLoadAnimation
