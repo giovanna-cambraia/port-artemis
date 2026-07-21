@@ -1,3 +1,4 @@
+// StatueScene.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -16,13 +17,34 @@ import {
   uniforms as dionysosUniforms,
   createAsciiAtlas,
 } from "./shaders/dionysosShaders";
-import { setHandoffCorruption } from "../../immersive-section/lib/corruptionHandoff"; 
+import { setHandoffCorruption } from "../../immersive-section/lib/corruptionHandoff";
 import "./StatueScene.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
 // ============================================================
-// SPLIT WORDS COMPONENT
+// HERO BEATS DATA
+// ============================================================
+const HERO_BEATS = [
+  {
+    big: "What the stone kept",
+    small: "→ Excavated from the earth, not explained by the hand that held it",
+    pos: "left",
+  },
+  { 
+    big: "Muscle carved", 
+    small: "→ Into memory, not motion — a stillness that outlasts the body", 
+    pos: "right" 
+  },
+  {
+    big: "Still unfinished",
+    small: "→ A fragment outlives its story, waiting for a gaze that will never come",
+    pos: "center",
+  },
+];
+
+// ============================================================
+// SPLIT WORDS COMPONENT (for panels)
 // ============================================================
 function SplitWords({
   text,
@@ -117,13 +139,13 @@ const GrainShader = {
 };
 
 // ============================================================
-// FULL SCREEN GLITCH SHADER — SLOWED & SOFTENED
+// FULL SCREEN GLITCH SHADER
 // ============================================================
 const FullScreenGlitchShader = {
   uniforms: {
     tDiffuse: { value: null },
     time: { value: 0 },
-    amount: { value: 0.0 }, // 0 = clean, 1 = full takeover
+    amount: { value: 0.0 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -145,30 +167,21 @@ const FullScreenGlitchShader = {
     void main() {
       vec2 uv = vUv;
 
-      // block displacement — coarser = less strobe-y
-      float blockY = floor(uv.y * mix(6.0, 20.0, amount)); // was 8.0–40.0
-      // SLOWED: re-rolls ~4x/sec instead of 10x/sec
+      float blockY = floor(uv.y * mix(6.0, 20.0, amount));
       float blockSeed = rand(vec2(blockY, floor(time * 4.0)));
-      // SOFTER: fewer tears (threshold raised from 0.6)
       float shouldTear = step(1.0 - amount * 0.4, blockSeed);
-      // SOFTER: reduced displacement from 0.25 to 0.15
       float tearOffset = (rand(vec2(blockSeed, time)) - 0.5) * amount * 0.15;
       uv.x += tearOffset * shouldTear;
 
       vec4 color = texture2D(tDiffuse, uv);
 
-      // RGB split — reduced from 0.02 to 0.012
       float split = amount * 0.012;
       color.r = texture2D(tDiffuse, uv + vec2(split, 0.0)).r;
       color.b = texture2D(tDiffuse, uv - vec2(split, 0.0)).b;
 
-      // WHITE FLASH FRAMES — REMOVED entirely (was the strobe risk)
+      float roll = sin(uv.y * 800.0 - time * 12.0 * amount) * 0.5 + 0.5;
+      color.rgb -= pow(roll, 14.0) * amount * 0.15;
 
-      // scanline roll — slower, subtler
-      float roll = sin(uv.y * 800.0 - time * 12.0 * amount) * 0.5 + 0.5; // was 40.0
-      color.rgb -= pow(roll, 14.0) * amount * 0.15; // was 10 power / 0.3 strength
-
-      // static noise — reduced from 0.4 to 0.25
       float staticNoise = rand(uv * 500.0 + time);
       color.rgb = mix(color.rgb, vec3(staticNoise), amount * amount * 0.25);
 
@@ -474,6 +487,78 @@ export default function StatueScene({
       );
 
       function initScroll(loadedModel: THREE.Object3D) {
+        // ── HERO TEXT: 3 beats, spread across full torso rotation ──
+        const beatEls = gsap.utils.toArray<HTMLElement>(".sweep-beat");
+
+        // Match the torso rotation's active range. Rotation keyframes span 0 to 0.75
+        // Give beats that same span, evenly spaced, each with real hold time.
+        const BEAT_SPAN = 0.22; // 22% of scroll per beat (reveal + hold + exit)
+        const BEAT_GAP = 0.04;
+
+        beatEls.forEach((beatEl, i) => {
+          const bigEl = beatEl.querySelector<HTMLElement>(".is-big")!;
+          const smallEl = beatEl.querySelector<HTMLElement>(".is-small")!;
+          const start = i * (BEAT_SPAN + BEAT_GAP);
+
+          gsap.set([bigEl, smallEl], {
+            opacity: 0,
+            "--reveal": 0,
+            filter: "blur(8px)",
+            y: 14,
+          });
+
+          gsap
+            .timeline({
+              scrollTrigger: {
+                trigger: content,
+                start: `top+=${start * 100}% top`,
+                end: `top+=${(start + BEAT_SPAN) * 100}% top`,
+                scrub: 0.4,
+              },
+            })
+            // big line leads
+            .to(
+              bigEl,
+              {
+                opacity: 1,
+                y: 0,
+                filter: "blur(0px)",
+                duration: 0.15,
+                ease: "power2.out",
+              },
+              0,
+            )
+            .to(bigEl, { "--reveal": 1, duration: 0.3, ease: "none" }, 0.02)
+            // small line follows, slightly delayed
+            .to(
+              smallEl,
+              {
+                opacity: 1,
+                y: 0,
+                filter: "blur(0px)",
+                duration: 0.15,
+                ease: "power2.out",
+              },
+              0.12,
+            )
+            .to(smallEl, { "--reveal": 1, duration: 0.28, ease: "none" }, 0.15)
+            // hold — real breathing room
+            .to([bigEl, smallEl], { opacity: 1, duration: 0.35 }, 0.42)
+            // exit together
+            .to(
+              [bigEl, smallEl],
+              {
+                opacity: 0,
+                filter: "blur(10px)",
+                y: -16,
+                duration: 0.2,
+                ease: "power2.in",
+              },
+              0.8,
+            );
+        });
+
+        // ── MAIN SCROLL TIMELINE ──────────────────────────────
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: content,
@@ -490,7 +575,7 @@ export default function StatueScene({
                   self.progress;
               }
 
-              // ── SHOW ABYSS BUTTON (using ref to avoid dependency issues) ──
+              // ── SHOW ABYSS BUTTON ──
               if (self.progress > 0.9 && !showAbyssButtonRef.current) {
                 showAbyssButtonRef.current = true;
                 setShowAbyssButton(true);
@@ -509,7 +594,7 @@ export default function StatueScene({
                 0,
                 1,
               );
-              const takeoverEased = takeover * takeover * (3 - 2 * takeover); // smoothstep
+              const takeoverEased = takeover * takeover * (3 - 2 * takeover);
 
               if (chromaPassRef.current) {
                 chromaPassRef.current.uniforms.intensity.value =
@@ -539,7 +624,7 @@ export default function StatueScene({
           .to(loadedModel.rotation, { y: Math.PI * 2.05, ease: "none" }, 0.75)
           .to(camera.position, { x: 0, y: 0.2, z: 4.4, ease: "none" }, 0.75);
 
-        // ── UPDATED PANEL ANIMATIONS WITH SPLIT WORDS ──
+        // ── PANEL ANIMATIONS WITH SPLIT WORDS ──
         panelRefs.current.forEach((panel) => {
           if (!panel) return;
           const spacer = panel.closest(".ts-spacer");
@@ -550,7 +635,6 @@ export default function StatueScene({
           );
           const bodyGroups = panel.querySelectorAll(".ts-body .word-inner");
 
-          // panel itself must become visible — the CSS still has opacity:0 as its base state
           gsap.set(panel, { opacity: 1 });
           gsap.set([headingWords, bodyGroups], { yPercent: 100 });
 
@@ -582,7 +666,6 @@ export default function StatueScene({
         frameId = requestAnimationFrame(animate);
         if (model) camera.lookAt(0, 0, 0);
 
-        // Update shader time and camera distance
         if (shaderMaterialRef.current) {
           shaderMaterialRef.current.uniforms.uTime.value =
             performance.now() * 0.001;
@@ -590,7 +673,6 @@ export default function StatueScene({
             camera.position.length();
         }
 
-        // Update fullscreen glitch time
         if (fullscreenGlitchPassRef.current) {
           fullscreenGlitchPassRef.current.uniforms.time.value =
             performance.now() * 0.001;
@@ -659,11 +741,11 @@ export default function StatueScene({
       setWebglSupported(false);
       return;
     }
-  }, [modelUrl, isBrowser]); // Removed showAbyssButton from dependencies
+  }, [modelUrl, isBrowser]);
 
   function handleEnterAbyss() {
     setTransitioning(true);
-    setHandoffCorruption(screenCorrupt); // persist the corruption level right before leaving
+    setHandoffCorruption(screenCorrupt);
     setTimeout(() => {
       router.push("/abyss");
     }, 850);
@@ -754,9 +836,31 @@ export default function StatueScene({
         <div className="ts-canvas-stage" ref={stageRef} />
         <div
           className="ts-screen-glitch"
-          style={{ ["--screen-corrupt" as any]: screenCorrupt }}
+          style={{ "--screen-corrupt": screenCorrupt } as React.CSSProperties}
         />
         <div className="ts-arrival-veil" ref={veilRef} />
+
+        {/* ─── SWEEP HEADING — 3 beats, each big + small ─── */}
+        <div className="hero-sweep-block">
+          {HERO_BEATS.map((beat, i) => (
+            <div className="sweep-beat" data-pos={beat.pos} key={i}>
+              <span
+                className="sweep-heading is-big"
+                data-text={beat.big}
+                style={{ "--reveal": 0, opacity: 0 } as React.CSSProperties}
+              >
+                {beat.big}
+              </span>
+              <span
+                className="sweep-heading is-small"
+                data-text={beat.small}
+                style={{ "--reveal": 0, opacity: 0 } as React.CSSProperties}
+              >
+                {beat.small}
+              </span>
+            </div>
+          ))}
+        </div>
 
         <div className="ts-plaque">
           <span>{plaqueTitle}</span>

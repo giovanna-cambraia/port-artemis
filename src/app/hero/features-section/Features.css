@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Sekuya&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
 
 .features-section {
   position: relative;
@@ -35,7 +36,6 @@
   top: 0;
 }
 
-/* Much shorter card — this was the main "too big" culprit */
 .feature-card {
   height: auto;
   min-height: 45vh;
@@ -49,7 +49,6 @@
   will-change: transform, opacity;
 }
 
-/* Force these — !important guards against the dark section bg bleeding through */
 .card-light {
   background-color: #f5f5f5 !important;
 }
@@ -151,6 +150,7 @@
 }
 
 .card-description {
+  font-family: "Michroma", sans-serif;
   font-size: 15px;
   line-height: 1.6;
   max-width: 460px;

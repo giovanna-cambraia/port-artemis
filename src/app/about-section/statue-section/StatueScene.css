@@ -1,153 +1,6 @@
-.ts-panel {
-  position: absolute;
-  max-width: 380px;
-  padding: 0 6vw;
-  opacity: 0;
-  pointer-events: auto;
-  transition: filter 0.15s ease;
-}
+/* StatueScene.css */
 
-.ts-eyebrow,
-.ts-heading,
-.ts-body {
-  overflow: hidden;
-}
-
-.ts-eyebrow-inner,
-.ts-heading-line,
-.ts-body-inner {
-  display: block;
-  transform: translateY(110%);
-  will-change: transform;
-}
-
-.ts-heading {
-  position: relative;
-  --corrupt: 0;
-}
-
-.ts-heading-line {
-  position: relative;
-}
-
-/* glitch clones sit on top, only visible once --corrupt rises */
-.ts-heading[data-text]::before,
-.ts-heading[data-text]::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  white-space: pre-wrap;
-  opacity: calc(var(--corrupt) * 0.85);
-  clip-path: inset(0 0 0 0);
-  pointer-events: none;
-}
-
-.ts-heading[data-text]::before {
-  color: #ff2b2b;
-  transform: translate(calc(var(--corrupt) * -4px), 0);
-  animation: ts-glitch-slice-a 2.6s steps(1) infinite;
-  animation-play-state: paused;
-}
-
-.ts-heading[data-text]::after {
-  color: #3ad4ff;
-  transform: translate(calc(var(--corrupt) * 4px), 0);
-  animation: ts-glitch-slice-b 3.1s steps(1) infinite;
-  animation-play-state: paused;
-}
-
-.ts-heading[data-corrupting="1"]::before,
-.ts-heading[data-corrupting="1"]::after {
-  animation-play-state: running;
-}
-
-@keyframes ts-glitch-slice-a {
-  0%,
-  88% {
-    clip-path: inset(0 0 0 0);
-    opacity: 0;
-  }
-  90% {
-    clip-path: inset(10% 0 60% 0);
-    opacity: 0.5;
-  }
-  93% {
-    clip-path: inset(70% 0 5% 0);
-    opacity: 0.5;
-  }
-  96% {
-    clip-path: inset(30% 0 40% 0);
-    opacity: 0.4;
-  }
-  100% {
-    clip-path: inset(0 0 0 0);
-    opacity: 0;
-  }
-}
-
-@keyframes ts-glitch-slice-b {
-  0%,
-  90% {
-    clip-path: inset(0 0 0 0);
-    opacity: 0;
-  }
-  91% {
-    clip-path: inset(50% 0 20% 0);
-    opacity: 1;
-  }
-  92% {
-    clip-path: inset(5% 0 80% 0);
-    opacity: 1;
-  }
-  93% {
-    clip-path: inset(65% 0 10% 0);
-    opacity: 1;
-  }
-  94%,
-  100% {
-    clip-path: inset(0 0 0 0);
-    opacity: 0;
-  }
-}
-
-/* subtle jitter on the real text too, not just the clones */
-.ts-heading-line {
-  animation: ts-jitter 0.15s steps(2) infinite;
-  animation-play-state: paused;
-}
-.ts-heading[data-corrupting="1"] .ts-heading-line {
-  animation-play-state: running;
-}
-
-@keyframes ts-jitter {
-  0% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(
-      calc(var(--corrupt) * 1.5px),
-      calc(var(--corrupt) * -1px)
-    );
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-/* body text: flicker/desync letter-spacing instead of RGB split — cheaper, still reads as breakdown */
-.ts-body {
-  transition:
-    letter-spacing 0.2s ease,
-    opacity 0.2s ease;
-}
-
-/* eyebrow: monospace glitch flicker, ties to corruption too */
-.ts-eyebrow {
-  transition: color 0.3s ease;
-}
-
+/* ── ROOT LAYOUT ──────────────────────────────────────────────── */
 .ts-root {
   position: relative;
   height: 900vh;
@@ -194,73 +47,18 @@
   position: relative;
 }
 
-.ts-panel {
+/* ── PROGRESS BAR ──────────────────────────────────────────────── */
+.ts-progress {
   position: absolute;
-  max-width: 380px;
-  padding: 0 6vw;
-  opacity: 0;
-  pointer-events: auto;
-}
-
-.ts-panel-1 {
-  top: 12vh;
+  top: 0;
   left: 0;
-}
-.ts-panel-2 {
-  top: 50vh;
-  right: 0;
-  text-align: right;
-}
-.ts-panel-3 {
-  top: 50vh;
-  left: 0;
-}
-.ts-panel-4 {
-  top: 46vh;
-  right: 0;
-  text-align: right;
-}
-.ts-panel-5 {
-  top: 40vh;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  max-width: 520px;
+  height: 2px;
+  background: #8a4a4a;
+  z-index: 4;
+  width: 0%;
 }
 
-.ts-eyebrow {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  color: #8a4a4a;
-  text-transform: uppercase;
-  margin-bottom: 14px;
-}
-
-.ts-heading {
-  font-family: "Fraunces", Georgia, serif;
-  font-weight: 500;
-  font-style: normal;
-  line-height: 1.05;
-  color: #f2e0e0;
-  font-size: clamp(26px, 3.4vw, 40px);
-  margin: 0;
-}
-
-.ts-body {
-  font-family: "IBM Plex Sans", Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.7;
-  color: #b9a1a1;
-  margin-top: 18px;
-  max-width: 34ch;
-}
-
-.ts-panel-5 .ts-body {
-  margin-left: auto;
-  margin-right: auto;
-}
-
+/* ── PLAQUE ────────────────────────────────────────────────────── */
 .ts-plaque {
   position: absolute;
   bottom: 40px;
@@ -283,16 +81,7 @@
   margin-bottom: 4px;
 }
 
-.ts-progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 2px;
-  background: #8a4a4a;
-  z-index: 4;
-  width: 0%;
-}
-
+/* ── CREDIT ────────────────────────────────────────────────────── */
 .ts-credit {
   position: absolute;
   top: 32px;
@@ -305,12 +94,7 @@
   text-transform: uppercase;
 }
 
-::selection {
-  background: #8a4a4a;
-  color: #000000;
-}
-
-/* ── ARRIVAL VEIL ── */
+/* ── ARRIVAL VEIL ──────────────────────────────────────────────── */
 .ts-arrival-veil {
   position: absolute;
   top: 0;
@@ -323,6 +107,7 @@
   opacity: 1;
 }
 
+/* ── SCREEN GLITCH ────────────────────────────────────────────── */
 .ts-screen-glitch {
   position: absolute;
   inset: 0;
@@ -355,18 +140,214 @@
   }
 }
 
-.abyss-btn-wrap--leaving {
-  opacity: 0;
-  transition: opacity 0.2s ease;
+/* ── SWEEP HEADING — 3 beats with positioning ──────────────────── */
+.hero-sweep-block {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   pointer-events: none;
 }
-/* ── ABYSS BUTTON WRAP ── */
+
+.sweep-beat {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.sweep-beat[data-pos="left"] {
+  top: 12vh;
+  left: 6vw;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.sweep-beat[data-pos="right"] {
+  top: 50vh;
+  right: 6vw;
+  left: auto;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.sweep-beat[data-pos="center"] {
+  top: 40vh;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  text-align: center;
+}
+
+.sweep-heading {
+  position: relative;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffffff calc(var(--reveal) * 100%),
+    #2c2c2c calc(var(--reveal) * 100% + 2%),
+    #2c2c2c 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  opacity: 0;
+  will-change: opacity, filter, transform;
+}
+
+.sweep-heading.is-big {
+  font-size: clamp(40px, 7vw, 120px);
+  line-height: 0.95;
+}
+
+.sweep-heading.is-small {
+  font-size: clamp(18px, 2.2vw, 36px);
+  font-weight: 500;
+}
+
+/* ghost clones — data-text includes arrow so it matches exactly */
+.sweep-heading::before,
+.sweep-heading::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  white-space: nowrap;
+  background: linear-gradient(
+    90deg,
+    transparent calc(var(--reveal) * 100% - 4%),
+    currentColor calc(var(--reveal) * 100% - 1%),
+    transparent calc(var(--reveal) * 100% + 3%)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: #ff2b2b;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.sweep-heading::after {
+  color: #3ad4ff;
+  transform: translateX(3px);
+}
+
+/* ── PANELS ────────────────────────────────────────────────────── */
+.ts-panel {
+  position: absolute;
+  max-width: 380px;
+  padding: 0 6vw;
+  opacity: 0;
+  pointer-events: auto;
+  transition: filter 0.15s ease;
+}
+
+.ts-panel-1 {
+  top: 12vh;
+  left: 0;
+}
+.ts-panel-2 {
+  top: 50vh;
+  right: 0;
+  text-align: right;
+}
+.ts-panel-3 {
+  top: 50vh;
+  left: 0;
+}
+.ts-panel-4 {
+  top: 46vh;
+  right: 0;
+  text-align: right;
+}
+.ts-panel-5 {
+  top: 40vh;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  max-width: 520px;
+}
+
+/* ── PANEL EYEBROW ────────────────────────────────────────────── */
+.ts-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: #8a4a4a;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.ts-eyebrow .word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.ts-eyebrow .word-inner {
+  display: inline-block;
+  transform: translateY(110%);
+  will-change: transform;
+}
+
+/* ── PANEL HEADING ────────────────────────────────────────────── */
+.ts-heading {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 1.05;
+  color: #f2e0e0;
+  font-size: clamp(26px, 3.4vw, 40px);
+  margin: 0;
+}
+
+.ts-heading .word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.ts-heading .word-inner {
+  display: inline-block;
+  transform: translateY(110%);
+  will-change: transform;
+}
+
+/* ── PANEL BODY ────────────────────────────────────────────────── */
+.ts-body {
+  font-family: "IBM Plex Sans", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #b9a1a1;
+  margin-top: 18px;
+  max-width: 34ch;
+}
+
+.ts-body .word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.ts-body .word-inner {
+  display: inline-block;
+  transform: translateY(110%);
+  will-change: transform;
+}
+
+.ts-panel-5 .ts-body {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── ABYSS BUTTON WRAP ────────────────────────────────────────── */
 .abyss-btn-wrap {
   position: absolute;
   top: 78%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 10; /* above ts-screen-glitch and ts-arrival-veil (both 5) */
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -399,7 +380,7 @@
   }
 }
 
-/* ── BUTTON RESET ── */
+/* ── ABYSS BUTTON ──────────────────────────────────────────────── */
 .abyss-btn {
   background: transparent;
   border: none;
@@ -415,7 +396,7 @@
   cursor: default;
 }
 
-/* ── EYEBROW ── */
+/* ── ABYSS BUTTON EYEBROW ────────────────────────────────────── */
 .abyss-btn-eyebrow {
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
@@ -446,6 +427,7 @@
   }
 }
 
+/* ── ABYSS BUTTON TITLE ────────────────────────────────────────── */
 .abyss-btn-title {
   position: relative;
   font-family: "Sekuya", "Bebas Neue", "Share Tech Mono", sans-serif;
@@ -583,18 +565,221 @@
   width: 80%;
 }
 
-.ts-line-mask {
-  display: block;
-  overflow: hidden;
+/* ── TRANSITION OVERLAY ────────────────────────────────────────── */
+.transition-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
 }
 
-.word-mask {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: top;
+.transition-overlay--burst {
+  animation: transition-burst 0.85s ease forwards;
 }
 
-.word-inner {
-  display: inline-block;
-  will-change: transform;
+@keyframes transition-burst {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.transition-noise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+}
+
+.transition-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.3) 2px,
+    rgba(0, 0, 0, 0.3) 3px
+  );
+}
+
+.transition-flash {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+  animation: transition-flash 0.85s ease forwards;
+}
+
+@keyframes transition-flash {
+  0% {
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.15;
+  }
+  10% {
+    opacity: 0;
+  }
+  80% {
+    opacity: 0;
+  }
+  85% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── SELECTION ────────────────────────────────────────────────── */
+::selection {
+  background: #be4949;
+  color: #000000;
+}
+
+/* ── RESPONSIVE ────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sweep-beat[data-pos="left"] {
+    top: 8vh;
+    left: 4vw;
+  }
+
+  .sweep-beat[data-pos="right"] {
+    top: 45vh;
+    right: 4vw;
+  }
+
+  .sweep-beat[data-pos="center"] {
+    top: 35vh;
+  }
+
+  .sweep-heading.is-big {
+    font-size: clamp(28px, 8vw, 48px);
+  }
+
+  .sweep-heading.is-small {
+    font-size: clamp(14px, 2.8vw, 24px);
+  }
+
+  .ts-panel {
+    padding: 0 4vw;
+    max-width: 320px;
+  }
+
+  .ts-panel-1 {
+    top: 8vh;
+  }
+
+  .ts-panel-2 {
+    top: 45vh;
+  }
+
+  .ts-panel-3 {
+    top: 45vh;
+  }
+
+  .ts-panel-4 {
+    top: 40vh;
+  }
+
+  .ts-panel-5 {
+    top: 35vh;
+    max-width: 380px;
+  }
+
+  .ts-heading {
+    font-size: clamp(22px, 4.5vw, 30px);
+  }
+
+  .ts-body {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .ts-plaque {
+    bottom: 24px;
+    left: 4vw;
+    font-size: 10px;
+    padding-left: 10px;
+  }
+
+  .ts-plaque span {
+    font-size: 11px;
+  }
+
+  .abyss-btn-title {
+    font-size: clamp(24px, 6vw, 36px);
+  }
+
+  .abyss-btn-eyebrow {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sweep-beat[data-pos="left"] {
+    top: 6vh;
+    left: 3vw;
+  }
+
+  .sweep-beat[data-pos="right"] {
+    top: 40vh;
+    right: 3vw;
+  }
+
+  .sweep-beat[data-pos="center"] {
+    top: 30vh;
+  }
+
+  .sweep-heading.is-big {
+    font-size: clamp(20px, 7vw, 32px);
+  }
+
+  .sweep-heading.is-small {
+    font-size: clamp(12px, 2.5vw, 18px);
+  }
+
+  .ts-panel {
+    max-width: 280px;
+    padding: 0 3vw;
+  }
+
+  .ts-panel-5 {
+    max-width: 300px;
+  }
+
+  .ts-heading {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+
+  .ts-body {
+    font-size: 13px;
+    margin-top: 12px;
+  }
+
+  .ts-eyebrow {
+    font-size: 10px;
+    margin-bottom: 10px;
+  }
+
+  .ts-plaque {
+    bottom: 16px;
+    left: 3vw;
+    font-size: 9px;
+    padding-left: 8px;
+  }
+
+  .ts-plaque span {
+    font-size: 10px;
+  }
 }
