@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
 import styles from "./CTA.module.css";
 
 // ============================================
@@ -42,7 +41,6 @@ const HOVER_RADIUS = 3;
 const CLUSTER_SIZE = 10;
 const HIGHLIGHT_LIFETIME = 300;
 const CELL_SIZE = 14; // px per ascii cell
-// REMOVED: const DPR = Math.min(window.devicePixelRatio || 1, 2); ❌
 
 // wave field tuning
 const WAVE_SPEED = 0.0006;
@@ -160,11 +158,6 @@ export default function CTA({
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
-
-    const lenis = new Lenis();
-    lenis.on("scroll", ScrollTrigger.update);
-    gsap.ticker.add((time: number) => lenis.raf(time * 1000));
-    gsap.ticker.lagSmoothing(0);
 
     const splitCharsManual = (element: HTMLElement): HTMLElement[] => {
       const text = element.textContent || "";
@@ -409,8 +402,8 @@ export default function CTA({
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-      lenis.destroy();
-      gsap.ticker.remove(() => {});
+      // Lenis removed - no cleanup needed
+      // gsap.ticker.remove(() => {}); // Also removed
     };
   }, []);
 

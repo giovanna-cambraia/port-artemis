@@ -1,8 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, forwardRef } from "react";
+import React, { useRef, forwardRef, useEffect, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+import FaultyTerminal from "@/src/react-components/dither/Dither";
 import styles from "./WorkSection.module.css";
-import AsciiTiles from "./ASCIITitles";
+
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 interface CardData {
   id: number;
@@ -79,101 +84,32 @@ const cardData: CardData[] = [
   },
 ];
 
-declare global {
-  interface Window {
-    Lenis: any;
-    gsap: any;
-    ScrollTrigger: any;
-  }
-}
-
 const WorkSection = forwardRef<HTMLElement>((_props, forwardedRef) => {
   const workRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  const setWorkRef = (node: HTMLElement | null) => {
-    (workRef as React.MutableRefObject<HTMLElement | null>).current = node;
-    if (typeof forwardedRef === "function") {
-      forwardedRef(node);
-    } else if (forwardedRef) {
-      (forwardedRef as React.MutableRefObject<HTMLElement | null>).current =
-        node;
-    }
-  };
-
+  // Wait for component to mount and layout to settle
   useEffect(() => {
-    const loadScripts = async () => {
-      const scripts = [
-        "https://unpkg.com/lenis@1.1.20/dist/lenis.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js",
-      ];
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
-      const loadScript = (src: string): Promise<void> => {
-        return new Promise((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = src;
-          script.async = true;
-          script.onload = () => resolve();
-          script.onerror = () =>
-            reject(new Error(`Failed to load script: ${src}`));
-          document.body.appendChild(script);
-        });
-      };
-
-      try {
-        for (const src of scripts) {
-          await loadScript(src);
-        }
-        initializeAnimations();
-      } catch (error) {
-        console.error("Error loading scripts:", error);
-      }
-    };
-
-    const initializeAnimations = () => {
-      const { gsap, ScrollTrigger, Lenis } = window;
-
-      if (!gsap || !ScrollTrigger || !Lenis) {
-        console.error("Required libraries not loaded");
-        return;
-      }
-
-      gsap.registerPlugin(ScrollTrigger);
-
-      const lenis = new Lenis();
-      lenis.on("scroll", ScrollTrigger.update);
-      gsap.ticker.add((time: number) => lenis.raf(time * 1000));
-      gsap.ticker.lagSmoothing(0);
-
+  useGSAP(
+    () => {
       const workSection = workRef.current;
       const cardsContainer = cardsRef.current;
+      if (!workSection || !cardsContainer || !isReady) return;
 
-      if (!workSection || !cardsContainer) {
-        console.error("Required DOM elements not found");
-        return;
-      }
+      let animationFrame: number;
 
+      // Use window.innerWidth * 5 for move distance (matches original behavior)
       const moveDistance = window.innerWidth * 5;
-      let currentXPosition = 0;
 
-      const lerp = (start: number, end: number, t: number) =>
-        start + (end - start) * t;
-
-      let workTrigger: any;
-
-      const updateCardsPosition = () => {
-        const targetX = -moveDistance * (workTrigger?.progress || 0);
-        currentXPosition = lerp(currentXPosition, targetX, 0.07);
-        gsap.set(cardsContainer, { x: currentXPosition });
-      };
-
-      const animate = () => {
-        updateCardsPosition();
-        requestAnimationFrame(animate);
-      };
-
-      workTrigger = ScrollTrigger.create({
+      // Create the scroll trigger with pinning
+      const scrollTrigger = ScrollTrigger.create({
         trigger: workSection,
         start: "top top",
         end: "+=700%",
@@ -182,15 +118,59 @@ const WorkSection = forwardRef<HTMLElement>((_props, forwardedRef) => {
         scrub: 1,
       });
 
-      animate();
-    };
+      // Lerp-based animation loop (matches original behavior)
+      let currentXPosition = 0;
 
-    loadScripts();
-  }, []);
+      const lerp = (start: number, end: number, t: number) =>
+        start + (end - start) * t;
+
+      const updateCardsPosition = () => {
+        const targetX = -moveDistance * (scrollTrigger?.progress || 0);
+        currentXPosition = lerp(currentXPosition, targetX, 0.07);
+        gsap.set(cardsContainer, { x: currentXPosition });
+        animationFrame = requestAnimationFrame(updateCardsPosition);
+      };
+
+      // Start the animation loop
+      updateCardsPosition();
+
+      // Cleanup
+      return () => {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+        }
+        scrollTrigger?.kill();
+      };
+    },
+    { scope: workRef, dependencies: [isReady] },
+  );
 
   return (
-    <section className={styles.work} ref={setWorkRef}>
-      <AsciiTiles />
+    <section className={styles.work} ref={workRef}>
+      {/* Background layer with FaultyTerminal */}
+      <div className={styles.background}>
+        <FaultyTerminal
+          scale={1.5}
+          gridMul={[2, 1]}
+          digitSize={1.2}
+          timeScale={0.5}
+          pause={false}
+          scanlineIntensity={0.5}
+          glitchAmount={1}
+          flickerAmount={1}
+          noiseAmp={1}
+          chromaticAberration={0}
+          dither={0}
+          curvature={0.1}
+          tint="#A7EF9E"
+          mouseReact
+          mouseStrength={0.5}
+          pageLoadAnimation
+          brightness={0.6}
+        />
+      </div>
+
+      {/* Cards layer - on top of background */}
       <div className={styles.cards} ref={cardsRef}>
         {cardData.map((card) => (
           <div key={card.id} className={styles.card}>
